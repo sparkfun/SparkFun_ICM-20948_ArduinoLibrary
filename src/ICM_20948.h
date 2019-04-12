@@ -47,7 +47,7 @@ public:
 
     ICM_20948_Status_e begin();
 
-    read(  )
+    // read(  )
 };
 
 

@@ -9,8 +9,8 @@
 #define SPI_CLK 1000000
 SPISettings mySettings(SPI_CLK, MSBFIRST, SPI_MODE3);
 
-ICM_20948_Status_e mywrite(uint8_t reg, uint8_t* data, uint32_t len);
-ICM_20948_Status_e myread(uint8_t reg, uint8_t* buff, uint32_t len);
+ICM_20948_Status_e mywrite(uint8_t reg, uint8_t* data, uint32_t len, void* user);
+ICM_20948_Status_e myread(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
 
 
 ICM_20948_Device_t myICM;
@@ -89,7 +89,7 @@ void loop() {
   ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
   ICM_20948_INT_STATUS_1_t reg;
   retval = ICM_20948_set_bank( &myICM, 0); // Must be in the right bank
-  retval = myread( AGB0_REG_INT_STATUS_1, (uint8_t*)&reg, sizeof(ICM_20948_INT_STATUS_1_t));
+  retval = myread( AGB0_REG_INT_STATUS_1, (uint8_t*)&reg, sizeof(ICM_20948_INT_STATUS_1_t), NULL);
 
   Serial.println(*((uint8_t*)&reg), BIN);
   
@@ -104,7 +104,7 @@ void loop() {
 
 }
 
-ICM_20948_Status_e mywrite(uint8_t reg, uint8_t* data, uint32_t len){
+ICM_20948_Status_e mywrite(uint8_t reg, uint8_t* data, uint32_t len, void* user){
   digitalWrite(CS_PIN, LOW);
   delayMicroseconds(5);
   SPI.beginTransaction(mySettings);
@@ -120,7 +120,7 @@ ICM_20948_Status_e mywrite(uint8_t reg, uint8_t* data, uint32_t len){
   return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e myread(uint8_t reg, uint8_t* buff, uint32_t len){
+ICM_20948_Status_e myread(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
   digitalWrite(CS_PIN, LOW);
   delayMicroseconds(5);
   SPI.beginTransaction(mySettings);

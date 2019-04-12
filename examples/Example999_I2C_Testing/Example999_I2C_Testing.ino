@@ -6,8 +6,8 @@
 #include <Wire.h>
 
 
-ICM_20948_Status_e write(uint8_t reg, uint8_t* data, uint32_t len);
-ICM_20948_Status_e read(uint8_t reg, uint8_t* buff, uint32_t len);
+ICM_20948_Status_e write(uint8_t reg, uint8_t* data, uint32_t len, void* user);
+ICM_20948_Status_e read(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
 #define I2C_ADDR 0x69
 
 
@@ -143,7 +143,7 @@ void loop() {
 
 }
 
-ICM_20948_Status_e write(uint8_t reg, uint8_t* data, uint32_t len){
+ICM_20948_Status_e write(uint8_t reg, uint8_t* data, uint32_t len, void* user){
   Wire.beginTransmission(I2C_ADDR);
   Wire.write(reg);
   Wire.write(data, len);
@@ -152,7 +152,7 @@ ICM_20948_Status_e write(uint8_t reg, uint8_t* data, uint32_t len){
   return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e read(uint8_t reg, uint8_t* buff, uint32_t len){
+ICM_20948_Status_e read(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
   Wire.beginTransmission(I2C_ADDR);
   Wire.write(reg);
   Wire.endTransmission(false); // Send repeated start
@@ -179,7 +179,7 @@ ICM_20948_Status_e read(uint8_t reg, uint8_t* buff, uint32_t len){
 void setBank(uint8_t bank){
   bank &= 0x03; // mask off values above 3
   bank = bank << 4; // Shift into the right place
-  write((uint8_t)REG_BANK_SEL, &bank, 1);
+  write((uint8_t)REG_BANK_SEL, &bank, 1, NULL);
 }
 
 void getAGMT( ICM_20948_AGMT_t* p ){
@@ -187,7 +187,7 @@ void getAGMT( ICM_20948_AGMT_t* p ){
   uint8_t buff[numbytes];
   
   setBank(0); 
-  read( (uint8_t)AGB0_REG_ACCEL_XOUT_H, buff, numbytes);
+  read( (uint8_t)AGB0_REG_ACCEL_XOUT_H, buff, numbytes, NULL);
 
   p->acc.i16bit[0] = ((buff[0] << 8) | (buff[1] & 0xFF));
   p->acc.i16bit[1] = ((buff[2] << 8) | (buff[3] & 0xFF));
@@ -208,18 +208,18 @@ void getAGMT( ICM_20948_AGMT_t* p ){
 
   setBank(2);
   ICM_20948_ACCEL_CONFIG_t acfg; 
-  read( (uint8_t)AGB2_REG_ACCEL_CONFIG, (uint8_t*)&acfg, 1*sizeof(acfg));
+  read( (uint8_t)AGB2_REG_ACCEL_CONFIG, (uint8_t*)&acfg, 1*sizeof(acfg), NULL);
   p->fss.a = acfg.ACCEL_FS_SEL; // Worth noting that without explicitly setting the FS range of the accelerometer it was showing the register value for +/- 2g but the reported values were actually scaled to the +/- 16g range 
                                 // Wait a minute... now it seems like this problem actually comes from the digital low-pass filter. When enabled the value is 1/8 what it should be...
   setBank(2);
   ICM_20948_GYRO_CONFIG_1_t gcfg1;
-  read( (uint8_t)AGB2_REG_GYRO_CONFIG_1, (uint8_t*)&gcfg1, 1*sizeof(gcfg1));
+  read( (uint8_t)AGB2_REG_GYRO_CONFIG_1, (uint8_t*)&gcfg1, 1*sizeof(gcfg1), NULL);
   p->fss.g = gcfg1.GYRO_FS_SEL;
 
 //  Serial.print("acc cfg: 0x"); Serial.print(*((uint8_t*)&acfg), HEX); Serial.println();
 
   ICM_20948_ACCEL_CONFIG_2_t acfg2;
-  read( (uint8_t)AGB2_REG_ACCEL_CONFIG_2, (uint8_t*)&acfg2, 1*sizeof(acfg2));
+  read( (uint8_t)AGB2_REG_ACCEL_CONFIG_2, (uint8_t*)&acfg2, 1*sizeof(acfg2), NULL);
 //  Serial.print("acc cfg2: 0x"); Serial.print(*((uint8_t*)&acfg2), HEX); Serial.println();
   
 }
@@ -276,7 +276,7 @@ void printRawAGMT( ICM_20948_AGMT_t agmt){
 
 uint16_t fifoAvailable( void ){
   uint16_t retval = 0;
-  read((uint8_t)AGB0_REG_FIFO_COUNT_H, (uint8_t*)&retval, 2);
+  read((uint8_t)AGB0_REG_FIFO_COUNT_H, (uint8_t*)&retval, 2, NULL);
   return retval;
 }
 

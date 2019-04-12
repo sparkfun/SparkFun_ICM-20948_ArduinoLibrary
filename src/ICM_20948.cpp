@@ -3,7 +3,7 @@
 // Forward Declarations
 ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len, void* user);
 ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
-ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user)
+ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
 ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
 
 
