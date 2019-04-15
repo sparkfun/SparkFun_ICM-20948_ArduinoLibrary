@@ -166,7 +166,7 @@ ICM_20948_Status_e	ICM_20948_set_sample_mode( ICM_20948_Device_t* pdev, ICM_2094
 	if( sensors & ICM_20948_Internal_Gyr ){ reg.GYRO_CYCLE = mode; }
 	if( sensors & ICM_20948_Internal_Mst ){ reg.I2C_MST_CYCLE = mode; }
 
-	retval = ICM_20948_execute_w( pdev, AGB0_REG_PWR_MGMT_1, (uint8_t*)&reg, sizeof(ICM_20948_PWR_MGMT_1_t));
+	retval = ICM_20948_execute_w( pdev, AGB0_REG_LP_CONFIG, (uint8_t*)&reg, sizeof(ICM_20948_LP_CONFIG_t));
 	if( retval != ICM_20948_Stat_Ok ){ return retval; }
 	return retval;
 }
