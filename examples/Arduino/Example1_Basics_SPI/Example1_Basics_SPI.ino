@@ -1,13 +1,12 @@
 #include "ICM_20948.h"
 
-
-#define MAG_AK09916_I2C_ADDR   0x0C
-#define MAG_AK09916_WHO_AM_I  0x4809
-#define MAG_REG_WHO_AM_I    0x00
+#include "util/ICM_20948_REGISTERS.h" // temporary
 
 #define SERIAL_PORT Serial
 
-ICM_20948_I2C myICM;
+#define CS_PIN 3
+
+ICM_20948_SPI myICM;
 
 void setup() {
   // put your setup code here, to run once:
@@ -15,20 +14,36 @@ void setup() {
   SERIAL_PORT.begin(115200);
 //  while(!SERIAL_PORT){}; // NOTE: make sure while(!SERIAL_PORT) does not accidentally call Wire.begin a bunch of times
 
-  Wire.begin();
-//  Wire.setClock(10000); // low-speed mode maybe helps?
-  Wire.setClock(400000); // low-speed mode maybe helps?
-  myICM.begin();
+  SPI.begin();
+  myICM.begin(CS_PIN, SPI);
+
+  myICM._spi->beginTransaction(myICM._spisettings);
+  myICM._spi->transfer( 0x00 );
+  myICM._spi->endTransaction();
+  
 
   while(!myICM.isConnected()){
-    SERIAL_PORT.print("Could not find the device at (8bit) address: 0x");
-    SERIAL_PORT.print(myICM._addr, HEX);
+    SERIAL_PORT.print("Could not find the device at chip select: ");
+    SERIAL_PORT.print(myICM._cs);
     SERIAL_PORT.print(". Trying again");
     SERIAL_PORT.println();
     delay(500);
   }
 
   SERIAL_PORT.println("Device connected!");
+
+  // For SPI we need to disable the I2C interface
+  uint8_t user_ctrl = 0xFF;
+  myICM.read(AGB0_REG_USER_CTRL, &user_ctrl, 1);
+  Serial.println(user_ctrl, HEX);
+  user_ctrl = 0x10;
+  myICM.write(AGB0_REG_USER_CTRL, &user_ctrl, 1);
+
+  delay(200);
+  
+  myICM.read(AGB0_REG_USER_CTRL, &user_ctrl, 1);
+  Serial.println(user_ctrl, HEX);
+//  while(1){};
 
   // Here we are doing a SW reset to make sure the device starts in a known state
   myICM.swReset( );
@@ -37,10 +52,6 @@ void setup() {
     SERIAL_PORT.println(myICM.statusString());
   }
   delay(250);
-
-  // Now wake the sensor up
-  myICM.sleep( false );
-  myICM.lowPower( false );
 
   // Set Gyro and Accelerometer to a particular sample mode
   myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous ); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
@@ -75,71 +86,25 @@ void setup() {
   SERIAL_PORT.print(F("Enable DLPF for Accelerometer returned: ")); SERIAL_PORT.println(myICM.statusString(accDLPEnableStat));
   SERIAL_PORT.print(F("Enable DLPF for Gyroscope returned: ")); SERIAL_PORT.println(myICM.statusString(gyrDLPEnableStat));
 
-//  // Enable the I2C master to talk to the magnetometer through the ICM 20948
-//  myICM.i2cMasterEnable( true ); 
-//  SERIAL_PORT.print(F("Enabling the I2C master returned ")); SERIAL_PORT.println(myICM.statusString());
-
-  // 
-  myICM.i2cMasterPassthrough( true ); // Set passthrough mode to try to access the magnetometer
+  // Now wake the sensor up
+  myICM.sleep( false );
+  myICM.lowPower( false );
 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
-//  if( myICM.dataReady() ){
-//    myICM.getAGMT();
-////    printRawAGMT( myICM.agmt );
-//    printScaledAGMT( myICM.agmt);
-//
-//    delay(20);
-//    
-//  }else{
-//    Serial.println("0");
-//  }
+  if( myICM.dataReady() ){
+    myICM.getAGMT();
+//    printRawAGMT( myICM.agmt );
+    printScaledAGMT( myICM.agmt );
 
-//  Serial.println( myICM.i2cMasterSingleR( MAG_AK09916_I2C_ADDR, MAG_REG_WHO_AM_I ), HEX);
-//  Serial.println("hi");
-//  delay(500);
-
-  byte error, address;
-  int nDevices;
- 
-  Serial.println("Scanning...");
- 
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
-  {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
- 
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("  !");
- 
-      nDevices++;
-    }
-    else if (error==4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.println(address,HEX);
-    }    
+    delay(20);
+    
+  }else{
+    Serial.println("0");
   }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
- 
-  delay(1000);           // wait 5 seconds for next scan
 
 }
 

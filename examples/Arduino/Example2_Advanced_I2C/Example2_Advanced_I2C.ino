@@ -1,6 +1,10 @@
 #include "ICM_20948.h"
 
+#include "util/ICM_20948_REGISTERS.h" // temporary
 
+
+#include "util\AK09916_REGISTERS.h"
+#include "util\AK09916_ENUMERATIONS.h"
 #define MAG_AK09916_I2C_ADDR   0x0C
 #define MAG_AK09916_WHO_AM_I  0x4809
 #define MAG_REG_WHO_AM_I    0x00
@@ -75,13 +79,33 @@ void setup() {
   SERIAL_PORT.print(F("Enable DLPF for Accelerometer returned: ")); SERIAL_PORT.println(myICM.statusString(accDLPEnableStat));
   SERIAL_PORT.print(F("Enable DLPF for Gyroscope returned: ")); SERIAL_PORT.println(myICM.statusString(gyrDLPEnableStat));
 
-//  // Enable the I2C master to talk to the magnetometer through the ICM 20948
-//  myICM.i2cMasterEnable( true ); 
-//  SERIAL_PORT.print(F("Enabling the I2C master returned ")); SERIAL_PORT.println(myICM.statusString());
+//  // If using the magnetometer through passthrough:
+//  myICM.i2cMasterPassthrough( true ); // Set passthrough mode to try to access the magnetometer (by default I2C master is disabled but you still have to enable the passthrough)
+//  SERIAL_PORT.print(F("Enable I2C Passthrough returned: ")); SERIAL_PORT.println(myICM.statusString(gyrDLPEnableStat));
+//
+//  // Try to set up magnetometer
+//  AK09916_CNTL2_Reg_t reg;
+//  reg.MODE = AK09916_mode_cont_100hz;
+//  
+//  Wire.beginTransmission(MAG_AK09916_I2C_ADDR);
+//  Wire.write(REG_CNTL2);
+//  Wire.write(*((uint8_t*)&reg));
+//  Wire.endTransmission();
 
-  // 
-  myICM.i2cMasterPassthrough( true ); // Set passthrough mode to try to access the magnetometer
+  myICM.setSampleMode( ( ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
 
+//  myICM.i2cMasterEnable( true );
+  Serial.println("here\n");
+  AK09916_CNTL2_Reg_t reg;
+  reg.MODE = AK09916_mode_cont_10hz;
+  while(1){
+    myICM.i2cMasterSingleW( MAG_AK09916_I2C_ADDR, REG_CNTL2, *((uint8_t*)&reg) );
+    SERIAL_PORT.print(F("Single Write returned: "));
+    SERIAL_PORT.println(myICM.statusString());
+    delay(500);
+  }
+
+  
 }
 
 void loop() {
@@ -102,45 +126,72 @@ void loop() {
 //  Serial.println("hi");
 //  delay(500);
 
-  byte error, address;
-  int nDevices;
- 
-  Serial.println("Scanning...");
- 
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
-  {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
- 
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("  !");
- 
-      nDevices++;
-    }
-    else if (error==4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
- 
-  delay(1000);           // wait 5 seconds for next scan
+//  byte error, address;
+//  int nDevices;
+// 
+//  Serial.println("Scanning...");
+// 
+//  nDevices = 0;
+//  for(address = 1; address < 127; address++ )
+//  {
+//    // The i2c_scanner uses the return value of
+//    // the Write.endTransmisstion to see if
+//    // a device did acknowledge to the address.
+//    Wire.beginTransmission(address);
+//    error = Wire.endTransmission();
+// 
+//    if (error == 0)
+//    {
+//      Serial.print("I2C device found at address 0x");
+//      if (address<16)
+//        Serial.print("0");
+//      Serial.print(address,HEX);
+//      Serial.println("  !");
+// 
+//      nDevices++;
+//    }
+//    else if (error==4)
+//    {
+//      Serial.print("Unknown error at address 0x");
+//      if (address<16)
+//        Serial.print("0");
+//      Serial.println(address,HEX);
+//    }    
+//  }
+//  if (nDevices == 0)
+//    Serial.println("No I2C devices found\n");
+//  else
+//    Serial.println("done\n");
+// 
+//  delay(1000);           // wait 5 seconds for next scan
 
+
+  Wire.beginTransmission(ICM_20948_I2C_ADDR_AD1);
+  Wire.write(AGB0_REG_ACCEL_XOUT_H);
+  Wire.endTransmission(false);
+
+  const uint32_t len = 9 + 14 +15;
+  uint8_t rxbuff[len];
+  uint32_t num_received = Wire.requestFrom(ICM_20948_I2C_ADDR_AD1, len);
+  if (num_received == len) {
+      for(uint8_t i = 0; i < len; i++){ 
+          rxbuff[i] = Wire.read();
+          Serial.print("0x");
+          if(i == (len-1)){
+            Serial.print(rxbuff[i] & 0x08, HEX);
+          }else{
+            Serial.print(rxbuff[i], HEX);
+          }
+          Serial.print(", ");
+      }
+      Serial.println();
+  }else{
+    Serial.println("No data got :( ");
+  }
+
+  delay(10);
+  
+  
 }
 
 void printPaddedInt16b( int16_t val ){
