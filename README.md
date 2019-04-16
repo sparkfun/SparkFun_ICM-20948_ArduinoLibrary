@@ -1,7 +1,7 @@
-HyperDisplay KWH018ST01 4WSPI Arduino Library
+SparkFun_ICM-20948_ArduinoLibrary
 ========================================
 
-This is an extension for the [HyperDisplay](https://github.com/sparkfun/SparkFun_HyperDisplay) library that is fully configured for the KWH018ST01 module used on several SparkFun products. 
+This is the library for the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15182). 
 
 
 Repository Contents
@@ -19,7 +19,7 @@ Documentation
 
 Products that use this Library 
 ---------------------------------
-* [LCD-15143](https://www.sparkfun.com/products/15143)
+* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15182)
 
 Version History
 ---------------
