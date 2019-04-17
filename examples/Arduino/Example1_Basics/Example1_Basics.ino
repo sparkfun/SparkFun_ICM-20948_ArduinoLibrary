@@ -1,4 +1,16 @@
-#include "ICM_20948.h"
+/****************************************************************
+ * Example1_Basics.ino
+ * ICM 20948 Arduino Library Demo 
+ * Use the default configuration to stream 9-axis IMU data
+ * Owen Lyke @ SparkFun Electronics
+ * Original Creation Date: April 17 2019
+ * 
+ * This code is beerware; if you see me (or any other SparkFun employee) at the
+ * local, and you've found our code helpful, please buy us a round!
+ * 
+ * Distributed as-is; no warranty is given.
+ ***************************************************************/
+#include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
 //#define USE_SPI       // Uncomment this to use SPI
 
@@ -22,14 +34,14 @@
 void setup() {
 
   SERIAL_PORT.begin(115200);
-  while(!SERIAL_PORT){}; // NOTE: make sure while(!SERIAL_PORT) does not accidentally call Wire.begin a bunch of times
-
+  while(!SERIAL_PORT){};
+  
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    SPI_PORT.begin( CS_PIN, SPI_PORT ); 
-    myICM.begin();
+    SPI_PORT.begin();
+    myICM.begin( CS_PIN, SPI_PORT ); 
 #else
     WIRE_PORT.begin();
     WIRE_PORT.setClock(400000);
