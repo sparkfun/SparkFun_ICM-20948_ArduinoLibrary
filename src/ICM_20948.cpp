@@ -18,7 +18,6 @@ ICM_20948::ICM_20948(){
 
 }
 
-extern void printRawAGMT( ICM_20948_AGMT_t agmt);
 ICM_20948_AGMT_t ICM_20948::getAGMT                 ( void ){
     status = ICM_20948_get_agmt( &_device, &agmt );
 
@@ -28,6 +27,75 @@ ICM_20948_AGMT_t ICM_20948::getAGMT                 ( void ){
 
     return agmt;
 }
+
+float             ICM_20948::magX                ( void ){
+    return getMagUT(agmt.mag.axes.x);
+}
+
+float             ICM_20948::magY                ( void ){
+    return getMagUT(agmt.mag.axes.y);
+}
+
+float             ICM_20948::magZ                ( void ){
+    return getMagUT(agmt.mag.axes.z);
+}
+
+float               ICM_20948::getMagUT            ( int16_t axis_val ){
+    return (((float)axis_val)*0.15);
+}
+
+float             ICM_20948::accX                ( void ){
+    return getAccMG(agmt.acc.axes.x);
+}
+
+float             ICM_20948::accY                ( void ){
+    return getAccMG(agmt.acc.axes.y);
+}
+
+float             ICM_20948::accZ                ( void ){
+    return getAccMG(agmt.acc.axes.z);
+}
+
+float               ICM_20948::getAccMG            ( int16_t axis_val ){
+    switch(agmt.fss.a){
+        case 0 : return (((float)axis_val)/16.384); break;
+        case 1 : return (((float)axis_val)/8.192); break;
+        case 2 : return (((float)axis_val)/4.096); break;
+        case 3 : return (((float)axis_val)/2.048); break;
+        default : return 0; break;
+    }
+}
+
+float             ICM_20948::gyrX                ( void ){
+    return getGyrDPS(agmt.gyr.axes.x);
+}
+
+float             ICM_20948::gyrY                ( void ){
+    return getGyrDPS(agmt.gyr.axes.y);
+}
+
+float             ICM_20948::gyrZ                ( void ){
+    return getGyrDPS(agmt.gyr.axes.z);
+}
+
+float               ICM_20948::getGyrDPS            ( int16_t axis_val ){
+    switch(agmt.fss.g){
+        case 0 : return (((float)axis_val)/131); break;
+        case 1 : return (((float)axis_val)/65.5); break;
+        case 2 : return (((float)axis_val)/32.8); break;
+        case 3 : return (((float)axis_val)/16.4); break;
+        default : return 0; break;
+    }
+}
+
+float             ICM_20948::temp                 ( void ){
+    return getTempC(agmt.tmp.val);
+}
+
+float               ICM_20948::getTempC             ( int16_t val ){
+    return (((float)val)/333.87) + 21;
+}
+
 
 
 const char* ICM_20948::statusString                 ( ICM_20948_Status_e stat ){
@@ -328,6 +396,9 @@ ICM_20948_Status_e  ICM_20948_I2C::startupMagnetometer    ( void ){
 
     ICM_20948_Status_e retval = writeMag( AK09916_REG_CNTL2, (uint8_t*)&reg, sizeof(AK09916_CNTL2_Reg_t) );
     status = retval;
+    if(status == ICM_20948_Stat_Ok){
+        _has_magnetometer = true;
+    }
     return status;
 }
 

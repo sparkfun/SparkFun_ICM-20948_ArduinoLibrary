@@ -22,13 +22,32 @@ private:
 protected:
     ICM_20948_Device_t  _device;
     bool                _has_magnetometer;
+
+    float               getTempC            ( int16_t val );
+    float               getGyrDPS           ( int16_t axis_val );
+    float               getAccMG            ( int16_t axis_val );
+    float               getMagUT            ( int16_t axis_val );
+
 public:
     ICM_20948();                                                                            // Constructor
 
     ICM_20948_AGMT_t    agmt;                                                               // Acceleometer, Gyroscope, Magenetometer, and Temperature data
     ICM_20948_AGMT_t    getAGMT             ( void );                                        // Updates the agmt field in the object and also returns a copy directly
 
-    // float get
+    float               magX                ( void );// micro teslas
+    float               magY                ( void );// micro teslas
+    float               magZ                ( void );// micro teslas
+
+    float               accX                ( void );// milli g's
+    float               accY                ( void );// milli g's
+    float               accZ                ( void );// milli g's
+
+    float               gyrX                ( void );// degrees per second
+    float               gyrY                ( void );// degrees per second
+    float               gyrZ                ( void );// degrees per second
+
+    float               temp                ( void );// degrees celsius
+
 
     ICM_20948_Status_e  status;                                                                 // Status from latest operation
     const char*         statusString        ( ICM_20948_Status_e stat = ICM_20948_Stat_NUM );   // Returns a human-readable status message. Defaults to status member, but prints string for supplied status if supplied                                            
