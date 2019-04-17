@@ -2,7 +2,7 @@ SparkFun_ICM-20948_ArduinoLibrary
 ========================================
 
 This is the library for the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15182). 
-
+![SparkFun 9DoF IMU Breakout -ICM 20948 - (Qwiic)](https://cdn.sparkfun.com/assets/parts/1/3/5/9/8/15182-SparkFun_9DoF_IMU_Breakout_-_ICM-20948__Qwiic_-01b.jpg)
 
 Repository Contents
 -------------------
