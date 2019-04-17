@@ -456,9 +456,9 @@ ICM_20948_Status_e  ICM_20948_get_agmt          ( ICM_20948_Device_t* pdev, ICM_
 	pagmt->tmp.val = ((buff[12] << 8) | (buff[13] & 0xFF));
 
 	// ToDo: get magnetometer readings
-	//  pagmt->mag.axes.x = ((buff[] << 8) | (buff[] & 0xFF));
-	//  pagmt->mag.axes.y = ((buff[] << 8) | (buff[] & 0xFF));
-	//  pagmt->mag.axes.z = ((buff[] << 8) | (buff[] & 0xFF));
+	//  pagmt->mag.axes.x =
+	//  pagmt->mag.axes.y =
+	//  pagmt->mag.axes.z =
 
 
 	// Get settings to be able to compute scaled values

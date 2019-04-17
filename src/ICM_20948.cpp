@@ -1,6 +1,7 @@
 #include "ICM_20948.h"
 
-#include "util/ICM_20948_REGISTERS.h" // temporary
+#include "util/ICM_20948_REGISTERS.h"
+#include "util/AK09916_REGISTERS.h"
 
 // Forward Declarations
 ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len, void* user);
@@ -20,35 +21,12 @@ ICM_20948::ICM_20948(){
 extern void printRawAGMT( ICM_20948_AGMT_t agmt);
 ICM_20948_AGMT_t ICM_20948::getAGMT                 ( void ){
     status = ICM_20948_get_agmt( &_device, &agmt );
+
+    if( _has_magnetometer ){
+        getMagnetometerData( &agmt );
+    }
+
     return agmt;
-
-	// // ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
-	// const uint8_t numbytes = 14;
-	// uint8_t buff[numbytes];
-
-	// // Get readings
-	// (ICM_20948_Status_e)setBank( 0 ); 
-	// read( (uint8_t)AGB0_REG_ACCEL_XOUT_H, buff, numbytes );
-
-	// // pagmt->acc.axes.x = ((buff[0] << 8) | (buff[1] & 0xFF));
-	// // pagmt->acc.axes.y = ((buff[2] << 8) | (buff[3] & 0xFF));
-	// // pagmt->acc.axes.z = ((buff[4] << 8) | (buff[5] & 0xFF));
-
-	// // pagmt->gyr.axes.x = ((buff[6] << 8) | (buff[7] & 0xFF));
-	// // pagmt->gyr.axes.y = ((buff[8] << 8) | (buff[9] & 0xFF));
-	// // pagmt->gyr.axes.z = ((buff[10] << 8) | (buff[11] & 0xFF));
-
-	// // pagmt->tmp.val = ((buff[12] << 8) | (buff[13] & 0xFF));
-
-    // for( uint8_t indi = 0; indi < numbytes; indi++ ){
-    //     Serial.print("0x");
-    //     if(buff[indi] < 16){
-    //         Serial.print("0");
-    //     }
-    //     Serial.print(buff[indi], HEX);
-    //     Serial.print(", ");
-    // }
-    // Serial.println();
 }
 
 
@@ -197,6 +175,75 @@ uint8_t	ICM_20948::i2cMasterSingleR        ( uint8_t addr, uint8_t reg ){
 
 
 
+ICM_20948_Status_e  ICM_20948::startupDefault          ( void ){
+    ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+    retval = checkID();
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+
+    retval = swReset();
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    delay(50);
+
+    retval = sleep( false );
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+
+    retval = lowPower( false );
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    
+    retval = setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous );  // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }                                                                 // sensors: 	ICM_20948_Internal_Acc, ICM_20948_Internal_Gyr, ICM_20948_Internal_Mst
+
+    ICM_20948_fss_t FSS;
+    FSS.a = gpm2;       // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+    FSS.g = dps250;     // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+    retval = setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS );  
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+
+    ICM_20948_dlpcfg_t dlpcfg;
+    dlpcfg.a = acc_d473bw_n499bw;
+    dlpcfg.g = gyr_d361bw4_n376bw5;
+    retval = setDLPFcfg( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg );
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+
+    retval = enableDLPF( ICM_20948_Internal_Acc, false );
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    retval = enableDLPF( ICM_20948_Internal_Gyr, false );
+    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+
+    _has_magnetometer = true;
+    retval = startupMagnetometer();
+    if(( retval != ICM_20948_Stat_Ok) && ( retval != ICM_20948_Stat_NotImpl )){ status = retval; return status; }
+    if( retval == ICM_20948_Stat_NotImpl ){
+        // This is a temporary fix. 
+        // Ultimately we *should* be able to configure the I2C master to handle the 
+        // magnetometer no matter what interface (SPI / I2C) we are using. 
+
+        // Should try testing I2C master functionality on a bare ICM chip w/o TXS0108 level shifter...
+
+        _has_magnetometer = false;
+    }
+
+    status = retval;
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::startupMagnetometer    ( void ){
+    return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
+}
+
+ICM_20948_Status_e  ICM_20948::getMagnetometerData     ( ICM_20948_AGMT_t* pagmt ){
+    return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
+}
+
+
+
+
+
+
+
+
+
 // direct read/write
 ICM_20948_Status_e  ICM_20948::read                 ( uint8_t reg, uint8_t* pdata, uint32_t len){
     status = ICM_20948_execute_r( &_device, reg, pdata, len );
@@ -263,8 +310,101 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
     // Link the serif
     _device._serif = &_serif;
 
+    // Perform default startup
+    status = startupDefault();
+    if( status != ICM_20948_Stat_Ok ){
+        return status;
+    }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948_I2C::startupMagnetometer    ( void ){
+    // If using the magnetometer through passthrough:
+    i2cMasterPassthrough( true ); // Set passthrough mode to try to access the magnetometer (by default I2C master is disabled but you still have to enable the passthrough)
+
+    // Try to set up magnetometer
+    AK09916_CNTL2_Reg_t reg;
+    reg.MODE = AK09916_mode_cont_100hz;
+
+    ICM_20948_Status_e retval = writeMag( AK09916_REG_CNTL2, (uint8_t*)&reg, sizeof(AK09916_CNTL2_Reg_t) );
+    status = retval;
+    return status;
+}
+
+
+ICM_20948_Status_e ICM_20948_I2C::magWhoIAm( void ){
+    ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+    const uint8_t len = 2;
+    uint8_t whoiam[len];
+    retval = readMag( AK09916_REG_WIA1, whoiam, len );
+    status = retval;
+    if( retval != ICM_20948_Stat_Ok ){ return retval; }
+
+    if( (whoiam[0] == (MAG_AK09916_WHO_AM_I >> 8)) && ( whoiam[1] == (MAG_AK09916_WHO_AM_I & 0xFF)) ){
+        retval = ICM_20948_Stat_Ok;
+        status = retval;
+        return status;
+    }
+    retval = ICM_20948_Stat_WrongID;
+    status = retval;
+    return status;
+}
+
+bool                ICM_20948_I2C::magIsConnected( void ){
+    if( magWhoIAm() != ICM_20948_Stat_Ok ){
+        return false;
+    }
+    return true;
+}
+
+ICM_20948_Status_e  ICM_20948_I2C::getMagnetometerData     ( ICM_20948_AGMT_t* pagmt ){
+
+    const uint8_t reqd_len = 9; // you must read all the way through the status2 register to re-enable the next measurement
+    uint8_t buff[reqd_len];
+        
+    status = readMag( AK09916_REG_ST1, buff, reqd_len );
+    if( status != ICM_20948_Stat_Ok ){
+        return status;
+    }
+
+    pagmt->mag.axes.x = ((buff[2] << 8) | (buff[1] & 0xFF));
+    pagmt->mag.axes.y = ((buff[4] << 8) | (buff[3] & 0xFF));
+    pagmt->mag.axes.z = ((buff[6] << 8) | (buff[5] & 0xFF));
+
+    return status;
+}
+
+
+
+
+
+
+ICM_20948_Status_e ICM_20948_I2C::readMag( uint8_t reg, uint8_t* pdata, uint8_t len ){
+    _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
+    _i2c->write(reg);
+    _i2c->endTransmission(false);
+
+    uint8_t num_received = _i2c->requestFrom( (uint8_t)MAG_AK09916_I2C_ADDR, (uint8_t)len);
+    if( num_received != len ){
+        return ICM_20948_Stat_NoData;
+    }
+
+    for( uint8_t indi = 0; indi < len; indi++ ){
+        *(pdata + indi) = _i2c->read();
+    }
+
     return ICM_20948_Stat_Ok;
 }
+
+ICM_20948_Status_e ICM_20948_I2C::writeMag( uint8_t reg, uint8_t* pdata, uint8_t len ){
+    _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
+    _i2c->write(reg);
+    _i2c->write(pdata, len);
+    _i2c->endTransmission();
+    return ICM_20948_Stat_Ok; // todo: check return of 'endTransmission' to verify all bytes sent w/ ACK
+}
+
 
 
 

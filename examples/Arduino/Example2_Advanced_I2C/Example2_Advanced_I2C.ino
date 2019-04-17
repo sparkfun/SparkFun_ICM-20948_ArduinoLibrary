@@ -21,7 +21,7 @@ void setup() {
 
   Wire.begin();
 //  Wire.setClock(10000); // low-speed mode maybe helps?
-  Wire.setClock(400000); // low-speed mode maybe helps?
+  Wire.setClock(400000);
   myICM.begin();
 
   while(!myICM.isConnected()){
@@ -56,7 +56,7 @@ void setup() {
   // Set full scale ranges for both acc and gyr
   ICM_20948_fss_t myFSS;
   myFSS.a = gpm2;     // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
-  myFSS.g = dps2000;  // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+  myFSS.g = dps250;  // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
   myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );  
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setFullScale returned: "));
@@ -94,16 +94,16 @@ void setup() {
 
   myICM.setSampleMode( ( ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
 
-//  myICM.i2cMasterEnable( true );
-  Serial.println("here\n");
-  AK09916_CNTL2_Reg_t reg;
-  reg.MODE = AK09916_mode_cont_10hz;
-  while(1){
-    myICM.i2cMasterSingleW( MAG_AK09916_I2C_ADDR, REG_CNTL2, *((uint8_t*)&reg) );
-    SERIAL_PORT.print(F("Single Write returned: "));
-    SERIAL_PORT.println(myICM.statusString());
-    delay(500);
-  }
+////  myICM.i2cMasterEnable( true );
+//  Serial.println("here\n");
+//  AK09916_CNTL2_Reg_t reg;
+//  reg.MODE = AK09916_mode_cont_10hz;
+//  while(1){
+//    myICM.i2cMasterSingleW( MAG_AK09916_I2C_ADDR, REG_CNTL2, *((uint8_t*)&reg) );
+//    SERIAL_PORT.print(F("Single Write returned: "));
+//    SERIAL_PORT.println(myICM.statusString());
+//    delay(500);
+//  }
 
   
 }

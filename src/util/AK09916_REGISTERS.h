@@ -4,21 +4,21 @@
 #include <stdint.h>
 
 typedef enum{
-	REG_WIA1 = 0x00,
-    REG_WIA2,
+	AK09916_REG_WIA1 = 0x00,
+    AK09916_REG_WIA2,
     // discontinuity
-    REG_ST1 = 0x10,
-    REG_HXL,
-    REG_HXH,
-    REG_HYL,
-    REG_HYH,
-    REG_HZL,
-    REG_HZH,
+    AK09916_REG_ST1 = 0x10,
+    AK09916_REG_HXL,
+    AK09916_REG_HXH,
+    AK09916_REG_HYL,
+    AK09916_REG_HYH,
+    AK09916_REG_HZL,
+    AK09916_REG_HZH,
     // discontinuity
-    REG_ST2 = 0x18,
+    AK09916_REG_ST2 = 0x18,
     // discontinuity
-    REG_CNTL2 = 0x31,
-    REG_CNTL3,
+    AK09916_REG_CNTL2 = 0x31,
+    AK09916_REG_CNTL3,
 }AK09916_Reg_Addr_e;
 
 	typedef struct{

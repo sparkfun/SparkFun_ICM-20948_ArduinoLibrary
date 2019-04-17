@@ -20,12 +20,15 @@ A C++ interface to the ICM-20948
 class ICM_20948 {
 private:
 protected:
-    ICM_20948_Device_t _device;
+    ICM_20948_Device_t  _device;
+    bool                _has_magnetometer;
 public:
     ICM_20948();                                                                            // Constructor
 
     ICM_20948_AGMT_t    agmt;                                                               // Acceleometer, Gyroscope, Magenetometer, and Temperature data
     ICM_20948_AGMT_t    getAGMT             ( void );                                        // Updates the agmt field in the object and also returns a copy directly
+
+    // float get
 
     ICM_20948_Status_e  status;                                                                 // Status from latest operation
     const char*         statusString        ( ICM_20948_Status_e stat = ICM_20948_Stat_NUM );   // Returns a human-readable status message. Defaults to status member, but prints string for supplied status if supplied                                            
@@ -59,6 +62,13 @@ public:
     ICM_20948_Status_e	i2cMasterSingleW        ( uint8_t addr, uint8_t reg, uint8_t data );
     uint8_t 	        i2cMasterSingleR        ( uint8_t addr, uint8_t reg );
 
+
+    // Default Setup
+    ICM_20948_Status_e          startupDefault          ( void );
+    virtual ICM_20948_Status_e  startupMagnetometer     ( void );
+    virtual ICM_20948_Status_e  getMagnetometerData     ( ICM_20948_AGMT_t* pagmt );
+
+
     // direct read/write
     ICM_20948_Status_e  read                ( uint8_t reg, uint8_t* pdata, uint32_t len);
     ICM_20948_Status_e  write               ( uint8_t reg, uint8_t* pdata, uint32_t len);
@@ -78,7 +88,15 @@ public:
 
     ICM_20948_I2C(); // Constructor
 
-    ICM_20948_Status_e begin(TwoWire &wirePort = Wire, bool ad0val = true, uint8_t ad0pin = ICM_20948_ARD_UNUSED_PIN);
+    ICM_20948_Status_e  begin(TwoWire &wirePort = Wire, bool ad0val = true, uint8_t ad0pin = ICM_20948_ARD_UNUSED_PIN);
+    ICM_20948_Status_e  startupMagnetometer( void );
+
+    ICM_20948_Status_e  readMag( uint8_t reg, uint8_t* pdata, uint8_t len );
+    ICM_20948_Status_e  writeMag( uint8_t reg, uint8_t* pdata, uint8_t len );
+
+    ICM_20948_Status_e  magWhoIAm( void );
+    bool                magIsConnected( void );
+    ICM_20948_Status_e  getMagnetometerData     ( ICM_20948_AGMT_t* pagmt );
 };
 
 
