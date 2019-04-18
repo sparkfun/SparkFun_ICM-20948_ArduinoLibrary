@@ -19,7 +19,7 @@ Documentation
 
 Products that use this Library 
 ---------------------------------
-* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15182)
+* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)]() (Coming Soon)
 
 Version History
 ---------------
