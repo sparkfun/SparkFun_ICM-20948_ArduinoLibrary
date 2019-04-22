@@ -29,22 +29,26 @@
 #else
   ICM_20948_I2C myICM;  // Otherwise create an ICM_20948_I2C object
 #endif
-  
+
 
 void setup() {
 
   SERIAL_PORT.begin(115200);
   while(!SERIAL_PORT){};
+
+#ifdef USE_SPI
+    SPI_PORT.begin();
+#else
+    WIRE_PORT.begin();
+    WIRE_PORT.setClock(400000);
+#endif
   
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    SPI_PORT.begin();
     myICM.begin( CS_PIN, SPI_PORT ); 
 #else
-    WIRE_PORT.begin();
-    WIRE_PORT.setClock(400000);
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
 

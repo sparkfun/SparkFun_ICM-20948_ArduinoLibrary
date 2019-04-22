@@ -34,17 +34,21 @@
 void setup() {
 
   SERIAL_PORT.begin(115200);
-  while(!SERIAL_PORT){}; 
+  while(!SERIAL_PORT){};
+
+#ifdef USE_SPI
+    SPI_PORT.begin();
+#else
+    WIRE_PORT.begin();
+    WIRE_PORT.setClock(400000);
+#endif
   
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    SPI_PORT.begin();
     myICM.begin( CS_PIN, SPI_PORT ); 
 #else
-    WIRE_PORT.begin();
-    WIRE_PORT.setClock(400000);
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
 
@@ -57,6 +61,7 @@ void setup() {
       initialized = true;
     }
   }
+}
 
   // In this advanced example we'll cover how to do a more fine-grained setup of your sensor
   SERIAL_PORT.println("Device connected!");
