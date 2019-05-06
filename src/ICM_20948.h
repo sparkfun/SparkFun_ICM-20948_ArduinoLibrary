@@ -95,6 +95,11 @@ public:
 
 
 // I2C
+
+// Forward declarations of TwoWire and Wire for board/variant combinations that don't have a default 'SPI'
+class TwoWire;
+extern TwoWire Wire;
+
 class ICM_20948_I2C : public ICM_20948 {
 private:
 protected:
@@ -123,6 +128,10 @@ public:
 #define ICM_20948_SPI_DEFAULT_FREQ 1000000
 #define ICM_20948_SPI_DEFAULT_ORDER MSBFIRST
 #define ICM_20948_SPI_DEFAULT_MODE SPI_MODE3
+
+// Forward declarations of SPIClass and SPI for board/variant combinations that don't have a default 'SPI'
+class SPIClass;
+extern SPIClass SPI;
 
 class ICM_20948_SPI : public ICM_20948 {
 private:
