@@ -290,6 +290,7 @@ ICM_20948_Status_e  ICM_20948::startupDefault          ( void ){
         // Should try testing I2C master functionality on a bare ICM chip w/o TXS0108 level shifter...
 
         _has_magnetometer = false;
+        retval = ICM_20948_Stat_Ok; // reset the retval because we handled it in this cases
     }
 
     status = retval;
@@ -505,6 +506,11 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
 
     // _spi->begin(); // Moved into user's sketch
 
+    // 'Kickstart' the SPI hardware.
+    _spi->beginTransaction(_spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
+
     // Set up the serif
     _serif.write = ICM_20948_write_SPI;
     _serif.read = ICM_20948_read_SPI;
@@ -512,6 +518,14 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
 
     // Link the serif
     _device._serif = &_serif;
+
+    // Perform default startup
+    status = startupDefault();
+    if( status != ICM_20948_Stat_Ok ){
+        return status;
+    }
+
+    // todo: disable I2C interface to prevent accidents
 
     return ICM_20948_Stat_Ok;
 }
@@ -602,6 +616,11 @@ ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* data, uint32_t len,
     SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
     if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
 
+    // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states even when sharing the SPI bus with devices that use other modes
+    _spi->beginTransaction(spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
+
     digitalWrite(cs, LOW);
     // delayMicroseconds(5);
     _spi->beginTransaction(spisettings);
@@ -623,6 +642,11 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, 
     uint8_t cs = ((ICM_20948_SPI*)user)->_cs;
     SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
     if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
+
+    // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states
+    _spi->beginTransaction(spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
 
     digitalWrite(cs, LOW);
     //   delayMicroseconds(5);
