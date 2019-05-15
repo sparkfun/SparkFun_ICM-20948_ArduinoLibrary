@@ -60,8 +60,8 @@ ICM_20948_Status_e	ICM_20948_i2c_master_slv4_txn( ICM_20948_Device_t* pdev, uint
 	ctrl.DLY = 0;
 	ctrl.REG_DIS = !send_reg_addr;
 
-	ICM_20948_I2C_MST_STATUS_t i2c_mst_status;
-	bool txn_failed = false;
+	// ICM_20948_I2C_MST_STATUS_t i2c_mst_status;
+	// bool txn_failed = false;
 	uint16_t nByte = 0;
 
 	while( nByte < len ){
