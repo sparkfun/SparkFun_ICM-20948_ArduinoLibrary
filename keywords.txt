@@ -1,0 +1,97 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ICM_20948_I2C	KEYWORD1
+ICM_20948_SPI	KEYWORD1
+ICM_20948_Status_e	KEYWORD1
+ICM_20948_InternalSensorID_bm	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+ICM_20948	KEYWORD2
+getAGMT	KEYWORD2
+magX	KEYWORD2
+magY	KEYWORD2
+magZ	KEYWORD2
+accX	KEYWORD2
+accY	KEYWORD2
+accZ	KEYWORD2
+gyrX	KEYWORD2
+gyrY	KEYWORD2
+gyrZ	KEYWORD2
+temp	KEYWORD2
+statusString	KEYWORD2
+setBank	KEYWORD2
+swReset	KEYWORD2
+sleep	KEYWORD2
+lowPower	KEYWORD2
+setClockSource	KEYWORD2
+checkID	KEYWORD2
+dataReady	KEYWORD2
+getWhoAmI	KEYWORD2
+isConnected	KEYWORD2
+setSampleMode	KEYWORD2
+setFullScale	KEYWORD2
+setDLPFcfg	KEYWORD2
+enableDLPF	KEYWORD2
+setSampleRate	KEYWORD2
+i2cMasterPassthrough	KEYWORD2
+i2cMasterEnable	KEYWORD2
+i2cMasterConfigureSlave	KEYWORD2
+i2cMasterSLV4Transaction	KEYWORD2
+i2cMasterSingleW	KEYWORD2
+i2cMasterSingleR	KEYWORD2
+startupDefault	KEYWORD2
+startupMagnetometer	KEYWORD2
+getMagnetometerData	KEYWORD2
+read	KEYWORD2
+write	KEYWORD2
+ICM_20948_I2C	KEYWORD2
+begin	KEYWORD2
+startupMagnetometer	KEYWORD2
+readMag	KEYWORD2
+writeMag	KEYWORD2
+magWhoIAm	KEYWORD2
+magIsConnected	KEYWORD2
+getMagnetometerData	KEYWORD2
+ICM_20948_SPI	KEYWORD2
+begin	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+_ICM_20948_H_	LITERAL1
+ICM_20948_ARD_UNUSED_PIN	LITERAL1
+ICM_20948_SPI_DEFAULT_FREQ	LITERAL1
+ICM_20948_SPI_DEFAULT_ORDER	LITERAL1
+ICM_20948_SPI_DEFAULT_MODE	LITERAL1
+ICM_20948_I2C_ADDR_AD0	LITERAL1
+ICM_20948_I2C_ADDR_AD1	LITERAL1
+ICM_20948_WHOAMI	LITERAL1
+MAG_AK09916_I2C_ADDR	LITERAL1
+MAG_AK09916_WHO_AM_I	LITERAL1
+MAG_REG_WHO_AM_I	LITERAL1
+ICM_20948_Stat_Ok	LITERAL1
+ICM_20948_Stat_Err	LITERAL1
+ICM_20948_Stat_NotImpl	LITERAL1
+ICM_20948_Stat_ParamErr	LITERAL1
+ICM_20948_Stat_WrongID	LITERAL1
+ICM_20948_Stat_InvalSensor	LITERAL1
+ICM_20948_Stat_NoData	LITERAL1
+ICM_20948_Stat_SensorNotSupported	LITERAL1
+ICM_20948_Stat_NUM	LITERAL1
+ICM_20948_Stat_Unknown	LITERAL1
+ICM_20948_Internal_Acc	LITERAL1
+ICM_20948_Internal_Gyr	LITERAL1
+ICM_20948_Internal_Mag	LITERAL1
+ICM_20948_Internal_Tmp	LITERAL1
+ICM_20948_Internal_Mst	LITERAL1
