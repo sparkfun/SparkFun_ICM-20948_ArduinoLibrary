@@ -144,7 +144,7 @@ public:
 
     ICM_20948_SPI(); // Constructor
 
-    ICM_20948_Status_e begin( uint8_t csPin, SPIClass &spiPort = SPI );
+    ICM_20948_Status_e begin( uint8_t csPin, SPIClass &spiPort = SPI, uint32_t SPIFreq = ICM_20948_SPI_DEFAULT_FREQ );
 };
 
 

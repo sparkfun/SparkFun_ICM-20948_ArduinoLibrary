@@ -485,16 +485,17 @@ ICM_20948_Status_e ICM_20948_I2C::writeMag( uint8_t reg, uint8_t* pdata, uint8_t
 
 
 // SPI
-SPISettings ICM_20948_SPI_DEFAULT_SETTINGS(ICM_20948_SPI_DEFAULT_FREQ, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
+
+// SPISettings ICM_20948_SPI_DEFAULT_SETTINGS(ICM_20948_SPI_DEFAULT_FREQ, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
 
 ICM_20948_SPI::ICM_20948_SPI(){
 
 }
 
-ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
+ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq ){
     // Associate
     _spi = &spiPort;
-    _spisettings = ICM_20948_SPI_DEFAULT_SETTINGS;
+    _spisettings = SPISettings(SPIFreq, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
 	_cs = csPin;
 
 

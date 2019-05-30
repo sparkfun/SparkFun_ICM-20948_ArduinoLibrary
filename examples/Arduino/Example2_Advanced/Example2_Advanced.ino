@@ -17,6 +17,7 @@
 #define SERIAL_PORT Serial
 
 #define SPI_PORT SPI    // Your desired SPI port.       Used only when "USE_SPI" is defined
+#define SPI_FREQ 10000000// You can override the default SPI frequency
 #define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
@@ -47,7 +48,7 @@ void setup() {
   while( !initialized ){
 
 #ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT ); 
+    myICM.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus 
 #else
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
