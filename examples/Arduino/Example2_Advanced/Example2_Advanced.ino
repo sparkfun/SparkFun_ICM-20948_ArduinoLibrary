@@ -62,7 +62,6 @@ void setup() {
       initialized = true;
     }
   }
-}
 
   // In this advanced example we'll cover how to do a more fine-grained setup of your sensor
   SERIAL_PORT.println("Device connected!");
