@@ -204,6 +204,199 @@ ICM_20948_Status_e	ICM_20948::setSampleRate	    ( uint8_t sensor_id_bm, ICM_2094
 
 
 
+// Interrupts on INT Pin
+ICM_20948_Status_e  ICM_20948::clearInterrupts         ( void ){
+    ICM_20948_INT_STATUS_t int_stat;
+    ICM_20948_INT_STATUS_1_t int_stat_1;
+
+    // read to clear interrupts
+    status = ICM_20948_set_bank( &_device, 0 );                                                                                   if( status != ICM_20948_Stat_Ok ){ return status; }
+    status = ICM_20948_execute_r( &_device, AGB0_REG_INT_STATUS, (uint8_t*)&int_stat, sizeof(ICM_20948_INT_STATUS_t) );           if( status != ICM_20948_Stat_Ok ){ return status; }
+    status = ICM_20948_execute_r( &_device, AGB0_REG_INT_STATUS_1, (uint8_t*)&int_stat_1, sizeof(ICM_20948_INT_STATUS_1_t) );     if( status != ICM_20948_Stat_Ok ){ return status; }
+
+    // todo: there may be additional interrupts that need to be cleared, like FIFO overflow/watermark
+
+    return status;
+}
+
+
+ICM_20948_Status_e  ICM_20948::cfgIntActiveLow         ( bool active_low ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.INT1_ACTL = active_low;                                         // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::cfgIntOpenDrain         ( bool open_drain ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.INT1_OPEN = open_drain;                                         // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::cfgIntLatch             ( bool latching ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.INT1_LATCH_EN = latching;                                       // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::cfgIntAnyReadToClear      ( bool enabled ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.INT_ANYRD_2CLEAR = enabled;                                     // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::cfgFsyncActiveLow       ( bool active_low ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.ACTL_FSYNC = active_low;                                         // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e  ICM_20948::cfgFsyncIntMode         ( bool interrupt_mode ){
+    ICM_20948_INT_PIN_CFG_t reg;
+    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    reg.FSYNC_INT_MODE_EN = interrupt_mode;                             // set the setting
+    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
+    if(status != ICM_20948_Stat_Ok){ return status; }
+    return status;
+}
+
+
+//      All these individual functions will use a read->set->write method to leave other settings untouched
+ICM_20948_Status_e	ICM_20948::intEnableI2C        ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.I2C_MST_INT_EN = enable;                             // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.I2C_MST_INT_EN != enable ){
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableDMP        ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.DMP_INT1_EN = enable;                                // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.DMP_INT1_EN != enable ){
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnablePLL        ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.PLL_RDY_EN = enable;                                 // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.PLL_RDY_EN != enable ){
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableWOM        ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.WOM_INT_EN = enable;                                 // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.WOM_INT_EN != enable ){
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableWOF        ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.REG_WOF_EN = enable;                                 // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.REG_WOF_EN != enable ){
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableRawDataReady   ( bool enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.RAW_DATA_0_RDY_EN = enable;                          // change the setting
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    if( en.RAW_DATA_0_RDY_EN != enable ){
+        Serial.println("mismatch error");
+        status = ICM_20948_Stat_Err;
+        return status; 
+    }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableOverflowFIFO   ( uint8_t bm_enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.FIFO_OVERFLOW_EN_0 = ((bm_enable >> 0) & 0x01);      // change the settings
+    en.FIFO_OVERFLOW_EN_1 = ((bm_enable >> 1) & 0x01);
+    en.FIFO_OVERFLOW_EN_2 = ((bm_enable >> 2) & 0x01);
+    en.FIFO_OVERFLOW_EN_3 = ((bm_enable >> 3) & 0x01);
+    en.FIFO_OVERFLOW_EN_4 = ((bm_enable >> 4) & 0x01);
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    return status;
+}
+
+ICM_20948_Status_e	ICM_20948::intEnableWatermarkFIFO  ( uint8_t bm_enable ){
+    ICM_20948_INT_enable_t en;                              // storage
+    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    en.FIFO_WM_EN_0 = ((bm_enable >> 0) & 0x01);            // change the settings
+    en.FIFO_WM_EN_1 = ((bm_enable >> 1) & 0x01);
+    en.FIFO_WM_EN_2 = ((bm_enable >> 2) & 0x01);
+    en.FIFO_WM_EN_3 = ((bm_enable >> 3) & 0x01);
+    en.FIFO_WM_EN_4 = ((bm_enable >> 4) & 0x01);
+    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
+    if( status != ICM_20948_Stat_Ok ){ return status; }
+    return status;
+}
+
+
+
 // Interface Options
 ICM_20948_Status_e	ICM_20948::i2cMasterPassthrough 	( bool passthrough ){
     status = ICM_20948_i2c_master_passthrough ( &_device, passthrough );
@@ -290,6 +483,7 @@ ICM_20948_Status_e  ICM_20948::startupDefault          ( void ){
         // Should try testing I2C master functionality on a bare ICM chip w/o TXS0108 level shifter...
 
         _has_magnetometer = false;
+        retval = ICM_20948_Stat_Ok; // reset the retval because we handled it in this cases
     }
 
     status = retval;
@@ -484,16 +678,17 @@ ICM_20948_Status_e ICM_20948_I2C::writeMag( uint8_t reg, uint8_t* pdata, uint8_t
 
 
 // SPI
-SPISettings ICM_20948_SPI_DEFAULT_SETTINGS(ICM_20948_SPI_DEFAULT_FREQ, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
+
+// SPISettings ICM_20948_SPI_DEFAULT_SETTINGS(ICM_20948_SPI_DEFAULT_FREQ, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
 
 ICM_20948_SPI::ICM_20948_SPI(){
 
 }
 
-ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
+ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq ){
     // Associate
     _spi = &spiPort;
-    _spisettings = ICM_20948_SPI_DEFAULT_SETTINGS;
+    _spisettings = SPISettings(SPIFreq, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
 	_cs = csPin;
 
 
@@ -505,6 +700,11 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
 
     // _spi->begin(); // Moved into user's sketch
 
+    // 'Kickstart' the SPI hardware.
+    _spi->beginTransaction(_spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
+
     // Set up the serif
     _serif.write = ICM_20948_write_SPI;
     _serif.read = ICM_20948_read_SPI;
@@ -512,6 +712,14 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort){
 
     // Link the serif
     _device._serif = &_serif;
+
+    // Perform default startup
+    status = startupDefault();
+    if( status != ICM_20948_Stat_Ok ){
+        return status;
+    }
+
+    // todo: disable I2C interface to prevent accidents
 
     return ICM_20948_Stat_Ok;
 }
@@ -602,6 +810,11 @@ ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* data, uint32_t len,
     SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
     if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
 
+    // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states even when sharing the SPI bus with devices that use other modes
+    _spi->beginTransaction(spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
+
     digitalWrite(cs, LOW);
     // delayMicroseconds(5);
     _spi->beginTransaction(spisettings);
@@ -623,6 +836,11 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, 
     uint8_t cs = ((ICM_20948_SPI*)user)->_cs;
     SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
     if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
+
+    // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states
+    _spi->beginTransaction(spisettings);
+    _spi->transfer(0x00);
+    _spi->endTransaction();
 
     digitalWrite(cs, LOW);
     //   delayMicroseconds(5);

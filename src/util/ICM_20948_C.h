@@ -13,6 +13,7 @@ The imementation of the interface is flexible
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "ICM_20948_REGISTERS.h"
 #include "ICM_20948_ENUMERATIONS.h"	// This is to give users access to usable value definiitons
 #include "AK09916_ENUMERATIONS.h"
 
@@ -76,6 +77,25 @@ typedef struct{
 	uint8_t g;
 }ICM_20948_smplrt_t;
 
+typedef struct{
+	uint8_t		I2C_MST_INT_EN		: 1;
+	uint8_t 	DMP_INT1_EN			: 1;
+	uint8_t		PLL_RDY_EN			: 1;
+	uint8_t 	WOM_INT_EN			: 1;
+	uint8_t		REG_WOF_EN			: 1;
+	uint8_t		RAW_DATA_0_RDY_EN	: 1;
+	uint8_t		FIFO_OVERFLOW_EN_4	: 1;
+	uint8_t		FIFO_OVERFLOW_EN_3	: 1;
+	uint8_t		FIFO_OVERFLOW_EN_2	: 1;
+	uint8_t		FIFO_OVERFLOW_EN_1	: 1;
+	uint8_t		FIFO_OVERFLOW_EN_0	: 1;
+	uint8_t 	FIFO_WM_EN_4		: 1;
+	uint8_t 	FIFO_WM_EN_3		: 1;
+	uint8_t 	FIFO_WM_EN_2		: 1;
+	uint8_t 	FIFO_WM_EN_1		: 1;
+	uint8_t 	FIFO_WM_EN_0		: 1;
+}ICM_20948_INT_enable_t;
+
 typedef union{
 	ICM_20948_axis3bit16_t	raw;
 	struct{
@@ -105,7 +125,7 @@ typedef struct{
 extern const ICM_20948_Serif_t NullSerif;	// Here is a default for initialization (NULL)
 
 typedef struct{
-	const ICM_20948_Serif_t*	_serif;				// Pointer to the assigned Serif (Serial Interface) vtable
+	const ICM_20948_Serif_t*	_serif;		// Pointer to the assigned Serif (Serial Interface) vtable
 }ICM_20948_Device_t;						// Definition of device struct type
 
 
@@ -158,7 +178,11 @@ ICM_20948_Status_e	ICM_20948_low_power			( ICM_20948_Device_t* pdev, bool on );	
 ICM_20948_Status_e	ICM_20948_set_clock_source	( ICM_20948_Device_t* pdev, ICM_20948_PWR_MGMT_1_CLKSEL_e source ); 		// Choose clock source
 ICM_20948_Status_e	ICM_20948_get_who_am_i		( ICM_20948_Device_t* pdev, uint8_t* whoami );								// Return whoami in out prarmeter
 ICM_20948_Status_e	ICM_20948_check_id			( ICM_20948_Device_t* pdev );												// Return 'ICM_20948_Stat_Ok' if whoami matches ICM_20948_WHOAMI
-ICM_20948_Status_e	ICM_20948_data_ready		( ICM_20948_Device_t* pdev );												// Returns 'Ok' if data is ready
+ICM_20948_Status_e	ICM_20948_data_ready		( ICM_20948_Device_t* pdev );									// Returns 'Ok' if data is ready
+
+// Interrupt Configuration
+ICM_20948_Status_e	ICM_20948_int_pin_cfg		( ICM_20948_Device_t* pdev, ICM_20948_INT_PIN_CFG_t* write, ICM_20948_INT_PIN_CFG_t* read );	// Set the INT pin configuration
+ICM_20948_Status_e	ICM_20948_int_enable 		( ICM_20948_Device_t* pdev, ICM_20948_INT_enable_t* write, ICM_20948_INT_enable_t* read );		// Write and or read the interrupt enable information. If non-null the write operation occurs before the read, so as to verify that the write was successful
 
 // Internal Sensor Options
 ICM_20948_Status_e	ICM_20948_set_sample_mode	( ICM_20948_Device_t* pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_LP_CONFIG_CYCLE_e mode );	// Use to set accel, gyro, and I2C master into cycled or continuous modes

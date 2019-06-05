@@ -60,7 +60,7 @@ public:
     ICM_20948_Status_e	setClockSource	    ( ICM_20948_PWR_MGMT_1_CLKSEL_e source );       // Choose clock source
     ICM_20948_Status_e	checkID			    ( void );								        // Return 'ICM_20948_Stat_Ok' if whoami matches ICM_20948_WHOAMI
     
-    bool	            dataReady		    ( void );									    // Returns 'true' if data is ready
+    bool	            dataReady		    ( void );				                        // Returns 'true' if data is ready
     uint8_t             getWhoAmI		    ( void );								        // Return whoami in out prarmeter
     bool                isConnected         ( void );                                       // Returns true if communications with the device are sucessful
 
@@ -71,6 +71,25 @@ public:
     ICM_20948_Status_e	setDLPFcfg		    ( uint8_t sensor_id_bm, ICM_20948_dlpcfg_t cfg );			
     ICM_20948_Status_e	enableDLPF		    ( uint8_t sensor_id_bm, bool enable );
     ICM_20948_Status_e	setSampleRate	    ( uint8_t sensor_id_bm, ICM_20948_smplrt_t smplrt );
+
+    // Interrupts on INT and FSYNC Pins
+    ICM_20948_Status_e  clearInterrupts         ( void );                                   
+
+    ICM_20948_Status_e  cfgIntActiveLow         ( bool active_low );
+    ICM_20948_Status_e  cfgIntOpenDrain         ( bool open_drain );
+    ICM_20948_Status_e  cfgIntLatch             ( bool latching );                          // If not latching then the interrupt is a 50 us pulse
+    ICM_20948_Status_e  cfgIntAnyReadToClear    ( bool enabled );                           // If enabled, *ANY* read will clear the INT_STATUS register. So if you have multiple interrupt sources enabled be sure to read INT_STATUS first
+    ICM_20948_Status_e  cfgFsyncActiveLow       ( bool active_low );
+    ICM_20948_Status_e  cfgFsyncIntMode         ( bool interrupt_mode );                    // Can ue FSYNC as an interrupt input that sets the I2C Master Status register's PASS_THROUGH bit
+
+    ICM_20948_Status_e	intEnableI2C            ( bool enable );
+    ICM_20948_Status_e	intEnableDMP            ( bool enable );
+    ICM_20948_Status_e	intEnablePLL            ( bool enable );
+    ICM_20948_Status_e	intEnableWOM            ( bool enable );
+    ICM_20948_Status_e	intEnableWOF            ( bool enable );
+    ICM_20948_Status_e	intEnableRawDataReady   ( bool enable );
+    ICM_20948_Status_e	intEnableOverflowFIFO   ( uint8_t bm_enable );
+    ICM_20948_Status_e	intEnableWatermarkFIFO  ( uint8_t bm_enable );
 
     // Interface Options
     ICM_20948_Status_e	i2cMasterPassthrough 	( bool passthrough = true );
@@ -95,6 +114,11 @@ public:
 
 
 // I2C
+
+// Forward declarations of TwoWire and Wire for board/variant combinations that don't have a default 'SPI'
+class TwoWire;
+extern TwoWire Wire;
+
 class ICM_20948_I2C : public ICM_20948 {
 private:
 protected:
@@ -120,9 +144,13 @@ public:
 
 
 // SPI
-#define ICM_20948_SPI_DEFAULT_FREQ 1000000
+#define ICM_20948_SPI_DEFAULT_FREQ 7000000
 #define ICM_20948_SPI_DEFAULT_ORDER MSBFIRST
 #define ICM_20948_SPI_DEFAULT_MODE SPI_MODE3
+
+// Forward declarations of SPIClass and SPI for board/variant combinations that don't have a default 'SPI'
+class SPIClass;
+extern SPIClass SPI;
 
 class ICM_20948_SPI : public ICM_20948 {
 private:
@@ -135,7 +163,7 @@ public:
 
     ICM_20948_SPI(); // Constructor
 
-    ICM_20948_Status_e begin( uint8_t csPin, SPIClass &spiPort = SPI );
+    ICM_20948_Status_e begin( uint8_t csPin, SPIClass &spiPort = SPI, uint32_t SPIFreq = ICM_20948_SPI_DEFAULT_FREQ );
 };
 
 
