@@ -209,14 +209,91 @@ ICM_20948_Status_e	ICM_20948_data_ready( ICM_20948_Device_t* pdev ){
 	if( retval != ICM_20948_Stat_Ok){ return retval; }
 	retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_STATUS_1, (uint8_t*)&reg, sizeof(ICM_20948_INT_STATUS_1_t));
 	if( retval != ICM_20948_Stat_Ok){ return retval; }
-	if( reg.RAW_DATA_0_RDY_INT ){ return retval; }
-	return ICM_20948_Stat_NoData;
+	if( !reg.RAW_DATA_0_RDY_INT ){ retval = ICM_20948_Stat_NoData; }
+	return retval;
 }
 
 
 
 
 
+
+
+// Interrupt Configuration
+ICM_20948_Status_e	ICM_20948_int_pin_cfg		( ICM_20948_Device_t* pdev, ICM_20948_INT_PIN_CFG_t* write, ICM_20948_INT_PIN_CFG_t* read ){
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+	retval = ICM_20948_set_bank(pdev, 0);						// Must be in the right bank
+	if( write != NULL ){										// write first, if available
+		retval = ICM_20948_execute_w( pdev, AGB0_REG_INT_PIN_CONFIG, (uint8_t*)write, sizeof(ICM_20948_INT_PIN_CFG_t));
+		if( retval != ICM_20948_Stat_Ok ){ return retval; }
+	}
+	if( read != NULL ){											// then read, to allow for verification
+		retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_PIN_CONFIG, (uint8_t*)read, sizeof(ICM_20948_INT_PIN_CFG_t));
+		if( retval != ICM_20948_Stat_Ok ){ return retval; }
+	}
+	return retval;
+}
+
+ICM_20948_Status_e	ICM_20948_int_enable 		( ICM_20948_Device_t* pdev, ICM_20948_INT_enable_t* write, ICM_20948_INT_enable_t* read ){
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_INT_ENABLE_t 		en_0;
+	ICM_20948_INT_ENABLE_1_t 	en_1;
+	ICM_20948_INT_ENABLE_2_t 	en_2;
+	ICM_20948_INT_ENABLE_3_t 	en_3;
+
+	retval = ICM_20948_set_bank(pdev, 0);	// Must be in the right bank
+
+	if( write != NULL ){	// If the write pointer is not NULL then write to the registers BEFORE reading
+		en_0.I2C_MST_INT_EN = write->I2C_MST_INT_EN;
+		en_0.DMP_INT1_EN = write->DMP_INT1_EN;
+		en_0.PLL_READY_EN = write->PLL_RDY_EN;
+		en_0.WOM_INT_EN = write->WOM_INT_EN;
+		en_0.REG_WOF_EN = write->REG_WOF_EN;
+		en_1.RAW_DATA_0_RDY_EN = write->RAW_DATA_0_RDY_EN;
+		en_2.individual.FIFO_OVERFLOW_EN_4 = write->FIFO_OVERFLOW_EN_4;
+		en_2.individual.FIFO_OVERFLOW_EN_3 = write->FIFO_OVERFLOW_EN_3;
+		en_2.individual.FIFO_OVERFLOW_EN_2 = write->FIFO_OVERFLOW_EN_2;
+		en_2.individual.FIFO_OVERFLOW_EN_1 = write->FIFO_OVERFLOW_EN_1;
+		en_2.individual.FIFO_OVERFLOW_EN_0 = write->FIFO_OVERFLOW_EN_0;
+		en_3.individual.FIFO_WM_EN_4 = write->FIFO_WM_EN_4;
+		en_3.individual.FIFO_WM_EN_3 = write->FIFO_WM_EN_3;
+		en_3.individual.FIFO_WM_EN_2 = write->FIFO_WM_EN_2;
+		en_3.individual.FIFO_WM_EN_1 = write->FIFO_WM_EN_1;
+		en_3.individual.FIFO_WM_EN_0 = write->FIFO_WM_EN_0;
+
+		retval = ICM_20948_execute_w( pdev, AGB0_REG_INT_ENABLE, (uint8_t*)&en_0, sizeof(ICM_20948_INT_ENABLE_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_w( pdev, AGB0_REG_INT_ENABLE_1, (uint8_t*)&en_1, sizeof(ICM_20948_INT_ENABLE_1_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_w( pdev, AGB0_REG_INT_ENABLE_2, (uint8_t*)&en_2, sizeof(ICM_20948_INT_ENABLE_2_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_w( pdev, AGB0_REG_INT_ENABLE_3, (uint8_t*)&en_3, sizeof(ICM_20948_INT_ENABLE_3_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+	}
+
+	if( read != NULL ){	// If read pointer is not NULL then read the registers (if write is not NULL then this should read back the results of write into read)
+		retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_ENABLE, (uint8_t*)&en_0, sizeof(ICM_20948_INT_ENABLE_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_ENABLE_1, (uint8_t*)&en_1, sizeof(ICM_20948_INT_ENABLE_1_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_ENABLE_2, (uint8_t*)&en_2, sizeof(ICM_20948_INT_ENABLE_2_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+		retval = ICM_20948_execute_r( pdev, AGB0_REG_INT_ENABLE_3, (uint8_t*)&en_3, sizeof(ICM_20948_INT_ENABLE_3_t)); if( retval != ICM_20948_Stat_Ok ){ return retval; }
+	
+		read->I2C_MST_INT_EN = en_0.I2C_MST_INT_EN;
+		read->DMP_INT1_EN = en_0.DMP_INT1_EN;
+		read->PLL_RDY_EN = en_0.PLL_READY_EN;
+		read->WOM_INT_EN = en_0.WOM_INT_EN;
+		read->REG_WOF_EN = en_0.REG_WOF_EN;
+		read->RAW_DATA_0_RDY_EN = en_1.RAW_DATA_0_RDY_EN;
+		read->FIFO_OVERFLOW_EN_4 = en_2.individual.FIFO_OVERFLOW_EN_4;
+		read->FIFO_OVERFLOW_EN_3 = en_2.individual.FIFO_OVERFLOW_EN_3;
+		read->FIFO_OVERFLOW_EN_2 = en_2.individual.FIFO_OVERFLOW_EN_2;
+		read->FIFO_OVERFLOW_EN_1 = en_2.individual.FIFO_OVERFLOW_EN_1;
+		read->FIFO_OVERFLOW_EN_0 = en_2.individual.FIFO_OVERFLOW_EN_0;
+		read->FIFO_WM_EN_4 = en_3.individual.FIFO_WM_EN_4;
+		read->FIFO_WM_EN_3 = en_3.individual.FIFO_WM_EN_3;
+		read->FIFO_WM_EN_2 = en_3.individual.FIFO_WM_EN_2;
+		read->FIFO_WM_EN_1 = en_3.individual.FIFO_WM_EN_1;
+		read->FIFO_WM_EN_0 = en_3.individual.FIFO_WM_EN_0;
+	}
+
+	return retval;
+}
 
 
 
