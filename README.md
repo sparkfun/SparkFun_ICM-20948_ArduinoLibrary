@@ -1,7 +1,7 @@
 SparkFun_ICM-20948_ArduinoLibrary
 ========================================
 
-This is the library for the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)]() (Coming Soon). 
+This is the library for the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335). 
 
 
 Repository Contents
@@ -15,14 +15,12 @@ Repository Contents
 Documentation
 --------------
 
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-9dof-imu-breakout-hookup-guide)** - Basic hookup guide for the SparkFun 9DoF IMU Breakout.
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
 Products that use this Library 
 ---------------------------------
-* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)]() (Coming Soon)
-
-Version History
----------------
+* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335)
 
 
 License Information
