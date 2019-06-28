@@ -15,7 +15,7 @@ Repository Contents
 Documentation
 --------------
 
-* **[Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-9dof-imu-breakout-hookup-guide)** - Basic hookup guide for the SparkFun 9DoF IMU Breakout.
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-9dof-imu-icm-20948-breakout-hookup-guide)** - Basic hookup guide for the SparkFun 9DoF IMU Breakout.
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
 Products that use this Library 
