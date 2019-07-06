@@ -116,6 +116,7 @@ ICM_20948_Status_e	ICM_20948_i2c_master_single_r( ICM_20948_Device_t* pdev, uint
 
 ICM_20948_Status_e	ICM_20948_set_bank( ICM_20948_Device_t* pdev, uint8_t bank ){
 	if( bank > 3 ){ return ICM_20948_Stat_ParamErr; } // Only 4 possible banks
+	bank = (bank << 4) & 0x30; // bits 5:4 of REG_BANK_SEL
 	return ICM_20948_execute_w( pdev, REG_BANK_SEL, &bank, 1 );
 }
 
