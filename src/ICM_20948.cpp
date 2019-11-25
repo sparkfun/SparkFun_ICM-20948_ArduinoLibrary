@@ -887,6 +887,9 @@ ICM_20948_SPI::ICM_20948_SPI()
 
 ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq)
 {
+    if (SPIFreq > 7000000)
+        SPIFreq = 7000000;
+
     // Associate
     _spi = &spiPort;
     _spisettings = SPISettings(SPIFreq, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
