@@ -140,7 +140,7 @@ public:
 // SPI
 #define ICM_20948_SPI_DEFAULT_FREQ 7000000
 #define ICM_20948_SPI_DEFAULT_ORDER MSBFIRST
-#define ICM_20948_SPI_DEFAULT_MODE SPI_MODE3
+#define ICM_20948_SPI_DEFAULT_MODE SPI_MODE0
 
 // Forward declarations of SPIClass and SPI for board/variant combinations that don't have a default 'SPI'
 class SPIClass;
