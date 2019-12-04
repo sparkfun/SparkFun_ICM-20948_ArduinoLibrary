@@ -4,481 +4,699 @@
 #include "util/AK09916_REGISTERS.h"
 
 // Forward Declarations
-ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len, void* user);
-ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
-ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
-ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user);
-
-
-
-
+ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len, void *user);
+ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len, void *user);
+ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *buff, uint32_t len, void *user);
+ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, void *user);
 
 // Base
-ICM_20948::ICM_20948(){
-
+ICM_20948::ICM_20948()
+{
 }
 
-ICM_20948_AGMT_t ICM_20948::getAGMT                 ( void ){
-    status = ICM_20948_get_agmt( &_device, &agmt );
+ICM_20948_AGMT_t ICM_20948::getAGMT(void)
+{
+    status = ICM_20948_get_agmt(&_device, &agmt);
 
-    if( _has_magnetometer ){
-        getMagnetometerData( &agmt );
+    if (_has_magnetometer)
+    {
+        getMagnetometerData(&agmt);
     }
 
     return agmt;
 }
 
-float             ICM_20948::magX                ( void ){
+float ICM_20948::magX(void)
+{
     return getMagUT(agmt.mag.axes.x);
 }
 
-float             ICM_20948::magY                ( void ){
+float ICM_20948::magY(void)
+{
     return getMagUT(agmt.mag.axes.y);
 }
 
-float             ICM_20948::magZ                ( void ){
+float ICM_20948::magZ(void)
+{
     return getMagUT(agmt.mag.axes.z);
 }
 
-float               ICM_20948::getMagUT            ( int16_t axis_val ){
-    return (((float)axis_val)*0.15);
+float ICM_20948::getMagUT(int16_t axis_val)
+{
+    return (((float)axis_val) * 0.15);
 }
 
-float             ICM_20948::accX                ( void ){
+float ICM_20948::accX(void)
+{
     return getAccMG(agmt.acc.axes.x);
 }
 
-float             ICM_20948::accY                ( void ){
+float ICM_20948::accY(void)
+{
     return getAccMG(agmt.acc.axes.y);
 }
 
-float             ICM_20948::accZ                ( void ){
+float ICM_20948::accZ(void)
+{
     return getAccMG(agmt.acc.axes.z);
 }
 
-float               ICM_20948::getAccMG            ( int16_t axis_val ){
-    switch(agmt.fss.a){
-        case 0 : return (((float)axis_val)/16.384); break;
-        case 1 : return (((float)axis_val)/8.192); break;
-        case 2 : return (((float)axis_val)/4.096); break;
-        case 3 : return (((float)axis_val)/2.048); break;
-        default : return 0; break;
+float ICM_20948::getAccMG(int16_t axis_val)
+{
+    switch (agmt.fss.a)
+    {
+    case 0:
+        return (((float)axis_val) / 16.384);
+        break;
+    case 1:
+        return (((float)axis_val) / 8.192);
+        break;
+    case 2:
+        return (((float)axis_val) / 4.096);
+        break;
+    case 3:
+        return (((float)axis_val) / 2.048);
+        break;
+    default:
+        return 0;
+        break;
     }
 }
 
-float             ICM_20948::gyrX                ( void ){
+float ICM_20948::gyrX(void)
+{
     return getGyrDPS(agmt.gyr.axes.x);
 }
 
-float             ICM_20948::gyrY                ( void ){
+float ICM_20948::gyrY(void)
+{
     return getGyrDPS(agmt.gyr.axes.y);
 }
 
-float             ICM_20948::gyrZ                ( void ){
+float ICM_20948::gyrZ(void)
+{
     return getGyrDPS(agmt.gyr.axes.z);
 }
 
-float               ICM_20948::getGyrDPS            ( int16_t axis_val ){
-    switch(agmt.fss.g){
-        case 0 : return (((float)axis_val)/131); break;
-        case 1 : return (((float)axis_val)/65.5); break;
-        case 2 : return (((float)axis_val)/32.8); break;
-        case 3 : return (((float)axis_val)/16.4); break;
-        default : return 0; break;
+float ICM_20948::getGyrDPS(int16_t axis_val)
+{
+    switch (agmt.fss.g)
+    {
+    case 0:
+        return (((float)axis_val) / 131);
+        break;
+    case 1:
+        return (((float)axis_val) / 65.5);
+        break;
+    case 2:
+        return (((float)axis_val) / 32.8);
+        break;
+    case 3:
+        return (((float)axis_val) / 16.4);
+        break;
+    default:
+        return 0;
+        break;
     }
 }
 
-float             ICM_20948::temp                 ( void ){
+float ICM_20948::temp(void)
+{
     return getTempC(agmt.tmp.val);
 }
 
-float               ICM_20948::getTempC             ( int16_t val ){
-    return (((float)val)/333.87) + 21;
+float ICM_20948::getTempC(int16_t val)
+{
+    return (((float)val) / 333.87) + 21;
 }
 
-
-
-const char* ICM_20948::statusString                 ( ICM_20948_Status_e stat ){
+const char *ICM_20948::statusString(ICM_20948_Status_e stat)
+{
     ICM_20948_Status_e val;
-    if( stat == ICM_20948_Stat_NUM){
+    if (stat == ICM_20948_Stat_NUM)
+    {
         val = status;
-    }else{
+    }
+    else
+    {
         val = stat;
     }
 
-    switch(val){
-        case ICM_20948_Stat_Ok : return "All is well."; break;
-        case ICM_20948_Stat_Err : return "General Error"; break;
-	    case ICM_20948_Stat_NotImpl : return "Not Implemented"; break;
-        case ICM_20948_Stat_ParamErr : return "Parameter Error"; break;
-        case ICM_20948_Stat_WrongID : return "Wrong ID"; break;
-        case ICM_20948_Stat_InvalSensor : return "Invalid Sensor"; break;
-        case ICM_20948_Stat_NoData : return "Data Underflow"; break;
-        case ICM_20948_Stat_SensorNotSupported : return "Sensor Not Supported"; break;
-        default :
-            return "Unknown Status"; break;
-        
+    switch (val)
+    {
+    case ICM_20948_Stat_Ok:
+        return "All is well.";
+        break;
+    case ICM_20948_Stat_Err:
+        return "General Error";
+        break;
+    case ICM_20948_Stat_NotImpl:
+        return "Not Implemented";
+        break;
+    case ICM_20948_Stat_ParamErr:
+        return "Parameter Error";
+        break;
+    case ICM_20948_Stat_WrongID:
+        return "Wrong ID";
+        break;
+    case ICM_20948_Stat_InvalSensor:
+        return "Invalid Sensor";
+        break;
+    case ICM_20948_Stat_NoData:
+        return "Data Underflow";
+        break;
+    case ICM_20948_Stat_SensorNotSupported:
+        return "Sensor Not Supported";
+        break;
+    default:
+        return "Unknown Status";
+        break;
     }
     return "None";
 }
 
-
-
 // Device Level
-ICM_20948_Status_e	ICM_20948::setBank			    ( uint8_t bank ){
-    status =  ICM_20948_set_bank( &_device, bank );
+ICM_20948_Status_e ICM_20948::setBank(uint8_t bank)
+{
+    status = ICM_20948_set_bank(&_device, bank);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::swReset			    ( void ){
-    status = ICM_20948_sw_reset( &_device );
+ICM_20948_Status_e ICM_20948::swReset(void)
+{
+    status = ICM_20948_sw_reset(&_device);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::sleep				( bool on ){
-    status = ICM_20948_sleep( &_device, on );
+ICM_20948_Status_e ICM_20948::sleep(bool on)
+{
+    status = ICM_20948_sleep(&_device, on);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::lowPower			( bool on ){
-    status = ICM_20948_low_power( &_device, on );
+ICM_20948_Status_e ICM_20948::lowPower(bool on)
+{
+    status = ICM_20948_low_power(&_device, on);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::setClockSource	    ( ICM_20948_PWR_MGMT_1_CLKSEL_e source ){
-    status = ICM_20948_set_clock_source( &_device, source );
+ICM_20948_Status_e ICM_20948::setClockSource(ICM_20948_PWR_MGMT_1_CLKSEL_e source)
+{
+    status = ICM_20948_set_clock_source(&_device, source);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::checkID			    ( void ){
-    status = ICM_20948_check_id( &_device );
+ICM_20948_Status_e ICM_20948::checkID(void)
+{
+    status = ICM_20948_check_id(&_device);
     return status;
 }
 
-bool	            ICM_20948::dataReady		    ( void ){
-    status = ICM_20948_data_ready( &_device );
-    if( status == ICM_20948_Stat_Ok ){ return true; }
+bool ICM_20948::dataReady(void)
+{
+    status = ICM_20948_data_ready(&_device);
+    if (status == ICM_20948_Stat_Ok)
+    {
+        return true;
+    }
     return false;
 }
 
-uint8_t	            ICM_20948::getWhoAmI		    ( void ){
+uint8_t ICM_20948::getWhoAmI(void)
+{
     uint8_t retval = 0x00;
-    status = ICM_20948_get_who_am_i( &_device, &retval );
+    status = ICM_20948_get_who_am_i(&_device, &retval);
     return retval;
 }
 
-bool                ICM_20948::isConnected         ( void ){
+bool ICM_20948::isConnected(void)
+{
     status = checkID();
-    if( status == ICM_20948_Stat_Ok ){ return true; }
+    if (status == ICM_20948_Stat_Ok)
+    {
+        return true;
+    }
     return false;
 }
 
-
 // Internal Sensor Options
-ICM_20948_Status_e	ICM_20948::setSampleMode	    ( uint8_t sensor_id_bm, uint8_t lp_config_cycle_mode ){
-    status = ICM_20948_set_sample_mode( &_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, (ICM_20948_LP_CONFIG_CYCLE_e)lp_config_cycle_mode );
+ICM_20948_Status_e ICM_20948::setSampleMode(uint8_t sensor_id_bm, uint8_t lp_config_cycle_mode)
+{
+    status = ICM_20948_set_sample_mode(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, (ICM_20948_LP_CONFIG_CYCLE_e)lp_config_cycle_mode);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::setFullScale 	    ( uint8_t sensor_id_bm, ICM_20948_fss_t fss ){
-    status = ICM_20948_set_full_scale( &_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, fss );
+ICM_20948_Status_e ICM_20948::setFullScale(uint8_t sensor_id_bm, ICM_20948_fss_t fss)
+{
+    status = ICM_20948_set_full_scale(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, fss);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::setDLPFcfg		    ( uint8_t sensor_id_bm, ICM_20948_dlpcfg_t cfg ){
-    status = ICM_20948_set_dlpf_cfg( &_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, cfg );
+ICM_20948_Status_e ICM_20948::setDLPFcfg(uint8_t sensor_id_bm, ICM_20948_dlpcfg_t cfg)
+{
+    status = ICM_20948_set_dlpf_cfg(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, cfg);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::enableDLPF		    ( uint8_t sensor_id_bm, bool enable ){
-    status = ICM_20948_enable_dlpf( &_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, enable );
+ICM_20948_Status_e ICM_20948::enableDLPF(uint8_t sensor_id_bm, bool enable)
+{
+    status = ICM_20948_enable_dlpf(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, enable);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::setSampleRate	    ( uint8_t sensor_id_bm, ICM_20948_smplrt_t smplrt ){
-    status = ICM_20948_set_sample_rate( &_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, smplrt );
+ICM_20948_Status_e ICM_20948::setSampleRate(uint8_t sensor_id_bm, ICM_20948_smplrt_t smplrt)
+{
+    status = ICM_20948_set_sample_rate(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, smplrt);
     return status;
 }
-
-
-
-
 
 // Interrupts on INT Pin
-ICM_20948_Status_e  ICM_20948::clearInterrupts         ( void ){
+ICM_20948_Status_e ICM_20948::clearInterrupts(void)
+{
     ICM_20948_INT_STATUS_t int_stat;
     ICM_20948_INT_STATUS_1_t int_stat_1;
 
     // read to clear interrupts
-    status = ICM_20948_set_bank( &_device, 0 );                                                                                   if( status != ICM_20948_Stat_Ok ){ return status; }
-    status = ICM_20948_execute_r( &_device, AGB0_REG_INT_STATUS, (uint8_t*)&int_stat, sizeof(ICM_20948_INT_STATUS_t) );           if( status != ICM_20948_Stat_Ok ){ return status; }
-    status = ICM_20948_execute_r( &_device, AGB0_REG_INT_STATUS_1, (uint8_t*)&int_stat_1, sizeof(ICM_20948_INT_STATUS_1_t) );     if( status != ICM_20948_Stat_Ok ){ return status; }
+    status = ICM_20948_set_bank(&_device, 0);
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    status = ICM_20948_execute_r(&_device, AGB0_REG_INT_STATUS, (uint8_t *)&int_stat, sizeof(ICM_20948_INT_STATUS_t));
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    status = ICM_20948_execute_r(&_device, AGB0_REG_INT_STATUS_1, (uint8_t *)&int_stat_1, sizeof(ICM_20948_INT_STATUS_1_t));
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
 
     // todo: there may be additional interrupts that need to be cleared, like FIFO overflow/watermark
 
     return status;
 }
 
-
-ICM_20948_Status_e  ICM_20948::cfgIntActiveLow         ( bool active_low ){
+ICM_20948_Status_e ICM_20948::cfgIntActiveLow(bool active_low)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.INT1_ACTL = active_low;                                         // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.INT1_ACTL = active_low;                           // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::cfgIntOpenDrain         ( bool open_drain ){
+ICM_20948_Status_e ICM_20948::cfgIntOpenDrain(bool open_drain)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.INT1_OPEN = open_drain;                                         // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.INT1_OPEN = open_drain;                           // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::cfgIntLatch             ( bool latching ){
+ICM_20948_Status_e ICM_20948::cfgIntLatch(bool latching)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.INT1_LATCH_EN = latching;                                       // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.INT1_LATCH_EN = latching;                         // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::cfgIntAnyReadToClear      ( bool enabled ){
+ICM_20948_Status_e ICM_20948::cfgIntAnyReadToClear(bool enabled)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.INT_ANYRD_2CLEAR = enabled;                                     // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.INT_ANYRD_2CLEAR = enabled;                       // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::cfgFsyncActiveLow       ( bool active_low ){
+ICM_20948_Status_e ICM_20948::cfgFsyncActiveLow(bool active_low)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.ACTL_FSYNC = active_low;                                         // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.ACTL_FSYNC = active_low;                          // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::cfgFsyncIntMode         ( bool interrupt_mode ){
+ICM_20948_Status_e ICM_20948::cfgFsyncIntMode(bool interrupt_mode)
+{
     ICM_20948_INT_PIN_CFG_t reg;
-    status = ICM_20948_int_pin_cfg		( &_device, NULL, &reg );       // read phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
-    reg.FSYNC_INT_MODE_EN = interrupt_mode;                             // set the setting
-    status = ICM_20948_int_pin_cfg		( &_device, &reg, NULL );       // write phase
-    if(status != ICM_20948_Stat_Ok){ return status; }
+    status = ICM_20948_int_pin_cfg(&_device, NULL, &reg); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    reg.FSYNC_INT_MODE_EN = interrupt_mode;               // set the setting
+    status = ICM_20948_int_pin_cfg(&_device, &reg, NULL); // write phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
-
 
 //      All these individual functions will use a read->set->write method to leave other settings untouched
-ICM_20948_Status_e	ICM_20948::intEnableI2C        ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.I2C_MST_INT_EN = enable;                             // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.I2C_MST_INT_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnableI2C(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.I2C_MST_INT_EN = enable;                        // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.I2C_MST_INT_EN != enable)
+    {
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableDMP        ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.DMP_INT1_EN = enable;                                // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.DMP_INT1_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnableDMP(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.DMP_INT1_EN = enable;                           // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.DMP_INT1_EN != enable)
+    {
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnablePLL        ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.PLL_RDY_EN = enable;                                 // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.PLL_RDY_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnablePLL(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.PLL_RDY_EN = enable;                            // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.PLL_RDY_EN != enable)
+    {
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableWOM        ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.WOM_INT_EN = enable;                                 // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.WOM_INT_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnableWOM(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.WOM_INT_EN = enable;                            // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.WOM_INT_EN != enable)
+    {
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableWOF        ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.REG_WOF_EN = enable;                                 // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.REG_WOF_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnableWOF(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.REG_WOF_EN = enable;                            // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.REG_WOF_EN != enable)
+    {
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableRawDataReady   ( bool enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.RAW_DATA_0_RDY_EN = enable;                          // change the setting
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    if( en.RAW_DATA_0_RDY_EN != enable ){
+ICM_20948_Status_e ICM_20948::intEnableRawDataReady(bool enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.RAW_DATA_0_RDY_EN = enable;                     // change the setting
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (en.RAW_DATA_0_RDY_EN != enable)
+    {
         Serial.println("mismatch error");
         status = ICM_20948_Stat_Err;
-        return status; 
+        return status;
     }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableOverflowFIFO   ( uint8_t bm_enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.FIFO_OVERFLOW_EN_0 = ((bm_enable >> 0) & 0x01);      // change the settings
+ICM_20948_Status_e ICM_20948::intEnableOverflowFIFO(uint8_t bm_enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.FIFO_OVERFLOW_EN_0 = ((bm_enable >> 0) & 0x01); // change the settings
     en.FIFO_OVERFLOW_EN_1 = ((bm_enable >> 1) & 0x01);
     en.FIFO_OVERFLOW_EN_2 = ((bm_enable >> 2) & 0x01);
     en.FIFO_OVERFLOW_EN_3 = ((bm_enable >> 3) & 0x01);
     en.FIFO_OVERFLOW_EN_4 = ((bm_enable >> 4) & 0x01);
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::intEnableWatermarkFIFO  ( uint8_t bm_enable ){
-    ICM_20948_INT_enable_t en;                              // storage
-    status = ICM_20948_int_enable( &_device, NULL, &en );   // read phase
-    if( status != ICM_20948_Stat_Ok ){ return status; }
-    en.FIFO_WM_EN_0 = ((bm_enable >> 0) & 0x01);            // change the settings
+ICM_20948_Status_e ICM_20948::intEnableWatermarkFIFO(uint8_t bm_enable)
+{
+    ICM_20948_INT_enable_t en;                          // storage
+    status = ICM_20948_int_enable(&_device, NULL, &en); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    en.FIFO_WM_EN_0 = ((bm_enable >> 0) & 0x01); // change the settings
     en.FIFO_WM_EN_1 = ((bm_enable >> 1) & 0x01);
     en.FIFO_WM_EN_2 = ((bm_enable >> 2) & 0x01);
     en.FIFO_WM_EN_3 = ((bm_enable >> 3) & 0x01);
     en.FIFO_WM_EN_4 = ((bm_enable >> 4) & 0x01);
-    status = ICM_20948_int_enable( &_device, &en, &en );    // write phase w/ readback
-    if( status != ICM_20948_Stat_Ok ){ return status; }
+    status = ICM_20948_int_enable(&_device, &en, &en); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
     return status;
 }
-
-
 
 // Interface Options
-ICM_20948_Status_e	ICM_20948::i2cMasterPassthrough 	( bool passthrough ){
-    status = ICM_20948_i2c_master_passthrough ( &_device, passthrough );
+ICM_20948_Status_e ICM_20948::i2cMasterPassthrough(bool passthrough)
+{
+    status = ICM_20948_i2c_master_passthrough(&_device, passthrough);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::i2cMasterEnable          ( bool enable ){
-    status = ICM_20948_i2c_master_enable( &_device, enable );
+ICM_20948_Status_e ICM_20948::i2cMasterEnable(bool enable)
+{
+    status = ICM_20948_i2c_master_enable(&_device, enable);
     return status;
 }
 
-ICM_20948_Status_e	ICM_20948::i2cMasterConfigureSlave  ( uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap ){
-    status = ICM_20948_i2c_master_configure_slave 		( &_device, slave, addr, reg, len, Rw, enable, data_only, grp, swap );
+ICM_20948_Status_e ICM_20948::i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+{
+    status = ICM_20948_i2c_master_configure_slave(&_device, slave, addr, reg, len, Rw, enable, data_only, grp, swap);
     return status;
 }
 
-ICM_20948_Status_e 	ICM_20948::i2cMasterSLV4Transaction( uint8_t addr, uint8_t reg, uint8_t* data, uint8_t len, bool Rw, bool send_reg_addr ){
-    status = ICM_20948_i2c_master_slv4_txn( &_device, addr, reg, data, len, Rw, send_reg_addr );
+ICM_20948_Status_e ICM_20948::i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
+{
+    status = ICM_20948_i2c_master_slv4_txn(&_device, addr, reg, data, len, Rw, send_reg_addr);
     return status;
 }
-ICM_20948_Status_e	ICM_20948::i2cMasterSingleW        ( uint8_t addr, uint8_t reg, uint8_t data ){
-    status = ICM_20948_i2c_master_single_w( &_device, addr, reg, &data );
+ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data)
+{
+    status = ICM_20948_i2c_master_single_w(&_device, addr, reg, &data);
     return status;
 }
-uint8_t	ICM_20948::i2cMasterSingleR        ( uint8_t addr, uint8_t reg ){
+uint8_t ICM_20948::i2cMasterSingleR(uint8_t addr, uint8_t reg)
+{
     uint8_t data;
-    status = ICM_20948_i2c_master_single_r( &_device, addr, reg, &data );
+    status = ICM_20948_i2c_master_single_r(&_device, addr, reg, &data);
     return data;
 }
 
-
-
-
-
-
-
-
-
-
-ICM_20948_Status_e  ICM_20948::startupDefault          ( void ){
+ICM_20948_Status_e ICM_20948::startupDefault(void)
+{
     ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
     retval = checkID();
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
 
     retval = swReset();
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
     delay(50);
 
-    retval = sleep( false );
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    retval = sleep(false);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
 
-    retval = lowPower( false );
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
-    
-    retval = setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous );  // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }                                                                 // sensors: 	ICM_20948_Internal_Acc, ICM_20948_Internal_Gyr, ICM_20948_Internal_Mst
+    retval = lowPower(false);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
+
+    retval = setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    } // sensors: 	ICM_20948_Internal_Acc, ICM_20948_Internal_Gyr, ICM_20948_Internal_Mst
 
     ICM_20948_fss_t FSS;
-    FSS.a = gpm2;       // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
-    FSS.g = dps250;     // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
-    retval = setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS );  
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    FSS.a = gpm2;   // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+    FSS.g = dps250; // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+    retval = setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
 
     ICM_20948_dlpcfg_t dlpcfg;
     dlpcfg.a = acc_d473bw_n499bw;
     dlpcfg.g = gyr_d361bw4_n376bw5;
-    retval = setDLPFcfg( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg );
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    retval = setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
 
-    retval = enableDLPF( ICM_20948_Internal_Acc, false );
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
-    retval = enableDLPF( ICM_20948_Internal_Gyr, false );
-    if( retval != ICM_20948_Stat_Ok ){ status = retval; return status; }
+    retval = enableDLPF(ICM_20948_Internal_Acc, false);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
+    retval = enableDLPF(ICM_20948_Internal_Gyr, false);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
 
     _has_magnetometer = true;
     retval = startupMagnetometer();
-    if(( retval != ICM_20948_Stat_Ok) && ( retval != ICM_20948_Stat_NotImpl )){ status = retval; return status; }
-    if( retval == ICM_20948_Stat_NotImpl ){
-        // This is a temporary fix. 
-        // Ultimately we *should* be able to configure the I2C master to handle the 
-        // magnetometer no matter what interface (SPI / I2C) we are using. 
+    if ((retval != ICM_20948_Stat_Ok) && (retval != ICM_20948_Stat_NotImpl))
+    {
+        status = retval;
+        return status;
+    }
+    if (retval == ICM_20948_Stat_NotImpl)
+    {
+        // This is a temporary fix.
+        // Ultimately we *should* be able to configure the I2C master to handle the
+        // magnetometer no matter what interface (SPI / I2C) we are using.
 
         // Should try testing I2C master functionality on a bare ICM chip w/o TXS0108 level shifter...
 
@@ -490,123 +708,109 @@ ICM_20948_Status_e  ICM_20948::startupDefault          ( void ){
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948::startupMagnetometer    ( void ){
+ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
+{
     return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
 }
 
-ICM_20948_Status_e  ICM_20948::getMagnetometerData     ( ICM_20948_AGMT_t* pagmt ){
+ICM_20948_Status_e ICM_20948::getMagnetometerData(ICM_20948_AGMT_t *pagmt)
+{
     return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
 }
-
-
-
-
-
-
-
-
 
 // direct read/write
-ICM_20948_Status_e  ICM_20948::read                 ( uint8_t reg, uint8_t* pdata, uint32_t len){
-    status = ICM_20948_execute_r( &_device, reg, pdata, len );
+ICM_20948_Status_e ICM_20948::read(uint8_t reg, uint8_t *pdata, uint32_t len)
+{
+    status = ICM_20948_execute_r(&_device, reg, pdata, len);
 }
 
-ICM_20948_Status_e  ICM_20948::write                ( uint8_t reg, uint8_t* pdata, uint32_t len){
-    status = ICM_20948_execute_w( &_device, reg, pdata, len );
+ICM_20948_Status_e ICM_20948::write(uint8_t reg, uint8_t *pdata, uint32_t len)
+{
+    status = ICM_20948_execute_w(&_device, reg, pdata, len);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // I2C
-ICM_20948_I2C::ICM_20948_I2C(){
-
+ICM_20948_I2C::ICM_20948_I2C()
+{
 }
 
-ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t ad0pin){
-    // Associate 
-	_ad0 = ad0pin;
-	_i2c = &wirePort;
-	_ad0val = ad0val;
+ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t ad0pin)
+{
+    // Associate
+    _ad0 = ad0pin;
+    _i2c = &wirePort;
+    _ad0val = ad0val;
 
     _addr = ICM_20948_I2C_ADDR_AD0;
-    if( _ad0val ){ _addr = ICM_20948_I2C_ADDR_AD1; }
+    if (_ad0val)
+    {
+        _addr = ICM_20948_I2C_ADDR_AD1;
+    }
 
     // Set pinmodes
-	if(_ad0 != ICM_20948_ARD_UNUSED_PIN){ pinMode(_ad0, OUTPUT); }
+    if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
+    {
+        pinMode(_ad0, OUTPUT);
+    }
 
     // Set pins to default positions
-	if(_ad0 != ICM_20948_ARD_UNUSED_PIN){ digitalWrite(_ad0, _ad0val); }
+    if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
+    {
+        digitalWrite(_ad0, _ad0val);
+    }
 
     // _i2c->begin(); // Moved into user's sketch
 
     // Set up the serif
     _serif.write = ICM_20948_write_I2C;
     _serif.read = ICM_20948_read_I2C;
-    _serif.user = (void*)this;              // refer to yourself in the user field
+    _serif.user = (void *)this; // refer to yourself in the user field
 
     // Link the serif
     _device._serif = &_serif;
 
     // Perform default startup
     status = startupDefault();
-    if( status != ICM_20948_Stat_Ok ){
+    if (status != ICM_20948_Stat_Ok)
+    {
         return status;
     }
     return status;
 }
 
-ICM_20948_Status_e  ICM_20948_I2C::startupMagnetometer    ( void ){
+ICM_20948_Status_e ICM_20948_I2C::startupMagnetometer(void)
+{
     // If using the magnetometer through passthrough:
-    i2cMasterPassthrough( true ); // Set passthrough mode to try to access the magnetometer (by default I2C master is disabled but you still have to enable the passthrough)
+    i2cMasterPassthrough(true); // Set passthrough mode to try to access the magnetometer (by default I2C master is disabled but you still have to enable the passthrough)
 
     // Try to set up magnetometer
     AK09916_CNTL2_Reg_t reg;
     reg.MODE = AK09916_mode_cont_100hz;
 
-    ICM_20948_Status_e retval = writeMag( AK09916_REG_CNTL2, (uint8_t*)&reg, sizeof(AK09916_CNTL2_Reg_t) );
+    ICM_20948_Status_e retval = writeMag(AK09916_REG_CNTL2, (uint8_t *)&reg, sizeof(AK09916_CNTL2_Reg_t));
     status = retval;
-    if(status == ICM_20948_Stat_Ok){
+    if (status == ICM_20948_Stat_Ok)
+    {
         _has_magnetometer = true;
     }
     return status;
 }
 
-
-ICM_20948_Status_e ICM_20948_I2C::magWhoIAm( void ){
+ICM_20948_Status_e ICM_20948_I2C::magWhoIAm(void)
+{
     ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
     const uint8_t len = 2;
     uint8_t whoiam[len];
-    retval = readMag( AK09916_REG_WIA1, whoiam, len );
+    retval = readMag(AK09916_REG_WIA1, whoiam, len);
     status = retval;
-    if( retval != ICM_20948_Stat_Ok ){ return retval; }
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        return retval;
+    }
 
-    if( (whoiam[0] == (MAG_AK09916_WHO_AM_I >> 8)) && ( whoiam[1] == (MAG_AK09916_WHO_AM_I & 0xFF)) ){
+    if ((whoiam[0] == (MAG_AK09916_WHO_AM_I >> 8)) && (whoiam[1] == (MAG_AK09916_WHO_AM_I & 0xFF)))
+    {
         retval = ICM_20948_Stat_Ok;
         status = retval;
         return status;
@@ -616,20 +820,24 @@ ICM_20948_Status_e ICM_20948_I2C::magWhoIAm( void ){
     return status;
 }
 
-bool                ICM_20948_I2C::magIsConnected( void ){
-    if( magWhoIAm() != ICM_20948_Stat_Ok ){
+bool ICM_20948_I2C::magIsConnected(void)
+{
+    if (magWhoIAm() != ICM_20948_Stat_Ok)
+    {
         return false;
     }
     return true;
 }
 
-ICM_20948_Status_e  ICM_20948_I2C::getMagnetometerData     ( ICM_20948_AGMT_t* pagmt ){
+ICM_20948_Status_e ICM_20948_I2C::getMagnetometerData(ICM_20948_AGMT_t *pagmt)
+{
 
     const uint8_t reqd_len = 9; // you must read all the way through the status2 register to re-enable the next measurement
     uint8_t buff[reqd_len];
-        
-    status = readMag( AK09916_REG_ST1, buff, reqd_len );
-    if( status != ICM_20948_Stat_Ok ){
+
+    status = readMag(AK09916_REG_ST1, buff, reqd_len);
+    if (status != ICM_20948_Stat_Ok)
+    {
         return status;
     }
 
@@ -640,29 +848,28 @@ ICM_20948_Status_e  ICM_20948_I2C::getMagnetometerData     ( ICM_20948_AGMT_t* p
     return status;
 }
 
-
-
-
-
-
-ICM_20948_Status_e ICM_20948_I2C::readMag( uint8_t reg, uint8_t* pdata, uint8_t len ){
+ICM_20948_Status_e ICM_20948_I2C::readMag(uint8_t reg, uint8_t *pdata, uint8_t len)
+{
     _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
     _i2c->write(reg);
     _i2c->endTransmission(false);
 
-    uint8_t num_received = _i2c->requestFrom( (uint8_t)MAG_AK09916_I2C_ADDR, (uint8_t)len);
-    if( num_received != len ){
+    uint8_t num_received = _i2c->requestFrom((uint8_t)MAG_AK09916_I2C_ADDR, (uint8_t)len);
+    if (num_received != len)
+    {
         return ICM_20948_Stat_NoData;
     }
 
-    for( uint8_t indi = 0; indi < len; indi++ ){
+    for (uint8_t indi = 0; indi < len; indi++)
+    {
         *(pdata + indi) = _i2c->read();
     }
 
     return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e ICM_20948_I2C::writeMag( uint8_t reg, uint8_t* pdata, uint8_t len ){
+ICM_20948_Status_e ICM_20948_I2C::writeMag(uint8_t reg, uint8_t *pdata, uint8_t len)
+{
     _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
     _i2c->write(reg);
     _i2c->write(pdata, len);
@@ -670,33 +877,29 @@ ICM_20948_Status_e ICM_20948_I2C::writeMag( uint8_t reg, uint8_t* pdata, uint8_t
     return ICM_20948_Stat_Ok; // todo: check return of 'endTransmission' to verify all bytes sent w/ ACK
 }
 
-
-
-
-
-
-
-
 // SPI
 
 // SPISettings ICM_20948_SPI_DEFAULT_SETTINGS(ICM_20948_SPI_DEFAULT_FREQ, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
 
-ICM_20948_SPI::ICM_20948_SPI(){
-
+ICM_20948_SPI::ICM_20948_SPI()
+{
 }
 
-ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq ){
+ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq)
+{
+    if (SPIFreq > 7000000)
+        SPIFreq = 7000000;
+
     // Associate
     _spi = &spiPort;
     _spisettings = SPISettings(SPIFreq, ICM_20948_SPI_DEFAULT_ORDER, ICM_20948_SPI_DEFAULT_MODE);
-	_cs = csPin;
+    _cs = csPin;
 
+    // Set pinmodes
+    pinMode(_cs, OUTPUT);
 
-	// Set pinmodes
-	pinMode(_cs, OUTPUT);
-
-	// Set pins to default positions
-	digitalWrite(_cs, HIGH);
+    // Set pins to default positions
+    digitalWrite(_cs, HIGH);
 
     // _spi->begin(); // Moved into user's sketch
 
@@ -708,14 +911,15 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort, uint3
     // Set up the serif
     _serif.write = ICM_20948_write_SPI;
     _serif.read = ICM_20948_read_SPI;
-    _serif.user = (void*)this;              // refer to yourself in the user field
+    _serif.user = (void *)this; // refer to yourself in the user field
 
     // Link the serif
     _device._serif = &_serif;
 
     // Perform default startup
     status = startupDefault();
-    if( status != ICM_20948_Stat_Ok ){
+    if (status != ICM_20948_Stat_Ok)
+    {
         return status;
     }
 
@@ -724,29 +928,19 @@ ICM_20948_Status_e ICM_20948_SPI::begin( uint8_t csPin, SPIClass &spiPort, uint3
     return ICM_20948_Stat_Ok;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // serif functions for the I2C and SPI classes
-ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len, void* user){
-    if(user == NULL){ return ICM_20948_Stat_ParamErr; }
-    TwoWire* _i2c = ((ICM_20948_I2C*)user)->_i2c;             // Cast user field to ICM_20948_I2C type and extract the I2C interface pointer
-    uint8_t addr = ((ICM_20948_I2C*)user)->_addr;
-    if(_i2c == NULL){ return ICM_20948_Stat_ParamErr; }
+ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len, void *user)
+{
+    if (user == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
+    TwoWire *_i2c = ((ICM_20948_I2C *)user)->_i2c; // Cast user field to ICM_20948_I2C type and extract the I2C interface pointer
+    uint8_t addr = ((ICM_20948_I2C *)user)->_addr;
+    if (_i2c == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
 
     _i2c->beginTransmission(addr);
     _i2c->write(reg);
@@ -766,11 +960,18 @@ ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len,
     return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
-    if(user == NULL){ return ICM_20948_Stat_ParamErr; }
-    TwoWire* _i2c = ((ICM_20948_I2C*)user)->_i2c;
-    uint8_t addr = ((ICM_20948_I2C*)user)->_addr;
-    if(_i2c == NULL){ return ICM_20948_Stat_ParamErr; }
+ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len, void *user)
+{
+    if (user == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
+    TwoWire *_i2c = ((ICM_20948_I2C *)user)->_i2c;
+    uint8_t addr = ((ICM_20948_I2C *)user)->_addr;
+    if (_i2c == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
 
     _i2c->beginTransmission(addr);
     _i2c->write(reg);
@@ -787,28 +988,39 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, 
     //     }
     // }
 
-    if (num_received == len) {
-        for(uint8_t i = 0; i < len; i++){ 
+    if (num_received == len)
+    {
+        for (uint8_t i = 0; i < len; i++)
+        {
             buff[i] = _i2c->read();
         }
         return ICM_20948_Stat_Ok;
-    } else {
+    }
+    else
+    {
         return ICM_20948_Stat_NoData;
     }
 
-    if(len != 0){ return ICM_20948_Stat_NoData; }
+    if (len != 0)
+    {
+        return ICM_20948_Stat_NoData;
+    }
     return ICM_20948_Stat_Ok;
 }
 
-
-
-
-ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* data, uint32_t len, void* user){
-    if(user == NULL){ return ICM_20948_Stat_ParamErr; }
-    SPIClass* _spi = ((ICM_20948_SPI*)user)->_spi;             // Cast user field to ICM_20948_SPI type and extract the SPI interface pointer
-    uint8_t cs = ((ICM_20948_SPI*)user)->_cs;
-    SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
-    if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
+ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *data, uint32_t len, void *user)
+{
+    if (user == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
+    SPIClass *_spi = ((ICM_20948_SPI *)user)->_spi; // Cast user field to ICM_20948_SPI type and extract the SPI interface pointer
+    uint8_t cs = ((ICM_20948_SPI *)user)->_cs;
+    SPISettings spisettings = ((ICM_20948_SPI *)user)->_spisettings;
+    if (_spi == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
 
     // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states even when sharing the SPI bus with devices that use other modes
     _spi->beginTransaction(spisettings);
@@ -818,9 +1030,10 @@ ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* data, uint32_t len,
     digitalWrite(cs, LOW);
     // delayMicroseconds(5);
     _spi->beginTransaction(spisettings);
-    _spi->transfer( ((reg & 0x7F) | 0x00) );
+    _spi->transfer(((reg & 0x7F) | 0x00));
     //  SPI.transfer(data, len); // Can't do this thanks to Arduino's poor implementation
-    for(uint32_t indi = 0; indi < len; indi++){
+    for (uint32_t indi = 0; indi < len; indi++)
+    {
         _spi->transfer(*(data + indi));
     }
     _spi->endTransaction();
@@ -830,12 +1043,19 @@ ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t* data, uint32_t len,
     return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
-    if(user == NULL){ return ICM_20948_Stat_ParamErr; }
-    SPIClass* _spi = ((ICM_20948_SPI*)user)->_spi;
-    uint8_t cs = ((ICM_20948_SPI*)user)->_cs;
-    SPISettings spisettings = ((ICM_20948_SPI*)user)->_spisettings;
-    if(_spi == NULL){ return ICM_20948_Stat_ParamErr; }
+ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, void *user)
+{
+    if (user == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
+    SPIClass *_spi = ((ICM_20948_SPI *)user)->_spi;
+    uint8_t cs = ((ICM_20948_SPI *)user)->_cs;
+    SPISettings spisettings = ((ICM_20948_SPI *)user)->_spisettings;
+    if (_spi == NULL)
+    {
+        return ICM_20948_Stat_ParamErr;
+    }
 
     // 'Kickstart' the SPI hardware. This is a fairly high amount of overhead, but it guarantees that the lines will start in the correct states
     _spi->beginTransaction(spisettings);
@@ -845,9 +1065,10 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t* buff, uint32_t len, 
     digitalWrite(cs, LOW);
     //   delayMicroseconds(5);
     _spi->beginTransaction(spisettings);
-    _spi->transfer( ((reg & 0x7F) | 0x80) );
+    _spi->transfer(((reg & 0x7F) | 0x80));
     //  SPI.transfer(data, len); // Can't do this thanks to Arduino's stupid implementation
-    for(uint32_t indi = 0; indi < len; indi++){
+    for (uint32_t indi = 0; indi < len; indi++)
+    {
         *(buff + indi) = _spi->transfer(0x00);
     }
     _spi->endTransaction();
