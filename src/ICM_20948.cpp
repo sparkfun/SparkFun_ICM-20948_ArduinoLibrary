@@ -722,11 +722,13 @@ ICM_20948_Status_e ICM_20948::getMagnetometerData(ICM_20948_AGMT_t *pagmt)
 ICM_20948_Status_e ICM_20948::read(uint8_t reg, uint8_t *pdata, uint32_t len)
 {
     status = ICM_20948_execute_r(&_device, reg, pdata, len);
+    return (status);
 }
 
 ICM_20948_Status_e ICM_20948::write(uint8_t reg, uint8_t *pdata, uint32_t len)
 {
     status = ICM_20948_execute_w(&_device, reg, pdata, len);
+    return (status);
 }
 
 // I2C
