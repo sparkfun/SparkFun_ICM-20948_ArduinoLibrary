@@ -43,11 +43,11 @@ ICM_20948_Status_e ICM_20948_execute_r(ICM_20948_Device_t *pdev, uint8_t regaddr
 	return (*pdev->_serif->read)(regaddr, pdata, len, pdev->_serif->user);
 }
 
-// Single-shot I2C on Master IF
+//Transact directly with an I2C device, one byte at a time
+//Used to configure a device before it is setup into a normal 0-3 slave slot
 ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
 {
 	// Thanks MikeFair! // https://github.com/kriswiner/MPU9250/issues/86
-
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
 	addr = (((Rw) ? 0x80 : 0x00) | addr);
@@ -72,8 +72,8 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 	ctrl.DLY = 0;
 	ctrl.REG_DIS = !send_reg_addr;
 
-	// ICM_20948_I2C_MST_STATUS_t i2c_mst_status;
-	// bool txn_failed = false;
+	ICM_20948_I2C_MST_STATUS_t i2c_mst_status;
+	bool txn_failed = false;
 	uint16_t nByte = 0;
 
 	while (nByte < len)
@@ -96,30 +96,39 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 			return retval;
 		}
 
-		// 	// long tsTimeout = millis() + 3000;  // Emergency timeout for txn (hard coded to 3 secs)
-		// 	uint32_t max_cycles = 1000;
-		// 	uint32_t count = 0;
-		// 	bool slave4Done = false;
-		// 	while (!slave4Done) {
-		// 		retval = ICM_20948_set_bank( pdev, 0 );
-		// 		retval = ICM_20948_execute_r( pdev, AGB0_REG_I2C_MST_STATUS, &i2c_mst_status, 1 );
+		// long tsTimeout = millis() + 3000;  // Emergency timeout for txn (hard coded to 3 secs)
+		uint32_t max_cycles = 1000;
+		uint32_t count = 0;
+		bool slave4Done = false;
+		while (!slave4Done)
+		{
+			retval = ICM_20948_set_bank(pdev, 0);
+			retval = ICM_20948_execute_r(pdev, AGB0_REG_I2C_MST_STATUS, (uint8_t *)&i2c_mst_status, 1);
 
-		// 		slave4Done = ( i2c_mst_status.I2C_SLV4_DONE /*| (millis() > tsTimeout) */ ); // todo: avoid forever-loops
-		// 		slave4Done |= (count >= max_cycles);
-		// 		count++;
-		// 	}
-		// 	txn_failed = (i2c_mst_status.I2C_SLV4_NACK /* & (1 << I2C_SLV4_NACK_BIT)) | (millis() > tsTimeout) */);
-		// 	txn_failed |= (count >= max_cycles);
-		// 	if (txn_failed) break;
+			slave4Done = (i2c_mst_status.I2C_SLV4_DONE /*| (millis() > tsTimeout) */); //Avoid forever-loops
+			slave4Done |= (count >= max_cycles);
+			count++;
+		}
+		txn_failed = (i2c_mst_status.I2C_SLV4_NACK /*| (millis() > tsTimeout) */);
+		txn_failed |= (count >= max_cycles);
+		if (txn_failed)
+			break;
 
-		// 	if ( Rw ){
-		// 		retval = ICM_20948_set_bank( pdev, 3 );
-		// 		retval = ICM_20948_execute_r( pdev, AGB3_REG_I2C_SLV4_DI, &data[nByte], 1 );
-		// 	}
+		if (Rw)
+		{
+			retval = ICM_20948_set_bank(pdev, 3);
+			retval = ICM_20948_execute_r(pdev, AGB3_REG_I2C_SLV4_DI, &data[nByte], 1);
+		}
 
 		nByte++;
 	}
-	// if( txn_failed ){ return ICM_20948_Stat_Err; }
+
+	if (txn_failed)
+	{
+		//We often fail here if mag is stuck
+		return ICM_20948_Stat_Err;
+	}
+
 	return retval;
 }
 
@@ -666,6 +675,33 @@ ICM_20948_Status_e ICM_20948_i2c_master_enable(ICM_20948_Device_t *pdev, bool en
 	return retval;
 }
 
+ICM_20948_Status_e ICM_20948_i2c_master_reset(ICM_20948_Device_t *pdev)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_USER_CTRL_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	ctrl.I2C_MST_RST = 1; //Reset!
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+	return retval;
+}
+
 ICM_20948_Status_e ICM_20948_i2c_master_configure_slave(ICM_20948_Device_t *pdev, uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
 {
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
@@ -698,6 +734,12 @@ ICM_20948_Status_e ICM_20948_i2c_master_configure_slave(ICM_20948_Device_t *pdev
 		break;
 	default:
 		return ICM_20948_Stat_ParamErr;
+	}
+
+	retval = ICM_20948_set_bank(pdev, 3);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
 	}
 
 	// Set the slave address and the Rw flag
@@ -747,7 +789,7 @@ ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t
 	}
 
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
-	const uint8_t numbytes = 14;
+	const uint8_t numbytes = 14 + 9; //Read Accel, gyro, temp, and 9 bytes of mag
 	uint8_t buff[numbytes];
 
 	// Get readings
@@ -764,10 +806,11 @@ ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t
 
 	pagmt->tmp.val = ((buff[12] << 8) | (buff[13] & 0xFF));
 
-	// ToDo: get magnetometer readings
-	//  pagmt->mag.axes.x =
-	//  pagmt->mag.axes.y =
-	//  pagmt->mag.axes.z =
+	pagmt->magStat1 = buff[14];
+	pagmt->mag.axes.x = ((buff[16] << 8) | (buff[15] & 0xFF)); //Mag data is read little endian
+	pagmt->mag.axes.y = ((buff[18] << 8) | (buff[17] & 0xFF));
+	pagmt->mag.axes.z = ((buff[20] << 8) | (buff[19] & 0xFF));
+	pagmt->magStat2 = buff[22];
 
 	// Get settings to be able to compute scaled values
 	retval |= ICM_20948_set_bank(pdev, 2);
