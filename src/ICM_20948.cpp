@@ -601,9 +601,9 @@ ICM_20948_Status_e ICM_20948::i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg
     return status;
 }
 
-ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t *data)
+ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data)
 {
-    status = ICM_20948_i2c_master_single_w(&_device, addr, reg, data);
+    status = ICM_20948_i2c_master_single_w(&_device, addr, reg, &data);
     return status;
 }
 uint8_t ICM_20948::i2cMasterSingleR(uint8_t addr, uint8_t reg)

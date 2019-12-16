@@ -99,7 +99,7 @@ public:
     ICM_20948_Status_e i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
 
     //Used for configuring the Magnetometer
-    ICM_20948_Status_e i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t *data);
+    ICM_20948_Status_e i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data);
     uint8_t i2cMasterSingleR(uint8_t addr, uint8_t reg);
 
     // Default Setup
