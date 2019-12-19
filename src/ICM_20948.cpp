@@ -18,11 +18,6 @@ ICM_20948_AGMT_t ICM_20948::getAGMT(void)
 {
     status = ICM_20948_get_agmt(&_device, &agmt);
 
-    if (_has_magnetometer)
-    {
-        getMagnetometerData(&agmt);
-    }
-
     return agmt;
 }
 
@@ -527,7 +522,6 @@ ICM_20948_Status_e ICM_20948::intEnableRawDataReady(bool enable)
     }
     if (en.RAW_DATA_0_RDY_EN != enable)
     {
-        Serial.println("mismatch error");
         status = ICM_20948_Stat_Err;
         return status;
     }
@@ -589,6 +583,12 @@ ICM_20948_Status_e ICM_20948::i2cMasterEnable(bool enable)
     return status;
 }
 
+ICM_20948_Status_e ICM_20948::i2cMasterReset()
+{
+    status = ICM_20948_i2c_master_reset(&_device);
+    return status;
+}
+
 ICM_20948_Status_e ICM_20948::i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
 {
     status = ICM_20948_i2c_master_configure_slave(&_device, slave, addr, reg, len, Rw, enable, data_only, grp, swap);
@@ -600,6 +600,7 @@ ICM_20948_Status_e ICM_20948::i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg
     status = ICM_20948_i2c_master_slv4_txn(&_device, addr, reg, data, len, Rw, send_reg_addr);
     return status;
 }
+
 ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data)
 {
     status = ICM_20948_i2c_master_single_w(&_device, addr, reg, &data);
@@ -684,49 +685,39 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         status = retval;
         return status;
     }
-
-    _has_magnetometer = true;
     retval = startupMagnetometer();
-    if ((retval != ICM_20948_Stat_Ok) && (retval != ICM_20948_Stat_NotImpl))
+    if (retval != ICM_20948_Stat_Ok)
     {
         status = retval;
         return status;
     }
-    if (retval == ICM_20948_Stat_NotImpl)
-    {
-        // This is a temporary fix.
-        // Ultimately we *should* be able to configure the I2C master to handle the
-        // magnetometer no matter what interface (SPI / I2C) we are using.
 
-        // Should try testing I2C master functionality on a bare ICM chip w/o TXS0108 level shifter...
-
-        _has_magnetometer = false;
-        retval = ICM_20948_Stat_Ok; // reset the retval because we handled it in this cases
-    }
-
-    status = retval;
     return status;
-}
-
-ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
-{
-    return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
-}
-
-ICM_20948_Status_e ICM_20948::getMagnetometerData(ICM_20948_AGMT_t *pagmt)
-{
-    return ICM_20948_Stat_NotImpl; // By default we assume that we cannot access the magnetometer
 }
 
 // direct read/write
 ICM_20948_Status_e ICM_20948::read(uint8_t reg, uint8_t *pdata, uint32_t len)
 {
     status = ICM_20948_execute_r(&_device, reg, pdata, len);
+    return (status);
 }
 
 ICM_20948_Status_e ICM_20948::write(uint8_t reg, uint8_t *pdata, uint32_t len)
 {
     status = ICM_20948_execute_w(&_device, reg, pdata, len);
+    return (status);
+}
+
+uint8_t ICM_20948::readMag(AK09916_Reg_Addr_e reg)
+{
+    uint8_t data = i2cMasterSingleR(MAG_AK09916_I2C_ADDR, reg);
+    return data;
+}
+
+ICM_20948_Status_e ICM_20948::writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata)
+{
+    status = i2cMasterSingleW(MAG_AK09916_I2C_ADDR, reg, pdata);
+    return status;
 }
 
 // I2C
@@ -778,38 +769,70 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
     return status;
 }
 
-ICM_20948_Status_e ICM_20948_I2C::startupMagnetometer(void)
-{
-    // If using the magnetometer through passthrough:
-    i2cMasterPassthrough(true); // Set passthrough mode to try to access the magnetometer (by default I2C master is disabled but you still have to enable the passthrough)
-
-    // Try to set up magnetometer
-    AK09916_CNTL2_Reg_t reg;
-    reg.MODE = AK09916_mode_cont_100hz;
-
-    ICM_20948_Status_e retval = writeMag(AK09916_REG_CNTL2, (uint8_t *)&reg, sizeof(AK09916_CNTL2_Reg_t));
-    status = retval;
-    if (status == ICM_20948_Stat_Ok)
-    {
-        _has_magnetometer = true;
-    }
-    return status;
-}
-
-ICM_20948_Status_e ICM_20948_I2C::magWhoIAm(void)
+ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
 {
     ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
-    const uint8_t len = 2;
-    uint8_t whoiam[len];
-    retval = readMag(AK09916_REG_WIA1, whoiam, len);
+    i2cMasterPassthrough(false); //Do not connect the SDA/SCL pins to AUX_DA/AUX_CL
+    i2cMasterEnable(true);
+
+    //After a ICM reset the Mag sensor may stop responding over the I2C master
+    //Reset the Master I2C until it responds
+    uint8_t tries = 0;
+    uint8_t maxTries = 5;
+    while (tries < maxTries)
+    {
+        //See if we can read the WhoIAm register correctly
+        retval = magWhoIAm();
+        if (retval == ICM_20948_Stat_Ok)
+            break; //WIA matched!
+
+        i2cMasterReset(); //Otherwise, reset the master I2C and try again
+        tries++;
+    }
+
+    if (tries == maxTries)
+    {
+        status = ICM_20948_Stat_WrongID;
+        return status;
+    }
+
+    //Serial.printf("Mag connected tries: %d\n", tries);
+
+    //Set up magnetometer
+    AK09916_CNTL2_Reg_t reg;
+    reg.MODE = AK09916_mode_cont_100hz;
+    retval = writeMag(AK09916_REG_CNTL2, (uint8_t *)&reg);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
+
+    retval = i2cMasterConfigureSlave(0, MAG_AK09916_I2C_ADDR, AK09916_REG_ST1, 9, true, true, false, false, false);
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        status = retval;
+        return status;
+    }
+
+    return status;
+}
+
+ICM_20948_Status_e ICM_20948::magWhoIAm(void)
+{
+    ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+    uint8_t whoiam1, whoiam2;
+    whoiam1 = readMag(AK09916_REG_WIA1);
+    whoiam2 = readMag(AK09916_REG_WIA2);
     status = retval;
     if (retval != ICM_20948_Stat_Ok)
     {
         return retval;
     }
 
-    if ((whoiam[0] == (MAG_AK09916_WHO_AM_I >> 8)) && (whoiam[1] == (MAG_AK09916_WHO_AM_I & 0xFF)))
+    if ((whoiam1 == (MAG_AK09916_WHO_AM_I >> 8)) && (whoiam2 == (MAG_AK09916_WHO_AM_I & 0xFF)))
     {
         retval = ICM_20948_Stat_Ok;
         status = retval;
@@ -818,63 +841,6 @@ ICM_20948_Status_e ICM_20948_I2C::magWhoIAm(void)
     retval = ICM_20948_Stat_WrongID;
     status = retval;
     return status;
-}
-
-bool ICM_20948_I2C::magIsConnected(void)
-{
-    if (magWhoIAm() != ICM_20948_Stat_Ok)
-    {
-        return false;
-    }
-    return true;
-}
-
-ICM_20948_Status_e ICM_20948_I2C::getMagnetometerData(ICM_20948_AGMT_t *pagmt)
-{
-
-    const uint8_t reqd_len = 9; // you must read all the way through the status2 register to re-enable the next measurement
-    uint8_t buff[reqd_len];
-
-    status = readMag(AK09916_REG_ST1, buff, reqd_len);
-    if (status != ICM_20948_Stat_Ok)
-    {
-        return status;
-    }
-
-    pagmt->mag.axes.x = ((buff[2] << 8) | (buff[1] & 0xFF));
-    pagmt->mag.axes.y = ((buff[4] << 8) | (buff[3] & 0xFF));
-    pagmt->mag.axes.z = ((buff[6] << 8) | (buff[5] & 0xFF));
-
-    return status;
-}
-
-ICM_20948_Status_e ICM_20948_I2C::readMag(uint8_t reg, uint8_t *pdata, uint8_t len)
-{
-    _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
-    _i2c->write(reg);
-    _i2c->endTransmission(false);
-
-    uint8_t num_received = _i2c->requestFrom((uint8_t)MAG_AK09916_I2C_ADDR, (uint8_t)len);
-    if (num_received != len)
-    {
-        return ICM_20948_Stat_NoData;
-    }
-
-    for (uint8_t indi = 0; indi < len; indi++)
-    {
-        *(pdata + indi) = _i2c->read();
-    }
-
-    return ICM_20948_Stat_Ok;
-}
-
-ICM_20948_Status_e ICM_20948_I2C::writeMag(uint8_t reg, uint8_t *pdata, uint8_t len)
-{
-    _i2c->beginTransmission(MAG_AK09916_I2C_ADDR);
-    _i2c->write(reg);
-    _i2c->write(pdata, len);
-    _i2c->endTransmission();
-    return ICM_20948_Stat_Ok; // todo: check return of 'endTransmission' to verify all bytes sent w/ ACK
 }
 
 // SPI
@@ -922,8 +888,6 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
     {
         return status;
     }
-
-    // todo: disable I2C interface to prevent accidents
 
     return ICM_20948_Stat_Ok;
 }

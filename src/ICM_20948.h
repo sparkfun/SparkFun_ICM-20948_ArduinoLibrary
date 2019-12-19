@@ -8,6 +8,7 @@ A C++ interface to the ICM-20948
 #define _ICM_20948_H_
 
 #include "util/ICM_20948_C.h" // The C backbone
+#include "util/AK09916_REGISTERS.h"
 
 #include "Arduino.h" // Arduino support
 #include "Wire.h"
@@ -21,7 +22,6 @@ class ICM_20948
 private:
 protected:
     ICM_20948_Device_t _device;
-    bool _has_magnetometer;
 
     float getTempC(int16_t val);
     float getGyrDPS(int16_t axis_val);
@@ -92,20 +92,28 @@ public:
     // Interface Options
     ICM_20948_Status_e i2cMasterPassthrough(bool passthrough = true);
     ICM_20948_Status_e i2cMasterEnable(bool enable = true);
-    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+    ICM_20948_Status_e i2cMasterReset();
 
+    //Used for configuring slaves 0-3
+    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
     ICM_20948_Status_e i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
+
+    //Used for configuring the Magnetometer
     ICM_20948_Status_e i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data);
     uint8_t i2cMasterSingleR(uint8_t addr, uint8_t reg);
 
     // Default Setup
     ICM_20948_Status_e startupDefault(void);
-    virtual ICM_20948_Status_e startupMagnetometer(void);
-    virtual ICM_20948_Status_e getMagnetometerData(ICM_20948_AGMT_t *pagmt);
 
     // direct read/write
     ICM_20948_Status_e read(uint8_t reg, uint8_t *pdata, uint32_t len);
     ICM_20948_Status_e write(uint8_t reg, uint8_t *pdata, uint32_t len);
+
+    //Mag specific
+    ICM_20948_Status_e startupMagnetometer(void);
+    ICM_20948_Status_e magWhoIAm(void);
+    uint8_t readMag(AK09916_Reg_Addr_e reg);
+    ICM_20948_Status_e writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata);
 };
 
 // I2C
@@ -128,13 +136,6 @@ public:
     ICM_20948_I2C(); // Constructor
 
     virtual ICM_20948_Status_e begin(TwoWire &wirePort = Wire, bool ad0val = true, uint8_t ad0pin = ICM_20948_ARD_UNUSED_PIN);
-    virtual ICM_20948_Status_e readMag(uint8_t reg, uint8_t *pdata, uint8_t len);
-    virtual ICM_20948_Status_e writeMag(uint8_t reg, uint8_t *pdata, uint8_t len);
-
-    ICM_20948_Status_e startupMagnetometer(void);
-    ICM_20948_Status_e magWhoIAm(void);
-    bool magIsConnected(void);
-    ICM_20948_Status_e getMagnetometerData(ICM_20948_AGMT_t *pagmt);
 };
 
 // SPI
