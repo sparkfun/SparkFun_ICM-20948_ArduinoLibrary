@@ -716,7 +716,7 @@ uint8_t ICM_20948::readMag(AK09916_Reg_Addr_e reg)
 
 ICM_20948_Status_e ICM_20948::writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata)
 {
-    status = i2cMasterSingleW(MAG_AK09916_I2C_ADDR, reg, pdata);
+    status = i2cMasterSingleW(MAG_AK09916_I2C_ADDR, reg, *pdata);
     return status;
 }
 
