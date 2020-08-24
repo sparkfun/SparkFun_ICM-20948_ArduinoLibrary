@@ -122,7 +122,7 @@ float ICM_20948::temp(void)
 
 float ICM_20948::getTempC(int16_t val)
 {
-    return (((float)val) / 333.87) + 21;
+    return (((float)val - 21) / 333.87) + 21;
 }
 
 const char *ICM_20948::statusString(ICM_20948_Status_e stat)
