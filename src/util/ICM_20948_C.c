@@ -425,6 +425,45 @@ ICM_20948_Status_e ICM_20948_int_enable(ICM_20948_Device_t *pdev, ICM_20948_INT_
 	return retval;
 }
 
+
+
+
+
+
+
+ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_ACCEL_WOM_THR_t thr;
+
+	retval = ICM_20948_set_bank(pdev, 2); // Must be in the right bank
+
+	if (write != NULL)
+	{ // If the write pointer is not NULL then write to the registers BEFORE reading
+		thr.WOM_THRESHOLD = write->WOM_THRESHOLD;
+		
+		retval = ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_WOM_THR, (uint8_t *)&thr, sizeof(ICM_20948_ACCEL_WOM_THR_t));
+		if (retval != ICM_20948_Stat_Ok)
+		{
+			return retval;
+		}
+	}
+
+	if (read != NULL)
+	{ // If read pointer is not NULL then read the registers (if write is not NULL then this should read back the results of write into read)
+		retval = ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_WOM_THR, (uint8_t *)&thr, sizeof(ICM_20948_ACCEL_WOM_THR_t));
+		if (retval != ICM_20948_Stat_Ok)
+		{
+			return retval;
+		}
+
+		read->WOM_THRESHOLD = thr.WOM_THRESHOLD;
+		}
+
+	return retval;
+}
+
 ICM_20948_Status_e ICM_20948_set_sample_mode(ICM_20948_Device_t *pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_LP_CONFIG_CYCLE_e mode)
 {
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
