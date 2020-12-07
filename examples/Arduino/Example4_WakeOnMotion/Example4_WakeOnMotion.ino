@@ -42,7 +42,8 @@
 volatile bool isrFired = false;
 volatile bool sensorSleep = false;
 volatile bool canToggle = false;
-unsigned int WOM_threshold=200;
+unsigned int WOM_threshold=255;
+double lastTrigerred;
 
 void setup() {
 
@@ -50,7 +51,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(INT_PIN), icmISR, FALLING); // Set up a falling interrupt
 
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, !sensorSleep);
+  digitalWrite(LED_PIN, LOW);
 
   SERIAL_PORT.begin(115200);
   while(!SERIAL_PORT){};
@@ -215,7 +216,9 @@ void loop() {
     isrFired = false;
     myICM.getAGMT();                    // get the A, G, M, and T readings
 //    printScaledAGMT( myICM.agmt);   // This function takes into account the sclae settings from when the measurement was made to calculate the values with units
-    SERIAL_PORT.println(F("Shock detected")); 
+    SERIAL_PORT.println(F("Shock detected"));
+    digitalWrite(LED_PIN, HIGH);
+    lastTrigerred=millis();
     delay(30);
     myICM.clearInterrupts();            // This would be efficient... but not compatible with Uno
   }
@@ -231,7 +234,8 @@ void loop() {
                                         //    2. use the pulse-based interrupt in ICM settings (set cfgIntLatch to false)
                                         //    3. use a microcontroller with nestable interrupts
                                         //    4. clear the interrupts often
-                                      
+    if(millis()-lastTrigerred>1000)
+      digitalWrite(LED_PIN, LOW);;                                  
 }
 
 void icmISR( void ){
