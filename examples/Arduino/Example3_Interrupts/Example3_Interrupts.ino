@@ -1,16 +1,15 @@
 /****************************************************************
  * Example3_Interrupts.ino
- * ICM 20948 Arduino Library Demo 
+ * ICM 20948 Arduino Library Demo
  * Builds on Example2_Advanced.ino to set up interrupts when data is ready
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: June 5 2019
- * 
- * For this example you must connect the interrupt pin "INT" on the breakout 
+ *
+ * For this example you must connect the interrupt pin "INT" on the breakout
  * board to the pin specified by "INT_PIN" on your microcontroller.
- * 
- * This code is beerware; if you see me (or any other SparkFun employee) at the
- * local, and you've found our code helpful, please buy us a round!
- * 
+ *
+ * Please see License.md for the license information.
+ *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
@@ -29,8 +28,8 @@
 #define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL   1     // The value of the last bit of the I2C address. 
-                        // On the SparkFun 9DoF IMU breakout the default is 1, and when 
+#define AD0_VAL   1     // The value of the last bit of the I2C address.
+                        // On the SparkFun 9DoF IMU breakout the default is 1, and when
                         // the ADR jumper is closed the value becomes 0
 
 #ifdef USE_SPI
@@ -61,12 +60,12 @@ void setup() {
     WIRE_PORT.begin();
     WIRE_PORT.setClock(400000);
 #endif
-  
+
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus 
+    myICM.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus
 #else
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
@@ -91,7 +90,7 @@ void setup() {
     SERIAL_PORT.println(myICM.statusString());
   }
   delay(250);
-  
+
   // Now wake the sensor up
   myICM.sleep( sensorSleep );
   myICM.lowPower( false );
@@ -101,7 +100,7 @@ void setup() {
   // Set Gyro and Accelerometer to a particular sample mode
   // options: ICM_20948_Sample_Mode_Continuous
   //          ICM_20948_Sample_Mode_Cycled
-  myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ); 
+  myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled );
   SERIAL_PORT.print(F("setSampleMode returned: "));
   SERIAL_PORT.println(myICM.statusString());
 
@@ -111,23 +110,23 @@ void setup() {
   myICM.setSampleRate( ICM_20948_Internal_Gyr, mySmplrt );
   SERIAL_PORT.print(F("setSampleRate returned: "));
   SERIAL_PORT.println(myICM.statusString());
-    
+
   // Set full scale ranges for both acc and gyr
   ICM_20948_fss_t myFSS;  // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
-  
+
   myFSS.a = gpm2;         // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
                           // gpm2
                           // gpm4
                           // gpm8
                           // gpm16
-                          
+
   myFSS.g = dps250;       // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
                           // dps250
                           // dps500
                           // dps1000
                           // dps2000
-                          
-  myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );  
+
+  myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setFullScale returned: "));
     SERIAL_PORT.println(myICM.statusString());
@@ -154,7 +153,7 @@ void setup() {
                                           // gyr_d11bw6_n17bw8
                                           // gyr_d5bw7_n8bw9
                                           // gyr_d361bw4_n376bw5
-                                          
+
   myICM.setDLPFcfg( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg );
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setDLPcfg returned: "));
@@ -193,7 +192,7 @@ void setup() {
   myICM.cfgIntLatch(true);                          // Latch the interrupt until cleared
   SERIAL_PORT.print(F("cfgIntLatch returned: "));
   SERIAL_PORT.println(myICM.statusString());
-  
+
   myICM.intEnableRawDataReady(true);                // enable interrupts on raw data ready
   SERIAL_PORT.print(F("intEnableRawDataReady returned: "));
   SERIAL_PORT.println(myICM.statusString());
@@ -207,7 +206,7 @@ void setup() {
 //  ICM_20948_execute_w( &myICM._device, AGB0_REG_INT_ENABLE, (uint8_t*)&zero_0, sizeof(uint8_t) );
 
   SERIAL_PORT.println();
-  SERIAL_PORT.println(F("Configuration complete!")); 
+  SERIAL_PORT.println(F("Configuration complete!"));
 }
 
 void loop() {
@@ -217,19 +216,19 @@ void loop() {
 //    myICM.clearInterrupts();            // This would be efficient... but not compatible with Uno
   }
 
-  myICM.clearInterrupts();              // clear interrupts for next time - 
-                                        //    usually you'd do this only if an interrupt has occurred, however 
+  myICM.clearInterrupts();              // clear interrupts for next time -
+                                        //    usually you'd do this only if an interrupt has occurred, however
                                         //    on the 328p I2C usage can block interrupts. This means that sometimes
                                         //    an interrupt is missed. When missed, if using an edge-based interrupt
-                                        //    and only clearing interrupts when one was detected there will be no more 
-                                        //    edges to respond to, so no more interrupts will be detected. Here are 
+                                        //    and only clearing interrupts when one was detected there will be no more
+                                        //    edges to respond to, so no more interrupts will be detected. Here are
                                         //    some possible solutions:
                                         //    1. use a level based interrupt
                                         //    2. use the pulse-based interrupt in ICM settings (set cfgIntLatch to false)
                                         //    3. use a microcontroller with nestable interrupts
                                         //    4. clear the interrupts often
-                                      
-  
+
+
   if( (millis()%1000) < 5){             // This is a method to turn the sensor on and off once per second without using delays
     if( canToggle ){
       sensorSleep = !sensorSleep;

@@ -1,13 +1,12 @@
 /****************************************************************
  * Example2_Advanced.ino
- * ICM 20948 Arduino Library Demo 
+ * ICM 20948 Arduino Library Demo
  * Shows how to use granular configuration of the ICM 20948
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
- * 
- * This code is beerware; if you see me (or any other SparkFun employee) at the
- * local, and you've found our code helpful, please buy us a round!
- * 
+ *
+ * Please see License.md for the license information.
+ *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
@@ -21,8 +20,8 @@
 #define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL   1     // The value of the last bit of the I2C address. 
-                        // On the SparkFun 9DoF IMU breakout the default is 1, and when 
+#define AD0_VAL   1     // The value of the last bit of the I2C address.
+                        // On the SparkFun 9DoF IMU breakout the default is 1, and when
                         // the ADR jumper is closed the value becomes 0
 
 #ifdef USE_SPI
@@ -30,7 +29,7 @@
 #else
   ICM_20948_I2C myICM;  // Otherwise create an ICM_20948_I2C object
 #endif
-  
+
 
 void setup() {
 
@@ -43,12 +42,12 @@ void setup() {
     WIRE_PORT.begin();
     WIRE_PORT.setClock(400000);
 #endif
-  
+
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus 
+    myICM.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus
 #else
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
@@ -73,7 +72,7 @@ void setup() {
     SERIAL_PORT.println(myICM.statusString());
   }
   delay(250);
-  
+
   // Now wake the sensor up
   myICM.sleep( false );
   myICM.lowPower( false );
@@ -83,7 +82,7 @@ void setup() {
   // Set Gyro and Accelerometer to a particular sample mode
   // options: ICM_20948_Sample_Mode_Continuous
   //          ICM_20948_Sample_Mode_Cycled
-  myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous ); 
+  myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous );
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setSampleMode returned: "));
     SERIAL_PORT.println(myICM.statusString());
@@ -91,20 +90,20 @@ void setup() {
 
   // Set full scale ranges for both acc and gyr
   ICM_20948_fss_t myFSS;  // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
-  
+
   myFSS.a = gpm2;         // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
                           // gpm2
                           // gpm4
                           // gpm8
                           // gpm16
-                          
+
   myFSS.g = dps250;       // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
                           // dps250
                           // dps500
                           // dps1000
                           // dps2000
-                          
-  myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );  
+
+  myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setFullScale returned: "));
     SERIAL_PORT.println(myICM.statusString());
@@ -131,7 +130,7 @@ void setup() {
                                           // gyr_d11bw6_n17bw8
                                           // gyr_d5bw7_n8bw9
                                           // gyr_d361bw4_n376bw5
-                                          
+
   myICM.setDLPFcfg( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg );
   if( myICM.status != ICM_20948_Stat_Ok){
     SERIAL_PORT.print(F("setDLPcfg returned: "));
@@ -146,11 +145,11 @@ void setup() {
   SERIAL_PORT.print(F("Enable DLPF for Gyroscope returned: ")); SERIAL_PORT.println(myICM.statusString(gyrDLPEnableStat));
 
   SERIAL_PORT.println();
-  SERIAL_PORT.println(F("Configuration complete!")); 
+  SERIAL_PORT.println(F("Configuration complete!"));
 }
 
 void loop() {
-  
+
   if( myICM.dataReady() ){
     myICM.getAGMT();                // The values are only updated when you call 'getAGMT'
 //    printRawAGMT( myICM.agmt );     // Uncomment this to see the raw values, taken directly from the agmt structure
@@ -160,7 +159,7 @@ void loop() {
     Serial.println("Waiting for data");
     delay(500);
   }
-  
+
 }
 
 
