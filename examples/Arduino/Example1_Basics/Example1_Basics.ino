@@ -1,13 +1,12 @@
 /****************************************************************
  * Example1_Basics.ino
- * ICM 20948 Arduino Library Demo 
+ * ICM 20948 Arduino Library Demo
  * Use the default configuration to stream 9-axis IMU data
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
- * 
- * This code is beerware; if you see me (or any other SparkFun employee) at the
- * local, and you've found our code helpful, please buy us a round!
- * 
+ *
+ * Please see License.md for the license information.
+ *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
@@ -20,8 +19,8 @@
 #define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL   1     // The value of the last bit of the I2C address. 
-                        // On the SparkFun 9DoF IMU breakout the default is 1, and when 
+#define AD0_VAL   1     // The value of the last bit of the I2C address.
+                        // On the SparkFun 9DoF IMU breakout the default is 1, and when
                         // the ADR jumper is closed the value becomes 0
 
 #ifdef USE_SPI
@@ -42,12 +41,12 @@ void setup() {
     WIRE_PORT.begin();
     WIRE_PORT.setClock(400000);
 #endif
-  
+
   bool initialized = false;
   while( !initialized ){
 
 #ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT ); 
+    myICM.begin( CS_PIN, SPI_PORT );
 #else
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
@@ -74,7 +73,7 @@ void loop() {
     Serial.println("Waiting for data");
     delay(500);
   }
-  
+
 }
 
 

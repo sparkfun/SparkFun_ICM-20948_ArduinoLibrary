@@ -1,13 +1,12 @@
 /****************************************************************
  * Example999_Portable.ino
- * ICM 20948 Arduino Library Demo 
+ * ICM 20948 Arduino Library Demo
  * Uses underlying portable C skeleton with user-defined read/write functions
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
- * 
- * This code is beerware; if you see me (or any other SparkFun employee) at the
- * local, and you've found our code helpful, please buy us a round!
- * 
+ *
+ * Please see License.md for the license information.
+ *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
 #include "ICM_20948.h"                // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
@@ -27,7 +26,7 @@
 #endif
 
 
-// These are the interface functions that you would define for your system. They can use either I2C or SPI, 
+// These are the interface functions that you would define for your system. They can use either I2C or SPI,
 // or really **any** protocol as long as it successfully reads / writes the desired data into the ICM in the end
 #ifdef USE_SPI
   ICM_20948_Status_e my_write_spi(uint8_t reg, uint8_t* data, uint32_t len, void* user);
@@ -42,13 +41,13 @@
   const ICM_20948_Serif_t mySerif = {
     my_write_spi,   // write
     my_read_spi,    // read
-    NULL,           // this pointer is passed into your functions when they are called. 
+    NULL,           // this pointer is passed into your functions when they are called.
   };
 #else
   const ICM_20948_Serif_t mySerif = {
     my_write_i2c, // write
     my_read_i2c,  // read
-    NULL,         
+    NULL,
   };
 #endif
 
@@ -56,7 +55,7 @@
 ICM_20948_Device_t myICM;
 
 void setup() {
-  
+
   // Perform platform initialization
   Serial.begin(115200);
 
@@ -125,7 +124,7 @@ uint8_t whoami = 0x00;
 
 void loop() {
   delay(1000);
-  
+
   ICM_20948_AGMT_t agmt = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0}};
   if(ICM_20948_get_agmt( &myICM, &agmt ) == ICM_20948_Stat_Ok){
       printRawAGMT( agmt );
@@ -151,10 +150,10 @@ void loop() {
     SPI_PORT.endTransaction();
     delayMicroseconds(5);
     digitalWrite(CS_PIN, HIGH);
-  
+
     return ICM_20948_Stat_Ok;
   }
-  
+
   ICM_20948_Status_e my_read_spi(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
     digitalWrite(CS_PIN, LOW);
     delayMicroseconds(5);
@@ -166,10 +165,10 @@ void loop() {
     SPI_PORT.endTransaction();
     delayMicroseconds(5);
     digitalWrite(CS_PIN, HIGH);
-  
+
     return ICM_20948_Stat_Ok;
   }
-  
+
 #else
 
   ICM_20948_Status_e my_write_i2c(uint8_t reg, uint8_t* data, uint32_t len, void* user){
@@ -177,23 +176,23 @@ void loop() {
     WIRE_PORT.write(reg);
     WIRE_PORT.write(data, len);
     WIRE_PORT.endTransmission();
-  
+
     return ICM_20948_Stat_Ok;
   }
-  
+
   ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
     WIRE_PORT.beginTransmission(I2C_ADDR);
     WIRE_PORT.write(reg);
     WIRE_PORT.endTransmission(false); // Send repeated start
-  
+
     uint32_t num_received = WIRE_PORT.requestFrom(I2C_ADDR, len);
     if(num_received == len){
-        for(uint32_t i = 0; i < len; i++){ 
+        for(uint32_t i = 0; i < len; i++){
             buff[i] = WIRE_PORT.read();
         }
     }
     WIRE_PORT.endTransmission();
-    
+
     return ICM_20948_Stat_Ok;
   }
 
