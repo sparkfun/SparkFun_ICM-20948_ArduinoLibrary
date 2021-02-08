@@ -991,18 +991,18 @@ ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *data, uint32_t len,
     _spi->transfer(0x00);
     _spi->endTransaction();
 
+    _spi->beginTransaction(spisettings);
     digitalWrite(cs, LOW);
     // delayMicroseconds(5);
-    _spi->beginTransaction(spisettings);
     _spi->transfer(((reg & 0x7F) | 0x00));
     //  SPI.transfer(data, len); // Can't do this thanks to Arduino's poor implementation
     for (uint32_t indi = 0; indi < len; indi++)
     {
         _spi->transfer(*(data + indi));
     }
-    _spi->endTransaction();
     // delayMicroseconds(5);
     digitalWrite(cs, HIGH);
+    _spi->endTransaction();
 
     return ICM_20948_Stat_Ok;
 }
@@ -1026,18 +1026,18 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, 
     _spi->transfer(0x00);
     _spi->endTransaction();
 
+    _spi->beginTransaction(spisettings);
     digitalWrite(cs, LOW);
     //   delayMicroseconds(5);
-    _spi->beginTransaction(spisettings);
     _spi->transfer(((reg & 0x7F) | 0x80));
     //  SPI.transfer(data, len); // Can't do this thanks to Arduino's stupid implementation
     for (uint32_t indi = 0; indi < len; indi++)
     {
         *(buff + indi) = _spi->transfer(0x00);
     }
-    _spi->endTransaction();
     //   delayMicroseconds(5);
     digitalWrite(cs, HIGH);
+    _spi->endTransaction();
 
     return ICM_20948_Stat_Ok;
 }
