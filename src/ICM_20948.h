@@ -119,8 +119,8 @@ public:
 // I2C
 
 // Forward declarations of TwoWire and Wire for board/variant combinations that don't have a default 'SPI'
-class TwoWire;
-extern TwoWire Wire;
+//class TwoWire; // Commented by PaulZC 21/2/8 - this was causing compilation to fail on the Arduino NANO 33 BLE
+//extern TwoWire Wire; // Commented by PaulZC 21/2/8 - this was causing compilation to fail on the Arduino NANO 33 BLE
 
 class ICM_20948_I2C : public ICM_20948
 {
@@ -144,8 +144,8 @@ public:
 #define ICM_20948_SPI_DEFAULT_MODE SPI_MODE0
 
 // Forward declarations of SPIClass and SPI for board/variant combinations that don't have a default 'SPI'
-class SPIClass;
-extern SPIClass SPI;
+//class SPIClass; // Commented by PaulZC 21/2/8 - this was causing compilation to fail on the Arduino NANO 33 BLE
+//extern SPIClass SPI; // Commented by PaulZC 21/2/8 - this was causing compilation to fail on the Arduino NANO 33 BLE
 
 class ICM_20948_SPI : public ICM_20948
 {

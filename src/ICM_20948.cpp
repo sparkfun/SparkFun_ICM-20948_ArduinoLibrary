@@ -908,7 +908,7 @@ ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len,
 
     _i2c->beginTransmission(addr);
     _i2c->write(reg);
-    _i2c->write(data, len);
+    _i2c->write(data, (uint8_t)len);
     _i2c->endTransmission();
 
     // for( uint32_t indi = 0; indi < len; indi++ ){
