@@ -678,6 +678,31 @@ ICM_20948_Status_e ICM_20948::intEnableWatermarkFIFO(uint8_t bm_enable)
     return status;
 }
 
+
+ICM_20948_Status_e ICM_20948::WOMThreshold(uint8_t threshold)
+{
+    ICM_20948_ACCEL_WOM_THR_t thr;                      // storage
+    status = ICM_20948_wom_threshold(&_device, NULL, &thr); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    thr.WOM_THRESHOLD = threshold;                            // change the setting
+    status = ICM_20948_wom_threshold(&_device, &thr, &thr); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (thr.WOM_THRESHOLD != threshold)
+    {
+        status = ICM_20948_Stat_Err;
+        return status;
+    }
+    return status;
+}
+
+
+
 // Interface Options
 ICM_20948_Status_e ICM_20948::i2cMasterPassthrough(bool passthrough)
 {
@@ -1249,3 +1274,26 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, 
 
     return ICM_20948_Stat_Ok;
 }
+/*
+ICM_20948_Status_e ICM_20948::WOMThreshold(uint8_t threshold)
+{
+    ICM_20948_ACCEL_WOM_THR_t thr;                          // storage
+    status = ICM_20948_wom_threshold(&_device, NULL, &thr); // read phase
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    thr.WOM_THRESHOLD = threshold;                            // change the setting
+    status = ICM_20948_wom_threshold(&_device, &thr, &thr); // write phase w/ readback
+    if (status != ICM_20948_Stat_Ok)
+    {
+        return status;
+    }
+    if (thr.WOM_THRESHOLD != threshold)
+    {
+        status = ICM_20948_Stat_Err;
+        return status;
+    }
+    return status;
+}
+*/

@@ -130,6 +130,8 @@ public:
     ICM_20948_Status_e intEnableOverflowFIFO(uint8_t bm_enable);
     ICM_20948_Status_e intEnableWatermarkFIFO(uint8_t bm_enable);
 
+	ICM_20948_Status_e ICM_20948::WOMThreshold(uint8_t threshold);
+	
     // Interface Options
     ICM_20948_Status_e i2cMasterPassthrough(bool passthrough = true);
     ICM_20948_Status_e i2cMasterEnable(bool enable = true);
