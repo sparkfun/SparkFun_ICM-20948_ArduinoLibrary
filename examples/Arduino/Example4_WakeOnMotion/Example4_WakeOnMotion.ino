@@ -44,7 +44,7 @@ volatile bool sensorSleep = false;
 volatile bool canToggle = false;
 unsigned long lastTriggered;
 
-// Threshold LSB is 4mg. Range is 0mg to 1020mg.
+// Threshold LSBit is 4mg. Range is 0mg to 1020mg.
 unsigned int WOM_threshold = 255;
 
 void setup() {
