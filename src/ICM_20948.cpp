@@ -14,6 +14,61 @@ ICM_20948::ICM_20948()
 {
 }
 
+void ICM_20948::enableDebugging(Stream &debugPort)
+{
+  _debugSerial = &debugPort; //Grab which port the user wants us to use for debugging
+  _printDebug = true; //Should we print the commands we send? Good for debugging
+}
+void ICM_20948::disableDebugging(void)
+{
+  _printDebug = false; //Turn off extra print statements
+}
+
+// Debug Printing: based on gfvalvo's flash string helper code:
+// https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
+
+void ICM_20948::debugPrint(const char *line)
+{
+  doDebugPrint([](const char *ptr) {return *ptr;}, line);
+}
+
+void ICM_20948::debugPrint(const __FlashStringHelper *line)
+{
+  doDebugPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);},
+      (const char*) line);
+}
+
+void ICM_20948::debugPrintln(const char *line)
+{
+  doDebugPrint([](const char *ptr) {return *ptr;}, line, true);
+}
+
+void ICM_20948::debugPrintln(const __FlashStringHelper *line)
+{
+  doDebugPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);},
+      (const char*) line, true);
+}
+
+void ICM_20948::doDebugPrint(char (*funct)(const char *), const char *string, bool newLine)
+{
+  if (_printDebug == false)
+    return; // Bail if debugging is not enabled
+
+  char ch;
+
+  while ((ch = funct(string++)))
+  {
+    _debugSerial->print(ch);
+  }
+
+  if (newLine)
+  {
+    _debugSerial->println();
+  }
+}
+
+
+
 ICM_20948_AGMT_t ICM_20948::getAGMT(void)
 {
     status = ICM_20948_get_agmt(&_device, &agmt);
