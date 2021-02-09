@@ -17,6 +17,12 @@ ICM_20948_InternalSensorID_bm	KEYWORD1
 #######################################
 
 ICM_20948	KEYWORD2
+enableDebugging
+disableDebugging
+debugPrintStatus
+debugPrint
+debugPrintln
+doDebugPrint
 getAGMT	KEYWORD2
 magX	KEYWORD2
 magY	KEYWORD2
@@ -45,8 +51,8 @@ enableDLPF	KEYWORD2
 setSampleRate	KEYWORD2
 i2cMasterPassthrough	KEYWORD2
 i2cMasterEnable	KEYWORD2
-i2cMasterConfigureSlave	KEYWORD2
-i2cMasterSLV4Transaction	KEYWORD2
+i2cControllerConfigurePeripheral	KEYWORD2
+i2cControllerPeriph4Transaction	KEYWORD2
 i2cMasterSingleW	KEYWORD2
 i2cMasterSingleR	KEYWORD2
 startupDefault	KEYWORD2

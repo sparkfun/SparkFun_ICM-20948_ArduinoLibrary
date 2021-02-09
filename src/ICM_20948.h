@@ -23,6 +23,8 @@ private:
     Stream *_debugSerial;			//The stream to send debug messages to if enabled
     boolean _printDebug = false;		//Flag to print the serial commands we are sending to the Serial port for debug
 
+    const uint8_t MAX_MAGNETOMETER_STARTS = 10; // This replaces maxTries
+
 protected:
     ICM_20948_Device_t _device;
 
@@ -58,6 +60,8 @@ public:
 
   	void disableDebugging(void); //Turn off debug statements
 
+    void debugPrintStatus(ICM_20948_Status_e stat);
+
     // gfvalvo's flash string helper code: https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
     void debugPrint(const char *);
     void debugPrint(const __FlashStringHelper *);
@@ -65,11 +69,8 @@ public:
     void debugPrintln(const __FlashStringHelper *);
     void doDebugPrint(char (*)(const char *), const char *, bool newLine = false);
 
-    // Debug printf - not glamorous but it works...
-    #define debugPrintf1( var ) {if (_printDebug == true) _debugSerial->printf( var );}
-    #define debugPrintf2( var1, var2 ) {if (_printDebug == true) _debugSerial->printf( var1, var2 );}
-    #define debugPrintf3( var1, var2, var3 ) {if (_printDebug == true) _debugSerial->printf( var1, var2, var3 );}
-    #define debugPrintf4( var1, var2, var3, var4 ) {if (_printDebug == true) _debugSerial->printf( var1, var2, var3, var4 );}
+    void debugPrintf(int i);
+    void debugPrintf(float f);
 
     ICM_20948_AGMT_t agmt;          // Acceleometer, Gyroscope, Magenetometer, and Temperature data
     ICM_20948_AGMT_t getAGMT(void); // Updates the agmt field in the object and also returns a copy directly
@@ -134,8 +135,13 @@ public:
     ICM_20948_Status_e i2cMasterEnable(bool enable = true);
     ICM_20948_Status_e i2cMasterReset();
 
-    //Used for configuring slaves 0-3
-    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+    //Used for configuring peripherals 0-3
+    ICM_20948_Status_e i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+    ICM_20948_Status_e i2cControllerPeriph4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
+
+    //Provided for backward-compatibility only. Please update to i2cControllerConfigurePeripheral and i2cControllerPeriph4Transaction.
+    //https://www.oshwa.org/2020/06/29/a-resolution-to-redefine-spi-pin-names/
+    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
     ICM_20948_Status_e i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
 
     //Used for configuring the Magnetometer

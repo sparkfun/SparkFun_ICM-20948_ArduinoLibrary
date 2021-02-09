@@ -44,8 +44,8 @@ ICM_20948_Status_e ICM_20948_execute_r(ICM_20948_Device_t *pdev, uint8_t regaddr
 }
 
 //Transact directly with an I2C device, one byte at a time
-//Used to configure a device before it is setup into a normal 0-3 slave slot
-ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
+//Used to configure a device before it is setup into a normal 0-3 peripheral slot
+ICM_20948_Status_e ICM_20948_i2c_controller_periph4_txn(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
 {
 	// Thanks MikeFair! // https://github.com/kriswiner/MPU9250/issues/86
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
@@ -53,20 +53,20 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 	addr = (((Rw) ? 0x80 : 0x00) | addr);
 
 	retval = ICM_20948_set_bank(pdev, 3);
-	retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_SLV4_ADDR, (uint8_t *)&addr, 1);
+	retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_PERIPH4_ADDR, (uint8_t *)&addr, 1);
 	if (retval != ICM_20948_Stat_Ok)
 	{
 		return retval;
 	}
 
 	retval = ICM_20948_set_bank(pdev, 3);
-	retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_SLV4_REG, (uint8_t *)&reg, 1);
+	retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_PERIPH4_REG, (uint8_t *)&reg, 1);
 	if (retval != ICM_20948_Stat_Ok)
 	{
 		return retval;
 	}
 
-	ICM_20948_I2C_SLV4_CTRL_t ctrl;
+	ICM_20948_I2C_PERIPH4_CTRL_t ctrl;
 	ctrl.EN = 1;
 	ctrl.INT_EN = false;
 	ctrl.DLY = 0;
@@ -81,7 +81,7 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 		if (!Rw)
 		{
 			retval = ICM_20948_set_bank(pdev, 3);
-			retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_SLV4_DO, (uint8_t *)&(data[nByte]), 1);
+			retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_PERIPH4_DO, (uint8_t *)&(data[nByte]), 1);
 			if (retval != ICM_20948_Stat_Ok)
 			{
 				return retval;
@@ -90,7 +90,7 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 
 		// Kick off txn
 		retval = ICM_20948_set_bank(pdev, 3);
-		retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_SLV4_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_I2C_SLV4_CTRL_t));
+		retval = ICM_20948_execute_w(pdev, AGB3_REG_I2C_PERIPH4_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_I2C_PERIPH4_CTRL_t));
 		if (retval != ICM_20948_Stat_Ok)
 		{
 			return retval;
@@ -99,17 +99,17 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 		// long tsTimeout = millis() + 3000;  // Emergency timeout for txn (hard coded to 3 secs)
 		uint32_t max_cycles = 1000;
 		uint32_t count = 0;
-		bool slave4Done = false;
-		while (!slave4Done)
+		bool peripheral4Done = false;
+		while (!peripheral4Done)
 		{
 			retval = ICM_20948_set_bank(pdev, 0);
 			retval = ICM_20948_execute_r(pdev, AGB0_REG_I2C_MST_STATUS, (uint8_t *)&i2c_mst_status, 1);
 
-			slave4Done = (i2c_mst_status.I2C_SLV4_DONE /*| (millis() > tsTimeout) */); //Avoid forever-loops
-			slave4Done |= (count >= max_cycles);
+			peripheral4Done = (i2c_mst_status.I2C_PERIPH4_DONE /*| (millis() > tsTimeout) */); //Avoid forever-loops
+			peripheral4Done |= (count >= max_cycles);
 			count++;
 		}
-		txn_failed = (i2c_mst_status.I2C_SLV4_NACK /*| (millis() > tsTimeout) */);
+		txn_failed = (i2c_mst_status.I2C_PERIPH4_NACK /*| (millis() > tsTimeout) */);
 		txn_failed |= (count >= max_cycles);
 		if (txn_failed)
 			break;
@@ -117,7 +117,7 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 		if (Rw)
 		{
 			retval = ICM_20948_set_bank(pdev, 3);
-			retval = ICM_20948_execute_r(pdev, AGB3_REG_I2C_SLV4_DI, &data[nByte], 1);
+			retval = ICM_20948_execute_r(pdev, AGB3_REG_I2C_PERIPH4_DI, &data[nByte], 1);
 		}
 
 		nByte++;
@@ -134,12 +134,12 @@ ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8
 
 ICM_20948_Status_e ICM_20948_i2c_master_single_w(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data)
 {
-	return ICM_20948_i2c_master_slv4_txn(pdev, addr, reg, data, 1, false, true);
+	return ICM_20948_i2c_controller_periph4_txn(pdev, addr, reg, data, 1, false, true);
 }
 
 ICM_20948_Status_e ICM_20948_i2c_master_single_r(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data)
 {
-	return ICM_20948_i2c_master_slv4_txn(pdev, addr, reg, data, 1, true, true);
+	return ICM_20948_i2c_controller_periph4_txn(pdev, addr, reg, data, 1, true, true);
 }
 
 ICM_20948_Status_e ICM_20948_set_bank(ICM_20948_Device_t *pdev, uint8_t bank)
@@ -702,35 +702,35 @@ ICM_20948_Status_e ICM_20948_i2c_master_reset(ICM_20948_Device_t *pdev)
 	return retval;
 }
 
-ICM_20948_Status_e ICM_20948_i2c_master_configure_slave(ICM_20948_Device_t *pdev, uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
 {
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
-	uint8_t slv_addr_reg;
-	uint8_t slv_reg_reg;
-	uint8_t slv_ctrl_reg;
+	uint8_t periph_addr_reg;
+	uint8_t periph_reg_reg;
+	uint8_t periph_ctrl_reg;
 
-	switch (slave)
+	switch (peripheral)
 	{
 	case 0:
-		slv_addr_reg = AGB3_REG_I2C_SLV0_ADDR;
-		slv_reg_reg = AGB3_REG_I2C_SLV0_REG;
-		slv_ctrl_reg = AGB3_REG_I2C_SLV0_CTRL;
+		periph_addr_reg = AGB3_REG_I2C_PERIPH0_ADDR;
+		periph_reg_reg = AGB3_REG_I2C_PERIPH0_REG;
+		periph_ctrl_reg = AGB3_REG_I2C_PERIPH0_CTRL;
 		break;
 	case 1:
-		slv_addr_reg = AGB3_REG_I2C_SLV1_ADDR;
-		slv_reg_reg = AGB3_REG_I2C_SLV1_REG;
-		slv_ctrl_reg = AGB3_REG_I2C_SLV1_CTRL;
+		periph_addr_reg = AGB3_REG_I2C_PERIPH1_ADDR;
+		periph_reg_reg = AGB3_REG_I2C_PERIPH1_REG;
+		periph_ctrl_reg = AGB3_REG_I2C_PERIPH1_CTRL;
 		break;
 	case 2:
-		slv_addr_reg = AGB3_REG_I2C_SLV2_ADDR;
-		slv_reg_reg = AGB3_REG_I2C_SLV2_REG;
-		slv_ctrl_reg = AGB3_REG_I2C_SLV2_CTRL;
+		periph_addr_reg = AGB3_REG_I2C_PERIPH2_ADDR;
+		periph_reg_reg = AGB3_REG_I2C_PERIPH2_REG;
+		periph_ctrl_reg = AGB3_REG_I2C_PERIPH2_CTRL;
 		break;
 	case 3:
-		slv_addr_reg = AGB3_REG_I2C_SLV3_ADDR;
-		slv_reg_reg = AGB3_REG_I2C_SLV3_REG;
-		slv_ctrl_reg = AGB3_REG_I2C_SLV3_CTRL;
+		periph_addr_reg = AGB3_REG_I2C_PERIPH3_ADDR;
+		periph_reg_reg = AGB3_REG_I2C_PERIPH3_REG;
+		periph_ctrl_reg = AGB3_REG_I2C_PERIPH3_CTRL;
 		break;
 	default:
 		return ICM_20948_Stat_ParamErr;
@@ -742,36 +742,36 @@ ICM_20948_Status_e ICM_20948_i2c_master_configure_slave(ICM_20948_Device_t *pdev
 		return retval;
 	}
 
-	// Set the slave address and the Rw flag
-	ICM_20948_I2C_SLVX_ADDR_t address;
+	// Set the peripheral address and the Rw flag
+	ICM_20948_I2C_PERIPHX_ADDR_t address;
 	address.ID = addr;
 	if (Rw)
 	{
 		address.RNW = 1;
 	}
-	retval = ICM_20948_execute_w(pdev, slv_addr_reg, (uint8_t *)&address, sizeof(ICM_20948_I2C_SLVX_ADDR_t));
+	retval = ICM_20948_execute_w(pdev, periph_addr_reg, (uint8_t *)&address, sizeof(ICM_20948_I2C_PERIPHX_ADDR_t));
 	if (retval != ICM_20948_Stat_Ok)
 	{
 		return retval;
 	}
 
-	// Set the slave sub-address (reg)
-	ICM_20948_I2C_SLVX_REG_t subaddress;
+	// Set the peripheral sub-address (reg)
+	ICM_20948_I2C_PERIPHX_REG_t subaddress;
 	subaddress.REG = reg;
-	retval = ICM_20948_execute_w(pdev, slv_reg_reg, (uint8_t *)&subaddress, sizeof(ICM_20948_I2C_SLVX_REG_t));
+	retval = ICM_20948_execute_w(pdev, periph_reg_reg, (uint8_t *)&subaddress, sizeof(ICM_20948_I2C_PERIPHX_REG_t));
 	if (retval != ICM_20948_Stat_Ok)
 	{
 		return retval;
 	}
 
 	// Set up the control info
-	ICM_20948_I2C_SLVX_CTRL_t ctrl;
+	ICM_20948_I2C_PERIPHX_CTRL_t ctrl;
 	ctrl.LENG = len;
 	ctrl.EN = enable;
 	ctrl.REG_DIS = data_only;
 	ctrl.GRP = grp;
 	ctrl.BYTE_SW = swap;
-	retval = ICM_20948_execute_w(pdev, slv_ctrl_reg, (uint8_t *)&ctrl, sizeof(ICM_20948_I2C_SLVX_CTRL_t));
+	retval = ICM_20948_execute_w(pdev, periph_ctrl_reg, (uint8_t *)&ctrl, sizeof(ICM_20948_I2C_PERIPHX_CTRL_t));
 	if (retval != ICM_20948_Stat_Ok)
 	{
 		return retval;
