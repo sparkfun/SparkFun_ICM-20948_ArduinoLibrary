@@ -19,8 +19,8 @@
 #define SERIAL_PORT Serial
 
 #define INT_PIN 2       // Make sure to connect this pin on your uC to the "INT" pin on the ICM-20948 breakout
-#define LED_PIN 13
-//#define LED_PIN LED_BUILTIN
+//#define LED_PIN 13
+#define LED_PIN LED_BUILTIN
 #define BUFFER_SAMPLE_NUM 32
 
 #define SPI_PORT SPI    // Your desired SPI port.       Used only when "USE_SPI" is defined

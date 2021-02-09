@@ -17,12 +17,12 @@ ICM_20948_InternalSensorID_bm	KEYWORD1
 #######################################
 
 ICM_20948	KEYWORD2
-enableDebugging
-disableDebugging
-debugPrintStatus
-debugPrint
-debugPrintln
-doDebugPrint
+enableDebugging	KEYWORD2
+disableDebugging	KEYWORD2
+debugPrintStatus	KEYWORD2
+debugPrint	KEYWORD2
+debugPrintln	KEYWORD2
+doDebugPrint	KEYWORD2
 getAGMT	KEYWORD2
 magX	KEYWORD2
 magY	KEYWORD2
@@ -70,6 +70,7 @@ magIsConnected	KEYWORD2
 getMagnetometerData	KEYWORD2
 ICM_20948_SPI	KEYWORD2
 begin	KEYWORD2
+WOMThreshold	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

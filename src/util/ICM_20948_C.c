@@ -425,12 +425,6 @@ ICM_20948_Status_e ICM_20948_int_enable(ICM_20948_Device_t *pdev, ICM_20948_INT_
 	return retval;
 }
 
-
-
-
-
-
-
 ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read)
 {
 	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
@@ -442,7 +436,7 @@ ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_A
 	if (write != NULL)
 	{ // If the write pointer is not NULL then write to the registers BEFORE reading
 		thr.WOM_THRESHOLD = write->WOM_THRESHOLD;
-		
+
 		retval = ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_WOM_THR, (uint8_t *)&thr, sizeof(ICM_20948_ACCEL_WOM_THR_t));
 		if (retval != ICM_20948_Stat_Ok)
 		{
