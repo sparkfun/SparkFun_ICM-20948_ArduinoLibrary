@@ -61,6 +61,8 @@ void setup() {
     WIRE_PORT.setClock(400000);
 #endif
 
+  //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+
   bool initialized = false;
   while( !initialized ){
 

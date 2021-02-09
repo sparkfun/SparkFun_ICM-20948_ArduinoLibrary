@@ -14,6 +14,105 @@ ICM_20948::ICM_20948()
 {
 }
 
+void ICM_20948::enableDebugging(Stream &debugPort)
+{
+  _debugSerial = &debugPort; //Grab which port the user wants us to use for debugging
+  _printDebug = true; //Should we print the commands we send? Good for debugging
+}
+void ICM_20948::disableDebugging(void)
+{
+  _printDebug = false; //Turn off extra print statements
+}
+
+// Debug Printing: based on gfvalvo's flash string helper code:
+// https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
+
+void ICM_20948::debugPrint(const char *line)
+{
+  doDebugPrint([](const char *ptr) {return *ptr;}, line);
+}
+
+void ICM_20948::debugPrint(const __FlashStringHelper *line)
+{
+  doDebugPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);},
+      (const char*) line);
+}
+
+void ICM_20948::debugPrintln(const char *line)
+{
+  doDebugPrint([](const char *ptr) {return *ptr;}, line, true);
+}
+
+void ICM_20948::debugPrintln(const __FlashStringHelper *line)
+{
+  doDebugPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);},
+      (const char*) line, true);
+}
+
+void ICM_20948::doDebugPrint(char (*funct)(const char *), const char *string, bool newLine)
+{
+  if (_printDebug == false)
+    return; // Bail if debugging is not enabled
+
+  char ch;
+
+  while ((ch = funct(string++)))
+  {
+    _debugSerial->print(ch);
+  }
+
+  if (newLine)
+  {
+    _debugSerial->println();
+  }
+}
+
+void ICM_20948::debugPrintf(int i)
+{
+  if (_printDebug == true)
+    _debugSerial->print(i);
+}
+
+void ICM_20948::debugPrintf(float f)
+{
+  if (_printDebug == true)
+    _debugSerial->print(f);
+}
+
+void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
+{
+    switch (stat)
+    {
+    case ICM_20948_Stat_Ok:
+        debugPrint(F("All is well."));
+        break;
+    case ICM_20948_Stat_Err:
+        debugPrint(F("General Error"));
+        break;
+    case ICM_20948_Stat_NotImpl:
+        debugPrint(F("Not Implemented"));
+        break;
+    case ICM_20948_Stat_ParamErr:
+        debugPrint(F("Parameter Error"));
+        break;
+    case ICM_20948_Stat_WrongID:
+        debugPrint(F("Wrong ID"));
+        break;
+    case ICM_20948_Stat_InvalSensor:
+        debugPrint(F("Invalid Sensor"));
+        break;
+    case ICM_20948_Stat_NoData:
+        debugPrint(F("Data Underflow"));
+        break;
+    case ICM_20948_Stat_SensorNotSupported:
+        debugPrint(F("Sensor Not Supported"));
+        break;
+    default:
+        debugPrint(F("Unknown Status"));
+        break;
+    }
+}
+
 ICM_20948_AGMT_t ICM_20948::getAGMT(void)
 {
     status = ICM_20948_get_agmt(&_device, &agmt);
@@ -204,6 +303,12 @@ ICM_20948_Status_e ICM_20948::setClockSource(ICM_20948_PWR_MGMT_1_CLKSEL_e sourc
 ICM_20948_Status_e ICM_20948::checkID(void)
 {
     status = ICM_20948_check_id(&_device);
+    if (status != ICM_20948_Stat_Ok)
+    {
+        debugPrint(F("ICM_20948::checkID: ICM_20948_check_id returned: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
+    }
     return status;
 }
 
@@ -231,6 +336,9 @@ bool ICM_20948::isConnected(void)
     {
         return true;
     }
+    debugPrint(F("ICM_20948::isConnected: checkID returned: "));
+    debugPrintStatus(status);
+    debugPrintln(F(""));
     return false;
 }
 
@@ -589,16 +697,30 @@ ICM_20948_Status_e ICM_20948::i2cMasterReset()
     return status;
 }
 
-ICM_20948_Status_e ICM_20948::i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+ICM_20948_Status_e ICM_20948::i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
 {
-    status = ICM_20948_i2c_master_configure_slave(&_device, slave, addr, reg, len, Rw, enable, data_only, grp, swap);
+    status = ICM_20948_i2c_controller_configure_peripheral(&_device, peripheral, addr, reg, len, Rw, enable, data_only, grp, swap);
     return status;
 }
 
+//Provided for backward-compatibility only. Please update to i2cControllerConfigurePeripheral and i2cControllerPeriph4Transaction.
+//https://www.oshwa.org/2020/06/29/a-resolution-to-redefine-spi-pin-names/
+ICM_20948_Status_e ICM_20948::i2cMasterConfigureSlave(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+{
+  return (i2cControllerConfigurePeripheral(peripheral, addr, reg, len, Rw, enable, data_only, grp, swap));
+}
+
+ICM_20948_Status_e ICM_20948::i2cControllerPeriph4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
+{
+    status = ICM_20948_i2c_controller_periph4_txn(&_device, addr, reg, data, len, Rw, send_reg_addr);
+    return status;
+}
+
+//Provided for backward-compatibility only. Please update to i2cControllerConfigurePeripheral and i2cControllerPeriph4Transaction.
+//https://www.oshwa.org/2020/06/29/a-resolution-to-redefine-spi-pin-names/
 ICM_20948_Status_e ICM_20948::i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
 {
-    status = ICM_20948_i2c_master_slv4_txn(&_device, addr, reg, data, len, Rw, send_reg_addr);
-    return status;
+  return (i2cControllerPeriph4Transaction(addr, reg, data, len, Rw, send_reg_addr));
 }
 
 ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_t data)
@@ -608,8 +730,14 @@ ICM_20948_Status_e ICM_20948::i2cMasterSingleW(uint8_t addr, uint8_t reg, uint8_
 }
 uint8_t ICM_20948::i2cMasterSingleR(uint8_t addr, uint8_t reg)
 {
-    uint8_t data;
+    uint8_t data = 0;
     status = ICM_20948_i2c_master_single_r(&_device, addr, reg, &data);
+    if (status != ICM_20948_Stat_Ok)
+    {
+        debugPrint(F("ICM_20948::i2cMasterSingleR: ICM_20948_i2c_master_single_r returned: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
+    }
     return data;
 }
 
@@ -620,6 +748,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = checkID();
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: checkID returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -627,6 +758,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = swReset();
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: swReset returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -635,6 +769,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = sleep(false);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: sleep returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -642,6 +779,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = lowPower(false);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: lowPower returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -649,6 +789,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: setSampleMode returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     } // sensors: 	ICM_20948_Internal_Acc, ICM_20948_Internal_Gyr, ICM_20948_Internal_Mst
@@ -659,6 +802,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: setFullScale returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -669,6 +815,9 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: setDLPFcfg returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -676,23 +825,32 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
     retval = enableDLPF(ICM_20948_Internal_Acc, false);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: enableDLPF (Acc) returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
     retval = enableDLPF(ICM_20948_Internal_Gyr, false);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: enableDLPF (Gyr) returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
     retval = startupMagnetometer();
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupDefault: startupMagnetometer returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
 
-    return status;
+    return status; // Leave status unchanged - return whatever it was when startupDefault was called
 }
 
 // direct read/write
@@ -710,7 +868,7 @@ ICM_20948_Status_e ICM_20948::write(uint8_t reg, uint8_t *pdata, uint32_t len)
 
 uint8_t ICM_20948::readMag(AK09916_Reg_Addr_e reg)
 {
-    uint8_t data = i2cMasterSingleR(MAG_AK09916_I2C_ADDR, reg);
+    uint8_t data = i2cMasterSingleR(MAG_AK09916_I2C_ADDR, reg); // i2cMasterSingleR updates status too
     return data;
 }
 
@@ -764,7 +922,9 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
     status = startupDefault();
     if (status != ICM_20948_Stat_Ok)
     {
-        return status;
+        debugPrint(F("ICM_20948_I2C::begin: startupDefault returned: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
     }
     return status;
 }
@@ -779,25 +939,37 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
     //After a ICM reset the Mag sensor may stop responding over the I2C master
     //Reset the Master I2C until it responds
     uint8_t tries = 0;
-    uint8_t maxTries = 5;
-    while (tries < maxTries)
+    while (tries < MAX_MAGNETOMETER_STARTS)
     {
+        tries++;
+
         //See if we can read the WhoIAm register correctly
         retval = magWhoIAm();
         if (retval == ICM_20948_Stat_Ok)
             break; //WIA matched!
 
         i2cMasterReset(); //Otherwise, reset the master I2C and try again
-        tries++;
+
+        delay(10);
     }
 
-    if (tries == maxTries)
+    if (tries == MAX_MAGNETOMETER_STARTS)
     {
+        debugPrint(F("ICM_20948::startupMagnetometer: reached MAX_MAGNETOMETER_STARTS ("));
+        debugPrintf((int)MAX_MAGNETOMETER_STARTS);
+        debugPrintln(F("). Returning ICM_20948_Stat_WrongID"));
         status = ICM_20948_Stat_WrongID;
         return status;
     }
-
-    //Serial.printf("Mag connected tries: %d\n", tries);
+    else
+    {
+      debugPrint(F("ICM_20948::startupMagnetometer: successful magWhoIAm after "));
+      debugPrintf((int)tries);
+      if (tries == 1)
+        debugPrintln(F(" try"));
+      else
+        debugPrintln(F(" tries"));
+    }
 
     //Set up magnetometer
     AK09916_CNTL2_Reg_t reg;
@@ -805,13 +977,19 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
     retval = writeMag(AK09916_REG_CNTL2, (uint8_t *)&reg);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupMagnetometer: writeMag returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
 
-    retval = i2cMasterConfigureSlave(0, MAG_AK09916_I2C_ADDR, AK09916_REG_ST1, 9, true, true, false, false, false);
+    retval = i2cControllerConfigurePeripheral(0, MAG_AK09916_I2C_ADDR, AK09916_REG_ST1, 9, true, true, false, false, false);
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::startupMagnetometer: i2cMasterConfigurePeripheral returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
         status = retval;
         return status;
     }
@@ -825,10 +1003,31 @@ ICM_20948_Status_e ICM_20948::magWhoIAm(void)
 
     uint8_t whoiam1, whoiam2;
     whoiam1 = readMag(AK09916_REG_WIA1);
-    whoiam2 = readMag(AK09916_REG_WIA2);
-    status = retval;
+    // readMag calls i2cMasterSingleR which calls ICM_20948_i2c_master_single_r
+    // i2cMasterSingleR updates status so it is OK to set retval to status here
+    retval = status;
     if (retval != ICM_20948_Stat_Ok)
     {
+        debugPrint(F("ICM_20948::magWhoIAm: whoiam1: "));
+        debugPrintf((int)whoiam1);
+        debugPrint(F(" (should be 72) readMag set status to: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
+        return retval;
+    }
+    whoiam2 = readMag(AK09916_REG_WIA2);
+    // readMag calls i2cMasterSingleR which calls ICM_20948_i2c_master_single_r
+    // i2cMasterSingleR updates status so it is OK to set retval to status here
+    retval = status;
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        debugPrint(F("ICM_20948::magWhoIAm: whoiam1: "));
+        debugPrintf((int)whoiam1);
+        debugPrint(F(" (should be 72) whoiam2: "));
+        debugPrintf((int)whoiam2);
+        debugPrint(F(" (should be 9) readMag set status to: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
         return retval;
     }
 
@@ -838,6 +1037,13 @@ ICM_20948_Status_e ICM_20948::magWhoIAm(void)
         status = retval;
         return status;
     }
+
+    debugPrint(F("ICM_20948::magWhoIAm: whoiam1: "));
+    debugPrintf((int)whoiam1);
+    debugPrint(F(" (should be 72) whoiam2: "));
+    debugPrintf((int)whoiam2);
+    debugPrintln(F(" (should be 9). Returning ICM_20948_Stat_WrongID"));
+
     retval = ICM_20948_Stat_WrongID;
     status = retval;
     return status;
@@ -854,7 +1060,7 @@ ICM_20948_SPI::ICM_20948_SPI()
 ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32_t SPIFreq)
 {
     if (SPIFreq > 7000000)
-        SPIFreq = 7000000;
+        SPIFreq = 7000000; // Limit SPI frequency to 7MHz
 
     // Associate
     _spi = &spiPort;
@@ -886,10 +1092,12 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
     status = startupDefault();
     if (status != ICM_20948_Stat_Ok)
     {
-        return status;
+        debugPrint(F("ICM_20948_SPI::begin: startupDefault returned: "));
+        debugPrintStatus(status);
+        debugPrintln(F(""));
     }
 
-    return ICM_20948_Stat_Ok;
+    return status;
 }
 
 // serif functions for the I2C and SPI classes

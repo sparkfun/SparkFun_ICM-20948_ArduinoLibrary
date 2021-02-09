@@ -152,8 +152,8 @@ read raw temp values
 configure temperature sensor
 load DMP firmware into the device
 read DMP results from the device
-configure interrupts 
-	- configure interrupt and FSYNC pins 
+configure interrupts
+	- configure interrupt and FSYNC pins
 	- configure which interrupts activate the interrupt pin
 respond to interrupts on INT
 configure FIFO (and use it)
@@ -174,7 +174,7 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e ICM_20948_execute_w(ICM_20948_Device_t *pdev, uint8_t regaddr, uint8_t *pdata, uint32_t len);
 
 	// Single-shot I2C on Master IF
-	ICM_20948_Status_e ICM_20948_i2c_master_slv4_txn(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr);
+	ICM_20948_Status_e ICM_20948_i2c_controller_periph4_txn(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr);
 	ICM_20948_Status_e ICM_20948_i2c_master_single_w(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data);
 	ICM_20948_Status_e ICM_20948_i2c_master_single_r(ICM_20948_Device_t *pdev, uint8_t addr, uint8_t reg, uint8_t *data);
 
@@ -203,7 +203,7 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e ICM_20948_i2c_master_passthrough(ICM_20948_Device_t *pdev, bool passthrough);
 	ICM_20948_Status_e ICM_20948_i2c_master_enable(ICM_20948_Device_t *pdev, bool enable);
 	ICM_20948_Status_e ICM_20948_i2c_master_reset(ICM_20948_Device_t *pdev);
-	ICM_20948_Status_e ICM_20948_i2c_master_configure_slave(ICM_20948_Device_t *pdev, uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap);
+	ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap);
 
 	// Higher Level
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
@@ -212,15 +212,15 @@ callbacks for the user to respond to interrupt events
 
 	// ToDo:
 
-	/* 
+	/*
 	Want to access magnetometer throught the I2C master interface...
 
   // If using the I2C master to read from the magnetometer
   // Enable the I2C master to talk to the magnetometer through the ICM 20948
-  myICM.i2cMasterEnable( true ); 
+  myICM.i2cMasterEnable( true );
   SERIAL_PORT.print(F("Enabling the I2C master returned ")); SERIAL_PORT.println(myICM.statusString());
-  myICM.i2cMasterConfigureSlave ( 0, MAG_AK09916_I2C_ADDR, REG_ST1, 9, true, true, false, false, false );
-  SERIAL_PORT.print(F("Configuring the magnetometer slave returned ")); SERIAL_PORT.println(myICM.statusString());
+  myICM.i2cControllerConfigurePeripheral ( 0, MAG_AK09916_I2C_ADDR, REG_ST1, 9, true, true, false, false, false );
+  SERIAL_PORT.print(F("Configuring the magnetometer peripheral returned ")); SERIAL_PORT.println(myICM.statusString());
 
   // Operate the I2C master in duty-cycled mode
   myICM.setSampleMode( (ICM_20948_Internal_Mst | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ); // options: ICM_20948_Sample_Mode_Continuous or ICM_20948_Sample_Mode_Cycled

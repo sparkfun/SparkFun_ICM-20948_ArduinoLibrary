@@ -20,6 +20,11 @@ A C++ interface to the ICM-20948
 class ICM_20948
 {
 private:
+    Stream *_debugSerial;			//The stream to send debug messages to if enabled
+    boolean _printDebug = false;		//Flag to print the serial commands we are sending to the Serial port for debug
+
+    const uint8_t MAX_MAGNETOMETER_STARTS = 10; // This replaces maxTries
+
 protected:
     ICM_20948_Device_t _device;
 
@@ -30,6 +35,42 @@ protected:
 
 public:
     ICM_20948(); // Constructor
+
+    // Enable debug messages using the chosen Serial port (Stream)
+  	// Boards like the RedBoard Turbo use SerialUSB (not Serial).
+  	// But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
+  	// These lines let the code compile cleanly on as many SAMD boards as possible.
+  	#if defined(ARDUINO_ARCH_SAMD)	// Is this a SAMD board?
+  	#if defined(USB_VID)						// Is the USB Vendor ID defined?
+  	#if (USB_VID == 0x1B4F)					// Is this a SparkFun board?
+  	#if !defined(ARDUINO_SAMD51_THING_PLUS) & !defined(ARDUINO_SAMD51_MICROMOD) // If it is not a SAMD51 Thing Plus or SAMD51 MicroMod
+  	void enableDebugging(Stream &debugPort = SerialUSB); //Given a port to print to, enable debug messages.
+  	#else
+  	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages.
+  	#endif
+  	#else
+  	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages.
+  	#endif
+  	#else
+  	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages.
+  	#endif
+  	#else
+  	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages.
+  	#endif
+
+  	void disableDebugging(void); //Turn off debug statements
+
+    void debugPrintStatus(ICM_20948_Status_e stat);
+
+    // gfvalvo's flash string helper code: https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
+    void debugPrint(const char *);
+    void debugPrint(const __FlashStringHelper *);
+    void debugPrintln(const char *);
+    void debugPrintln(const __FlashStringHelper *);
+    void doDebugPrint(char (*)(const char *), const char *, bool newLine = false);
+
+    void debugPrintf(int i);
+    void debugPrintf(float f);
 
     ICM_20948_AGMT_t agmt;          // Acceleometer, Gyroscope, Magenetometer, and Temperature data
     ICM_20948_AGMT_t getAGMT(void); // Updates the agmt field in the object and also returns a copy directly
@@ -94,8 +135,13 @@ public:
     ICM_20948_Status_e i2cMasterEnable(bool enable = true);
     ICM_20948_Status_e i2cMasterReset();
 
-    //Used for configuring slaves 0-3
-    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t slave, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+    //Used for configuring peripherals 0-3
+    ICM_20948_Status_e i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+    ICM_20948_Status_e i2cControllerPeriph4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
+
+    //Provided for backward-compatibility only. Please update to i2cControllerConfigurePeripheral and i2cControllerPeriph4Transaction.
+    //https://www.oshwa.org/2020/06/29/a-resolution-to-redefine-spi-pin-names/
+    ICM_20948_Status_e i2cMasterConfigureSlave(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
     ICM_20948_Status_e i2cMasterSLV4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
 
     //Used for configuring the Magnetometer
