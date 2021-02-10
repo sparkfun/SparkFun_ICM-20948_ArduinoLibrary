@@ -777,6 +777,16 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         return status;
     }
 
+    retval = loadDMPFirmware();
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        debugPrint(F("ICM_20948::startupDefault: loadDMPFirmware returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
+        status = retval;
+        return status;
+    }
+
     retval = swReset();
     if (retval != ICM_20948_Stat_Ok)
     {
@@ -900,6 +910,14 @@ ICM_20948_Status_e ICM_20948::writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata)
     return status;
 }
 
+// DMP
+
+ICM_20948_Status_e ICM_20948::loadDMPFirmware(void)
+{
+    status = ICM_20948_firmware_load(&_device);
+    return status;
+}
+
 // I2C
 ICM_20948_I2C::ICM_20948_I2C()
 {
@@ -939,6 +957,8 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
 
     // Link the serif
     _device._serif = &_serif;
+
+    _device._firmware_loaded = false; // Initialize _firmware_loaded
 
     // Perform default startup
     status = startupDefault();
@@ -1109,6 +1129,8 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
 
     // Link the serif
     _device._serif = &_serif;
+
+    _device._firmware_loaded = false; // Initialize _firmware_loaded
 
     // Perform default startup
     status = startupDefault();

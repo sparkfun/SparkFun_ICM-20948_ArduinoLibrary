@@ -21,6 +21,8 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+extern int memcmp(const void *, const void *, size_t); // Avoid compiler warnings
+
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
 #define ICM_20948_WHOAMI 0xEA
@@ -28,6 +30,13 @@ extern "C"
 #define MAG_AK09916_I2C_ADDR 0x0C
 #define MAG_AK09916_WHO_AM_I 0x4809
 #define MAG_REG_WHO_AM_I 0x00
+
+/** @brief Max size that can be read across I2C or SPI data lines */
+#define INV_MAX_SERIAL_READ 16
+/** @brief Max size that can be written across I2C or SPI data lines */
+#define INV_MAX_SERIAL_WRITE 16
+
+#define DMP_LOAD_START 0x90
 
 	typedef enum
 	{
@@ -39,6 +48,7 @@ extern "C"
 		ICM_20948_Stat_InvalSensor, // Tried to apply a function to a sensor that does not support it (e.g. DLPF to the temperature sensor)
 		ICM_20948_Stat_NoData,
 		ICM_20948_Stat_SensorNotSupported,
+		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
 
 		ICM_20948_Stat_NUM,
 		ICM_20948_Stat_Unknown,
@@ -138,7 +148,16 @@ extern "C"
 	typedef struct
 	{
 		const ICM_20948_Serif_t *_serif; // Pointer to the assigned Serif (Serial Interface) vtable
+		bool _firmware_loaded; // Indicates if DMP has been loaded
 	} ICM_20948_Device_t;				 // Definition of device struct type
+
+	/*
+	 * Icm20948 device require a DMP image to be loaded on init
+	 * Provide such images by mean of a byte array
+	 */
+	const uint8_t dmp3_image[] = {
+	  #include "icm20948_img.dmp3a.h"
+	};
 
 	// Here's the list of what I want to be able to do:
 	/*
@@ -194,7 +213,7 @@ callbacks for the user to respond to interrupt events
 
 	// WoM Threshold Level Configuration
 	ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read); // Write and or read the Wake on Motion threshold. If non-null the write operation occurs before the read, so as to verify that the write was successful
-	
+
 	// Internal Sensor Options
 	ICM_20948_Status_e ICM_20948_set_sample_mode(ICM_20948_Device_t *pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_LP_CONFIG_CYCLE_e mode); // Use to set accel, gyro, and I2C master into cycled or continuous modes
 	ICM_20948_Status_e ICM_20948_set_full_scale(ICM_20948_Device_t *pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_fss_t fss);
@@ -212,6 +231,39 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
 
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
+
+	// DMP
+
+	ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev);
+
+	/** @brief Loads the DMP firmware from SRAM
+	* @param[in] data  pointer where the image
+	* @param[in] size  size if the image
+	* @param[in] load_addr  address to loading the image
+	* @return 0 in case of success, -1 for any error
+	*/
+	ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const unsigned char *data, unsigned short size, unsigned short load_addr);
+	/**
+	*  @brief       Write data to a register in DMP memory
+	*  @param[in]   DMP memory address
+	*  @param[in]   number of byte to be written
+	*  @param[out]  output data from the register
+	*  @return     0 if successful.
+	*/
+	ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, const unsigned char *data);
+	/**
+	*  @brief      Read data from a register in DMP memory
+	*  @param[in]  DMP memory address
+	*  @param[in]  number of byte to be read
+	*  @param[in]  input data from the register
+	*  @return     0 if successful.
+	*/
+	ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data);
+
+	// ICM_20948_Status_e inv_icm20948_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len);
+	// ICM_20948_Status_e inv_icm20948_serif_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len);
+	// ICM_20948_Status_e inv_icm20948_read_reg(ICM_20948_Device_t *pdev, uint8_t reg,	uint8_t * buf, uint32_t len);
+	// ICM_20948_Status_e inv_icm20948_serif_read_reg(ICM_20948_Device_t *pdev, uint8_t reg, uint8_t * buf, uint32_t len);
 
 	// ToDo:
 

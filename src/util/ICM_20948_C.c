@@ -860,3 +860,341 @@ ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t
 
 	return retval;
 }
+
+// DMP
+
+ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev)
+{
+		return (inv_icm20948_firmware_load(pdev, dmp3_image, sizeof(dmp3_image), DMP_LOAD_START));
+}
+
+/** @brief Loads the DMP firmware from SRAM
+* @param[in] data  pointer where the image
+* @param[in] size  size if the image
+* @param[in] load_addr  address to loading the image
+* @return 0 in case of success, -1 for any error
+*/
+ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const unsigned char *data_start, unsigned short size_start, unsigned short load_addr)
+{
+    int write_size;
+    int result;
+    unsigned short memaddr;
+    const unsigned char *data;
+    unsigned short size;
+    unsigned char data_cmp[INV_MAX_SERIAL_READ];
+    int flag = 0;
+
+		if(pdev->_firmware_loaded)
+			return ICM_20948_Stat_Ok; // Bail with no error if firmware is already loaded
+
+    // Write DMP memory
+
+    data = data_start;
+    size = size_start;
+    memaddr = load_addr;
+    while (size > 0) {
+        //write_size = min(size, INV_MAX_SERIAL_WRITE); // Write in chunks of INV_MAX_SERIAL_WRITE
+				if(size <= INV_MAX_SERIAL_WRITE) // Write in chunks of INV_MAX_SERIAL_WRITE
+						write_size = size;
+				else
+						write_size = INV_MAX_SERIAL_WRITE;
+        if ((memaddr & 0xff) + write_size > 0x100) {
+            // Moved across a bank
+            write_size = (memaddr & 0xff) + write_size - 0x100;
+        }
+        result = inv_icm20948_write_mems(pdev, memaddr, write_size, (unsigned char *)data);
+        if (result != ICM_20948_Stat_Ok)
+            return result;
+        data += write_size;
+        size -= write_size;
+        memaddr += write_size;
+    }
+
+    // Verify DMP memory
+
+    data = data_start;
+    size = size_start;
+    memaddr = load_addr;
+    while (size > 0) {
+        //write_size = min(size, INV_MAX_SERIAL_READ); // Read in chunks of INV_MAX_SERIAL_READ
+				if(size <= INV_MAX_SERIAL_READ) // Read in chunks of INV_MAX_SERIAL_READ
+						write_size = size;
+				else
+						write_size = INV_MAX_SERIAL_READ;
+        if ((memaddr & 0xff) + write_size > 0x100) {
+            // Moved across a bank
+            write_size = (memaddr & 0xff) + write_size - 0x100;
+        }
+        result = inv_icm20948_read_mems(pdev, memaddr, write_size, data_cmp);
+        if (result != ICM_20948_Stat_Ok)
+            flag++; // Error, DMP not written correctly
+        if (memcmp(data_cmp, data, write_size)) // Compare the data
+            return ICM_20948_Stat_DMPVerifyFail;
+        data += write_size;
+        size -= write_size;
+        memaddr += write_size;
+    }
+
+    // if(!flag)
+    //     Serial.println("DMP Firmware was updated successfully..");
+
+    return ICM_20948_Stat_Ok;
+}
+
+/**
+*  @brief       Write data to a register in DMP memory
+*  @param[in]   DMP memory address
+*  @param[in]   number of byte to be written
+*  @param[out]  output data from the register
+*  @return     0 if successful.
+*/
+ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, const unsigned char *data)
+{
+    ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+    unsigned int bytesWritten = 0;
+    unsigned int thisLen;
+    unsigned char lBankSelected;
+    unsigned char lStartAddrSelected;
+
+    // unsigned char power_state = inv_icm20948_get_chip_power_state(s);
+
+    if(!data)
+        return ICM_20948_Stat_NoData;
+
+    // if((power_state & CHIP_AWAKE) == 0)   // Wake up chip since it is asleep
+    //     result = inv_icm20948_set_chip_power_state(s, CHIP_AWAKE, 1);
+
+		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+    // result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 0);
+
+		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+		// result |= inv_set_bank(s, 0);
+
+		result = ICM_20948_set_bank(pdev, 0); // Set bank 0
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+    lBankSelected = (reg >> 8);
+
+		// if (lBankSelected != s->lLastBankSelected)
+		// {
+		// 	result |= inv_icm20948_write_reg(s, REG_MEM_BANK_SEL, &lBankSelected, 1);
+		// 	if (result)
+		// 		return result;
+		// 	s->lLastBankSelected = lBankSelected;
+		// }
+
+		result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+    while (bytesWritten < length)
+    {
+        lStartAddrSelected = (reg & 0xff);
+
+        /* Sets the starting read or write address for the selected memory, inside of the selected page (see MEM_SEL Register).
+           Contents are changed after read or write of the selected memory.
+           This register must be written prior to each access to initialize the register to the proper starting address.
+           The address will auto increment during burst transactions.  Two consecutive bursts without re-initializing the start address would skip one address. */
+
+				// result |= inv_icm20948_write_reg(s, REG_MEM_START_ADDR, &lStartAddrSelected, 1);
+        // if (result)
+        //     return result;
+
+				result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_START_ADDR, &lStartAddrSelected, 1);
+				if (result != ICM_20948_Stat_Ok)
+						return result;
+
+        //thisLen = min(INV_MAX_SERIAL_WRITE, length-bytesWritten);
+				if (length-bytesWritten <= INV_MAX_SERIAL_WRITE)
+						thisLen = length-bytesWritten;
+				else
+						thisLen = INV_MAX_SERIAL_WRITE;
+
+        /* Write data */
+
+        // result |= inv_icm20948_write_reg(s, REG_MEM_R_W, &data[bytesWritten], thisLen);
+        // if (result)
+        //     return result;
+
+				result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_R_W, (uint8_t *)&data[bytesWritten], thisLen);
+				if (result != ICM_20948_Stat_Ok)
+						return result;
+
+        bytesWritten += thisLen;
+        reg += thisLen;
+    }
+
+    //Enable LP_EN since we disabled it at begining of this function.
+
+    // result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 1);
+
+		result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+    return result;
+}
+
+/**
+*  @brief      Read data from a register in DMP memory
+*  @param[in]  DMP memory address
+*  @param[in]  number of byte to be read
+*  @param[in]  input data from the register
+*  @return     0 if successful.
+*/
+ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data)
+{
+	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+	unsigned int bytesWritten = 0;
+	unsigned int thisLen;
+	//unsigned char i;
+	unsigned char lBankSelected;
+	unsigned char lStartAddrSelected;
+
+	// unsigned char dat[INV_MAX_SERIAL_READ] = {0};
+
+	// unsigned char power_state = inv_icm20948_get_chip_power_state(s);
+
+	if(!data)
+		return ICM_20948_Stat_NoData;
+
+	// if((power_state & CHIP_AWAKE) == 0)   // Wake up chip since it is asleep
+	// 	result = inv_icm20948_set_chip_power_state(s, CHIP_AWAKE, 1);
+
+	result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+	if (result != ICM_20948_Stat_Ok)
+			return result;
+
+	// if(check_reg_access_lp_disable(s, reg))
+	// 	result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 0);
+
+	result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+	if (result != ICM_20948_Stat_Ok)
+			return result;
+
+	// result |= inv_set_bank(s, 0);
+
+	result = ICM_20948_set_bank(pdev, 0); // Set bank 0
+	if (result != ICM_20948_Stat_Ok)
+			return result;
+
+	lBankSelected = (reg >> 8);
+
+	// if (lBankSelected != s->lLastBankSelected)
+	// {
+	// 	result |= inv_icm20948_write_reg(s, REG_MEM_BANK_SEL, &lBankSelected, 1);
+	// 	if (result)
+	// 		return result;
+	// 	s->lLastBankSelected = lBankSelected;
+	// }
+
+	result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
+	if (result != ICM_20948_Stat_Ok)
+			return result;
+
+	while (bytesWritten < length)
+	{
+		lStartAddrSelected = (reg & 0xff);
+
+		/* Sets the starting read or write address for the selected memory, inside of the selected page (see MEM_SEL Register).
+		   Contents are changed after read or write of the selected memory.
+		   This register must be written prior to each access to initialize the register to the proper starting address.
+		   The address will auto increment during burst transactions.  Two consecutive bursts without re-initializing the start address would skip one address. */
+
+		// result |= inv_icm20948_write_reg(s, REG_MEM_START_ADDR, &lStartAddrSelected, 1);
+		// if (result)
+		// 	return result;
+
+		result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_START_ADDR, &lStartAddrSelected, 1);
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+		//thisLen = min(INV_MAX_SERIAL_READ, length-bytesWritten);
+		if (length-bytesWritten <= INV_MAX_SERIAL_READ)
+				thisLen = length-bytesWritten;
+		else
+				thisLen = INV_MAX_SERIAL_READ;
+
+		/* Read data */
+
+		// if(s->base_state.serial_interface == SERIAL_INTERFACE_SPI) {
+		// 	result |= inv_icm20948_read_reg(s, REG_MEM_R_W, &dat[bytesWritten], thisLen);
+		// } else {
+		// 	result |= inv_icm20948_read_reg(s, REG_MEM_R_W, &data[bytesWritten], thisLen);
+		// }
+		// if (result)
+		// 	return result;
+
+		result = ICM_20948_execute_r(pdev, AGB0_REG_MEM_R_W, &data[bytesWritten], thisLen);
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
+		bytesWritten += thisLen;
+		reg += thisLen;
+	}
+
+	// if(s->base_state.serial_interface == SERIAL_INTERFACE_SPI) {
+	// 	for (i=0; i< length; i++) {
+	// 		*data= dat[i];
+	// 		 data++;
+	// 	}
+	// }
+
+	//Enable LP_EN if we disabled it at begining of this function.
+
+	// if(check_reg_access_lp_disable(s, reg))
+	// 	result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 1);
+
+	result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+	if (result != ICM_20948_Stat_Ok)
+			return result;
+
+	return result;
+}
+
+// _device._serif.write
+//
+// ICM_20948_Status_e inv_icm20948_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len)
+// {
+// 	return inv_icm20948_serif_write_reg(&s->serif, reg, buf, len);
+// }
+//
+// static inline ICM_20948_Status_e inv_icm20948_serif_write_reg(ICM_20948_Device_t *pdev,
+// 		uint8_t reg, const uint8_t * buf, uint32_t len)
+// {
+// 	assert(s);
+//
+// 	if(len > s->max_write)
+// 		return INV_ERROR_SIZE;
+//
+// 	if(s->write_reg(s->context, reg, buf, len) != 0)
+// 		return INV_ERROR_TRANSPORT;
+//
+// 	return 0;
+// }
+//
+// ICM_20948_Status_e inv_icm20948_read_reg(ICM_20948_Device_t *pdev, uint8_t reg,	uint8_t * buf, uint32_t len)
+// {
+// 	return inv_icm20948_serif_read_reg(&s->serif, reg, buf, len);
+// }
+//
+// static inline ICM_20948_Status_e inv_icm20948_serif_read_reg(ICM_20948_Device_t *pdev,
+// 		uint8_t reg, uint8_t * buf, uint32_t len)
+// {
+// 	assert(s);
+//
+// 	if(len > s->max_read)
+// 		return INV_ERROR_SIZE;
+//
+// 	if(s->read_reg(s->context, reg, buf, len) != 0)
+// 		return INV_ERROR_TRANSPORT;
+//
+// 	return 0;
+// }

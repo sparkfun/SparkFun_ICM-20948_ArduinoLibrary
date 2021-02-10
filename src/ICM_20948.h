@@ -162,6 +162,9 @@ public:
     ICM_20948_Status_e magWhoIAm(void);
     uint8_t readMag(AK09916_Reg_Addr_e reg);
     ICM_20948_Status_e writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata);
+
+    //DMP
+    ICM_20948_Status_e loadDMPFirmware(void);
 };
 
 // I2C
