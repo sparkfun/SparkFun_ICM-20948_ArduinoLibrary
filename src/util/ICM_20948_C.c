@@ -865,7 +865,11 @@ ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t
 
 ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev)
 {
-		return (inv_icm20948_firmware_load(pdev, dmp3_image, sizeof(dmp3_image), DMP_LOAD_START));
+#if defined(ICM_20948_USE_DMP)
+    return (inv_icm20948_firmware_load(pdev, dmp3_image, sizeof(dmp3_image), DMP_LOAD_START));
+#else
+    return ICM_20948_Stat_DMPNotSupported;
+#endif
 }
 
 /** @brief Loads the DMP firmware from SRAM
@@ -1159,42 +1163,139 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 	return result;
 }
 
-// _device._serif.write
-//
-// ICM_20948_Status_e inv_icm20948_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len)
-// {
-// 	return inv_icm20948_serif_write_reg(&s->serif, reg, buf, len);
-// }
-//
-// static inline ICM_20948_Status_e inv_icm20948_serif_write_reg(ICM_20948_Device_t *pdev,
-// 		uint8_t reg, const uint8_t * buf, uint32_t len)
-// {
-// 	assert(s);
-//
-// 	if(len > s->max_write)
-// 		return INV_ERROR_SIZE;
-//
-// 	if(s->write_reg(s->context, reg, buf, len) != 0)
-// 		return INV_ERROR_TRANSPORT;
-//
-// 	return 0;
-// }
-//
-// ICM_20948_Status_e inv_icm20948_read_reg(ICM_20948_Device_t *pdev, uint8_t reg,	uint8_t * buf, uint32_t len)
-// {
-// 	return inv_icm20948_serif_read_reg(&s->serif, reg, buf, len);
-// }
-//
-// static inline ICM_20948_Status_e inv_icm20948_serif_read_reg(ICM_20948_Device_t *pdev,
-// 		uint8_t reg, uint8_t * buf, uint32_t len)
-// {
-// 	assert(s);
-//
-// 	if(len > s->max_read)
-// 		return INV_ERROR_SIZE;
-//
-// 	if(s->read_reg(s->context, reg, buf, len) != 0)
-// 		return INV_ERROR_TRANSPORT;
-//
-// 	return 0;
-// }
+ICM_20948_Status_e inv_icm20948_set_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint32_t period)
+{
+		//uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+
+		return ICM_20948_Stat_Ok;
+}
+
+ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
+{
+		if (pdev->_dmp_firmware_available == false)
+				return ICM_20948_Stat_DMPNotSupported;
+
+		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+
+		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+		// unsigned short inv_event_control = 0;
+		// unsigned short data_rdy_status = 0;
+		// unsigned long steps=0;
+		const short inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
+		{
+			// Unsupported Sensors are -1
+			-1, // Meta Data
+			-32760, //0x8008, // Accelerometer
+			0x0028, // Magnetic Field
+			0x0408, // Orientation
+			0x4048, // Gyroscope
+			0x1008, // Light
+			0x0088, // Pressure
+			-1, // Temperature
+			-1, // Proximity <----------- fixme
+			0x0808, // Gravity
+			-30712, // 0x8808, // Linear Acceleration
+			0x0408, // Rotation Vector
+			-1, // Humidity
+			-1, // Ambient Temperature
+			0x2008, // Magnetic Field Uncalibrated
+			0x0808, // Game Rotation Vector
+			0x4008, // Gyroscope Uncalibrated
+			0, // Significant Motion
+			0x0018, // Step Detector
+			0x0010, // Step Counter <----------- fixme
+			0x0108, // Geomagnetic Rotation Vector
+			-1, //ANDROID_SENSOR_HEART_RATE,
+			-1, //ANDROID_SENSOR_PROXIMITY,
+
+			-32760, // ANDROID_SENSOR_WAKEUP_ACCELEROMETER,
+			0x0028, // ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD,
+			0x0408, // ANDROID_SENSOR_WAKEUP_ORIENTATION,
+			0x4048, // ANDROID_SENSOR_WAKEUP_GYROSCOPE,
+			0x1008, // ANDROID_SENSOR_WAKEUP_LIGHT,
+			0x0088, // ANDROID_SENSOR_WAKEUP_PRESSURE,
+			0x0808, // ANDROID_SENSOR_WAKEUP_GRAVITY,
+			-30712, // ANDROID_SENSOR_WAKEUP_LINEAR_ACCELERATION,
+			0x0408, // ANDROID_SENSOR_WAKEUP_ROTATION_VECTOR,
+			-1,		// ANDROID_SENSOR_WAKEUP_RELATIVE_HUMIDITY,
+			-1,		// ANDROID_SENSOR_WAKEUP_AMBIENT_TEMPERATURE,
+			0x2008, // ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED,
+			0x0808, // ANDROID_SENSOR_WAKEUP_GAME_ROTATION_VECTOR,
+			0x4008, // ANDROID_SENSOR_WAKEUP_GYROSCOPE_UNCALIBRATED,
+			0x0018, // ANDROID_SENSOR_WAKEUP_STEP_DETECTOR,
+			0x0010, // ANDROID_SENSOR_WAKEUP_STEP_COUNTER,
+			0x0108, // ANDROID_SENSOR_WAKEUP_GEOMAGNETIC_ROTATION_VECTOR
+			-1,		// ANDROID_SENSOR_WAKEUP_HEART_RATE,
+			0,		// ANDROID_SENSOR_WAKEUP_TILT_DETECTOR,
+			0x8008, // Raw Acc
+			0x4048, // Raw Gyr
+		};
+
+		short delta = inv_androidSensor_to_control_bits[androidSensor];
+
+		if (delta == -1)
+				return ICM_20948_Stat_SensorNotSupported;
+
+		unsigned char data_output_control_reg1[2];
+
+    data_output_control_reg1[0] = (unsigned char)(delta >> 8);
+    data_output_control_reg1[1] = (unsigned char)(delta & 0xff);
+
+		result = ICM_20948_execute_w(pdev, DATA_OUT_CTL1, data_output_control_reg1, 2);
+
+		return result;
+}
+
+static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
+{
+	switch(sensor) {
+	case INV_ICM20948_SENSOR_ACCELEROMETER:                 return ANDROID_SENSOR_ACCELEROMETER;
+	case INV_ICM20948_SENSOR_GYROSCOPE:                     return ANDROID_SENSOR_GYROSCOPE;
+	case INV_ICM20948_SENSOR_RAW_ACCELEROMETER:             return ANDROID_SENSOR_RAW_ACCELEROMETER;
+	case INV_ICM20948_SENSOR_RAW_GYROSCOPE:                 return ANDROID_SENSOR_RAW_GYROSCOPE;
+	case INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED:   return ANDROID_SENSOR_MAGNETIC_FIELD_UNCALIBRATED;
+	case INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED:        return ANDROID_SENSOR_GYROSCOPE_UNCALIBRATED;
+	case INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON:        return ANDROID_SENSOR_ACTIVITY_CLASSIFICATON;
+	case INV_ICM20948_SENSOR_STEP_DETECTOR:                 return ANDROID_SENSOR_STEP_DETECTOR;
+	case INV_ICM20948_SENSOR_STEP_COUNTER:                  return ANDROID_SENSOR_STEP_COUNTER;
+	case INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR:          return ANDROID_SENSOR_GAME_ROTATION_VECTOR;
+	case INV_ICM20948_SENSOR_ROTATION_VECTOR:               return ANDROID_SENSOR_ROTATION_VECTOR;
+	case INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR:   return ANDROID_SENSOR_GEOMAGNETIC_ROTATION_VECTOR;
+	case INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD:             return ANDROID_SENSOR_GEOMAGNETIC_FIELD;
+	case INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION:     return ANDROID_SENSOR_WAKEUP_SIGNIFICANT_MOTION;
+	case INV_ICM20948_SENSOR_FLIP_PICKUP:                   return ANDROID_SENSOR_FLIP_PICKUP;
+	case INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR:          return ANDROID_SENSOR_WAKEUP_TILT_DETECTOR;
+	case INV_ICM20948_SENSOR_GRAVITY:                       return ANDROID_SENSOR_GRAVITY;
+	case INV_ICM20948_SENSOR_LINEAR_ACCELERATION:           return ANDROID_SENSOR_LINEAR_ACCELERATION;
+	case INV_ICM20948_SENSOR_ORIENTATION:                   return ANDROID_SENSOR_ORIENTATION;
+	case INV_ICM20948_SENSOR_B2S:                           return ANDROID_SENSOR_B2S;
+	default:                                                return ANDROID_SENSOR_NUM_MAX;
+	}
+}
+
+enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor)
+{
+	switch(sensor) {
+	case ANDROID_SENSOR_ACCELEROMETER:                    return INV_ICM20948_SENSOR_ACCELEROMETER;
+	case ANDROID_SENSOR_GYROSCOPE:                        return INV_ICM20948_SENSOR_GYROSCOPE;
+	case ANDROID_SENSOR_RAW_ACCELEROMETER:                return INV_ICM20948_SENSOR_RAW_ACCELEROMETER;
+	case ANDROID_SENSOR_RAW_GYROSCOPE:                    return INV_ICM20948_SENSOR_RAW_GYROSCOPE;
+	case ANDROID_SENSOR_MAGNETIC_FIELD_UNCALIBRATED:      return INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED;
+	case ANDROID_SENSOR_GYROSCOPE_UNCALIBRATED:           return INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED;
+	case ANDROID_SENSOR_ACTIVITY_CLASSIFICATON:           return INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON;
+	case ANDROID_SENSOR_STEP_DETECTOR:                    return INV_ICM20948_SENSOR_STEP_DETECTOR;
+	case ANDROID_SENSOR_STEP_COUNTER:                     return INV_ICM20948_SENSOR_STEP_COUNTER;
+	case ANDROID_SENSOR_GAME_ROTATION_VECTOR:             return INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR;
+	case ANDROID_SENSOR_ROTATION_VECTOR:                  return INV_ICM20948_SENSOR_ROTATION_VECTOR;
+	case ANDROID_SENSOR_GEOMAGNETIC_ROTATION_VECTOR:      return INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR;
+	case ANDROID_SENSOR_GEOMAGNETIC_FIELD:                return INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD;
+	case ANDROID_SENSOR_WAKEUP_SIGNIFICANT_MOTION:        return INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION;
+	case ANDROID_SENSOR_FLIP_PICKUP:                      return INV_ICM20948_SENSOR_FLIP_PICKUP;
+	case ANDROID_SENSOR_WAKEUP_TILT_DETECTOR:             return INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR;
+	case ANDROID_SENSOR_GRAVITY:                          return INV_ICM20948_SENSOR_GRAVITY;
+	case ANDROID_SENSOR_LINEAR_ACCELERATION:              return INV_ICM20948_SENSOR_LINEAR_ACCELERATION;
+	case ANDROID_SENSOR_ORIENTATION:                      return INV_ICM20948_SENSOR_ORIENTATION;
+	case ANDROID_SENSOR_B2S:                              return INV_ICM20948_SENSOR_B2S;
+	default:                                              return INV_ICM20948_SENSOR_MAX;
+	}
+}

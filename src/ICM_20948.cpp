@@ -107,6 +107,9 @@ void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
     case ICM_20948_Stat_SensorNotSupported:
         debugPrint(F("Sensor Not Supported"));
         break;
+    case ICM_20948_Stat_DMPNotSupported:
+        debugPrint(F("DMP Firmware Not Supported. Is #define ICM_20948_USE_DMP commented in util/ICM_20948_C.h?"));
+        break;
     case ICM_20948_Stat_DMPVerifyFail:
         debugPrint(F("DMP Firmware Verification Failed"));
         break;
@@ -780,14 +783,17 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         return status;
     }
 
-    retval = loadDMPFirmware();
-    if (retval != ICM_20948_Stat_Ok)
+    if (_device._dmp_firmware_available == true) // Should we attempt to load the DMP firmware?
     {
-        debugPrint(F("ICM_20948::startupDefault: loadDMPFirmware returned: "));
-        debugPrintStatus(retval);
-        debugPrintln(F(""));
-        status = retval;
-        return status;
+      retval = loadDMPFirmware();
+      if (retval != ICM_20948_Stat_Ok)
+      {
+          debugPrint(F("ICM_20948::startupDefault: loadDMPFirmware returned: "));
+          debugPrintStatus(retval);
+          debugPrintln(F(""));
+          status = retval;
+          return status;
+      }
     }
 
     retval = swReset();
@@ -921,6 +927,12 @@ ICM_20948_Status_e ICM_20948::loadDMPFirmware(void)
     return status;
 }
 
+ICM_20948_Status_e ICM_20948::enableSensor(enum inv_icm20948_sensor sensor, bool enable)
+{
+    status = inv_icm20948_enable_sensor(&_device, sensor, enable == true ? 1 : 0);
+    return status;
+}
+
 // I2C
 ICM_20948_I2C::ICM_20948_I2C()
 {
@@ -960,6 +972,12 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
 
     // Link the serif
     _device._serif = &_serif;
+
+#if defined(ICM_20948_USE_DMP)
+    _device._dmp_firmware_available = true; // Initialize _dmp_firmware_available
+#else
+    _device._dmp_firmware_available = false; // Initialize _dmp_firmware_available
+#endif
 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
 
@@ -1132,6 +1150,12 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
 
     // Link the serif
     _device._serif = &_serif;
+
+#if defined(ICM_20948_USE_DMP)
+    _device._dmp_firmware_available = true; // Initialize _dmp_firmware_available
+#else
+    _device._dmp_firmware_available = false; // Initialize _dmp_firmware_available
+#endif
 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
 

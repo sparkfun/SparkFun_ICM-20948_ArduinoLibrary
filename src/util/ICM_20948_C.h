@@ -15,6 +15,7 @@ The imementation of the interface is flexible
 #include "ICM_20948_REGISTERS.h"
 #include "ICM_20948_ENUMERATIONS.h" // This is to give users access to usable value definiitons
 #include "AK09916_ENUMERATIONS.h"
+#include "ICM_20948_SensorTypes.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -22,6 +23,10 @@ extern "C"
 #endif /* __cplusplus */
 
 extern int memcmp(const void *, const void *, size_t); // Avoid compiler warnings
+
+// Define if the DMP will be supported
+// Note: you must have 93KBytes of memory available to store the DMP firmware!
+#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
@@ -48,6 +53,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_InvalSensor, // Tried to apply a function to a sensor that does not support it (e.g. DLPF to the temperature sensor)
 		ICM_20948_Stat_NoData,
 		ICM_20948_Stat_SensorNotSupported,
+		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
 		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
 
 		ICM_20948_Stat_NUM,
@@ -148,6 +154,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	typedef struct
 	{
 		const ICM_20948_Serif_t *_serif; // Pointer to the assigned Serif (Serial Interface) vtable
+		bool _dmp_firmware_available; // Indicates if the DMP firmware has been included. It
 		bool _firmware_loaded; // Indicates if DMP has been loaded
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
@@ -155,9 +162,11 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	 * Icm20948 device require a DMP image to be loaded on init
 	 * Provide such images by mean of a byte array
 	 */
+#if defined(ICM_20948_USE_DMP) // Only include the 93KBytes of DMP if ICM_20948_USE_DMP is defined
 	const uint8_t dmp3_image[] = {
 	  #include "icm20948_img.dmp3a.h"
 	};
+#endif
 
 	// Here's the list of what I want to be able to do:
 	/*
@@ -260,10 +269,10 @@ callbacks for the user to respond to interrupt events
 	*/
 	ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data);
 
-	// ICM_20948_Status_e inv_icm20948_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len);
-	// ICM_20948_Status_e inv_icm20948_serif_write_reg(ICM_20948_Device_t *pdev, uint8_t reg, const uint8_t * buf, uint32_t len);
-	// ICM_20948_Status_e inv_icm20948_read_reg(ICM_20948_Device_t *pdev, uint8_t reg,	uint8_t * buf, uint32_t len);
-	// ICM_20948_Status_e inv_icm20948_serif_read_reg(ICM_20948_Device_t *pdev, uint8_t reg, uint8_t * buf, uint32_t len);
+	ICM_20948_Status_e inv_icm20948_set_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint32_t period);
+	ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state);
+	static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);
+	enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
 
 	// ToDo:
 

@@ -65,6 +65,17 @@ void setup() {
     }
   }
 
+  SERIAL_PORT.println("Device connected!");
+
+  myICM.enableSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR); // Enable the Game Rotation Vector
+
+  if( myICM.status == ICM_20948_Stat_Ok )
+    SERIAL_PORT.println("INV_ICM20948_SENSOR_ROTATION_VECTOR enabled!");
+  else
+  {
+    SERIAL_PORT.println("INV_ICM20948_SENSOR_ROTATION_VECTOR failed! Status is: ");
+    SERIAL_PORT.println( myICM.statusString() );
+  }
 }
 
 void loop() {
