@@ -107,6 +107,9 @@ void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
     case ICM_20948_Stat_SensorNotSupported:
         debugPrint(F("Sensor Not Supported"));
         break;
+    case ICM_20948_Stat_DMPVerifyFail:
+        debugPrint(F("DMP Firmware Verification Failed"));
+        break;
     default:
         debugPrint(F("Unknown Status"));
         break;
