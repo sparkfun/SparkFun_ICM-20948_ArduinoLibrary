@@ -992,6 +992,28 @@ ICM_20948_Status_e ICM_20948_get_FIFO_count(ICM_20948_Device_t *pdev, uint16_t *
 	return retval;
 }
 
+ICM_20948_Status_e ICM_20948_read_FIFO(ICM_20948_Device_t *pdev, uint8_t *data)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_FIFO_R_W_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_FIFO_R_W, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_R_W_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	*data = ctrl.FIFO_R_W;
+
+	return retval;
+}
+
 // DMP
 
 ICM_20948_Status_e ICM_20948_enable_DMP(ICM_20948_Device_t *pdev, bool enable)

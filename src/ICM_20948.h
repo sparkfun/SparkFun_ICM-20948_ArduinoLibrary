@@ -168,6 +168,7 @@ public:
     ICM_20948_Status_e resetFIFO(void);
     ICM_20948_Status_e setFIFOmode(bool snapshot = false); // Default to Stream (non-Snapshot) mode
     ICM_20948_Status_e getFIFOcount(uint16_t *count);
+    ICM_20948_Status_e readFIFO(uint8_t *data);
 
     //DMP
     ICM_20948_Status_e enableDMP(bool enable = true);

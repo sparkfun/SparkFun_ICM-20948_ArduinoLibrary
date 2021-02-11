@@ -946,6 +946,12 @@ ICM_20948_Status_e ICM_20948::getFIFOcount(uint16_t *count)
   return status;
 }
 
+ICM_20948_Status_e ICM_20948::readFIFO(uint8_t *data)
+{
+  status = ICM_20948_read_FIFO(&_device, data);
+  return status;
+}
+
 // DMP
 
 ICM_20948_Status_e ICM_20948::enableDMP(bool enable)

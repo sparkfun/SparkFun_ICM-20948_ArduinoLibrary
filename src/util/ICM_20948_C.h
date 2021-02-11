@@ -247,6 +247,7 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e ICM_20948_reset_FIFO(ICM_20948_Device_t *pdev);
 	ICM_20948_Status_e ICM_20948_set_FIFO_mode(ICM_20948_Device_t *pdev, bool snapshot);
 	ICM_20948_Status_e ICM_20948_get_FIFO_count(ICM_20948_Device_t *pdev, uint16_t *count);
+	ICM_20948_Status_e ICM_20948_read_FIFO(ICM_20948_Device_t *pdev, uint8_t *data);
 
 	// DMP
 
