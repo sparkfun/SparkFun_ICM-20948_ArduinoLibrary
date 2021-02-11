@@ -919,7 +919,46 @@ ICM_20948_Status_e ICM_20948::writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata)
     return status;
 }
 
+// FIFO
+
+ICM_20948_Status_e ICM_20948::enableFIFO(bool enable)
+{
+    status = ICM_20948_enable_FIFO(&_device, enable);
+    return status;
+}
+
+ICM_20948_Status_e ICM_20948::resetFIFO(void)
+{
+  status = ICM_20948_reset_FIFO(&_device);
+  return status;
+}
+
+ICM_20948_Status_e ICM_20948::setFIFOmode(bool snapshot)
+{
+    // Default to Stream (non-Snapshot) mode
+    status = ICM_20948_set_FIFO_mode(&_device, snapshot);
+    return status;
+}
+
+ICM_20948_Status_e ICM_20948::getFIFOcount(uint16_t *count)
+{
+  status = ICM_20948_get_FIFO_count(&_device, count);
+  return status;
+}
+
 // DMP
+
+ICM_20948_Status_e ICM_20948::enableDMP(bool enable)
+{
+    status = ICM_20948_enable_DMP(&_device, enable);
+    return status;
+}
+
+ICM_20948_Status_e ICM_20948::resetDMP(void)
+{
+    status = ICM_20948_reset_DMP(&_device);
+    return status;
+}
 
 ICM_20948_Status_e ICM_20948::loadDMPFirmware(void)
 {

@@ -861,7 +861,195 @@ ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t
 	return retval;
 }
 
+// FIFO
+
+ICM_20948_Status_e ICM_20948_enable_FIFO(ICM_20948_Device_t *pdev, bool enable)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_USER_CTRL_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	if (enable)
+			ctrl.FIFO_EN = 1;
+	else
+			ctrl.FIFO_EN = 0;
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+	return retval;
+}
+
+ICM_20948_Status_e ICM_20948_reset_FIFO(ICM_20948_Device_t *pdev)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_FIFO_RST_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_FIFO_RST, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_RST_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	ctrl.FIFO_RESET = 1; // Datasheet says "FIFO_RESET[4:0]" ???
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_FIFO_RST, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_RST_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	//delay ???
+
+	ctrl.FIFO_RESET = 0;
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_FIFO_RST, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_RST_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	return retval;
+}
+
+ICM_20948_Status_e ICM_20948_set_FIFO_mode(ICM_20948_Device_t *pdev, bool snapshot)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_FIFO_MODE_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_FIFO_MODE, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_MODE_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	if (snapshot)
+			ctrl.FIFO_MODE = 1; // Datasheet says "FIFO_MODE[4:0]" ???
+	else
+			ctrl.FIFO_MODE = 0;
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_FIFO_MODE, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_MODE_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+	return retval;
+}
+
+ICM_20948_Status_e ICM_20948_get_FIFO_count(ICM_20948_Device_t *pdev, uint16_t *count)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_FIFO_COUNTH_t ctrlh;
+	ICM_20948_FIFO_COUNTL_t ctrll;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_FIFO_COUNT_H, (uint8_t *)&ctrlh, sizeof(ICM_20948_FIFO_COUNTH_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	ctrlh.FIFO_COUNTH &= 0x1F; // Datasheet says "FIFO_CNT[12:8]"
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_FIFO_COUNT_L, (uint8_t *)&ctrll, sizeof(ICM_20948_FIFO_COUNTL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	*count = (((uint16_t)ctrlh.FIFO_COUNTH) << 8) | (uint16_t)ctrll.FIFO_COUNTL;
+
+	return retval;
+}
+
 // DMP
+
+ICM_20948_Status_e ICM_20948_enable_DMP(ICM_20948_Device_t *pdev, bool enable)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_USER_CTRL_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	if (enable)
+			ctrl.DMP_EN = 1;
+	else
+			ctrl.DMP_EN = 0;
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+	return retval;
+}
+
+ICM_20948_Status_e ICM_20948_reset_DMP(ICM_20948_Device_t *pdev)
+{
+	ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+	ICM_20948_USER_CTRL_t ctrl;
+	retval = ICM_20948_set_bank(pdev, 0);
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	retval = ICM_20948_execute_r(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+
+	ctrl.DMP_RST = 1;
+
+	retval = ICM_20948_execute_w(pdev, AGB0_REG_USER_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_USER_CTRL_t));
+	if (retval != ICM_20948_Stat_Ok)
+	{
+		return retval;
+	}
+	return retval;
+}
 
 ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev)
 {
@@ -953,9 +1141,9 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
 
 		//Enable LP_EN since we disabled it at begining of this function.
 
-		result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-		if (result != ICM_20948_Stat_Ok)
-				return result;
+		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+		// if (result != ICM_20948_Stat_Ok)
+		// 		return result;
 
     // if(!flag)
     //     Serial.println("DMP Firmware was updated successfully..");
@@ -1103,6 +1291,8 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 
 ICM_20948_Status_e inv_icm20948_set_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint32_t period)
 {
+		// TO DO: implement this!
+
 		//uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
 
 		return ICM_20948_Stat_Ok;
@@ -1110,15 +1300,15 @@ ICM_20948_Status_e inv_icm20948_set_sensor_period(ICM_20948_Device_t *pdev, enum
 
 ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
 {
+		// TO DO: figure out how to disable the sensor if state is 0
+
+		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+
 		if (pdev->_dmp_firmware_available == false)
 				return ICM_20948_Stat_DMPNotSupported;
 
 		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
 
-		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
-		// unsigned short inv_event_control = 0;
-		// unsigned short data_rdy_status = 0;
-		// unsigned long steps=0;
 		const short inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
 		{
 			// Unsupported Sensors are -1
@@ -1179,7 +1369,28 @@ ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv
     data_output_control_reg1[0] = (unsigned char)(delta >> 8);
     data_output_control_reg1[1] = (unsigned char)(delta & 0xff);
 
-		result = ICM_20948_execute_w(pdev, DATA_OUT_CTL1, data_output_control_reg1, 2);
+		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		// Write the sensor control bits into memory address DATA_OUT_CTL1
+		result = inv_icm20948_write_mems(pdev, DATA_OUT_CTL1, 2, (const unsigned char *)&data_output_control_reg1);
+
+		// TO DO: figure out if we need to set the ODR
+		// TO DO: figure out if we need to update REG_PWR_MGMT
+		// TO DO: figure out if we need to set DATA_RDY_STATUS
+
+		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+		// if (result != ICM_20948_Stat_Ok)
+		// 		return result;
 
 		return result;
 }

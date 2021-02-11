@@ -13,7 +13,7 @@
  ***************************************************************/
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
-//#define USE_SPI       // Uncomment this to use SPI
+#define USE_SPI       // Uncomment this to use SPI
 
 #define SERIAL_PORT Serial
 
@@ -34,8 +34,18 @@
 
 void setup() {
 
-  SERIAL_PORT.begin(115200);
-  while(!SERIAL_PORT){};
+  SERIAL_PORT.begin(115200); // Start the serial console
+  SERIAL_PORT.println(F("ICM-20948 Example"));
+
+  delay(100);
+
+  while (SERIAL_PORT.available()) // Make sure the serial RX buffer is empty
+    SERIAL_PORT.read();
+
+  SERIAL_PORT.println(F("Press any key to continue..."));
+
+  while (!SERIAL_PORT.available()) // Wait for the user to press a key (send any serial character)
+    ;
 
 #ifdef USE_SPI
     SPI_PORT.begin();
@@ -67,19 +77,53 @@ void setup() {
 
   SERIAL_PORT.println("Device connected!");
 
+  myICM.enableDMP(); // Enable the DMP
+
+  if( myICM.status == ICM_20948_Stat_Ok )
+    SERIAL_PORT.println("DMP enabled!");
+  else
+  {
+    SERIAL_PORT.print("Enable DMP failed! Status is: ");
+    SERIAL_PORT.println( myICM.statusString() );
+  }
+  
+  myICM.enableFIFO(); // Enable the FIFO
+
+  if( myICM.status == ICM_20948_Stat_Ok )
+    SERIAL_PORT.println("FIFO enabled!");
+  else
+  {
+    SERIAL_PORT.print("Enable FIFO failed! Status is: ");
+    SERIAL_PORT.println( myICM.statusString() );
+  }
+  
   myICM.enableSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR); // Enable the Game Rotation Vector
 
   if( myICM.status == ICM_20948_Stat_Ok )
     SERIAL_PORT.println("INV_ICM20948_SENSOR_ROTATION_VECTOR enabled!");
   else
   {
-    SERIAL_PORT.println("INV_ICM20948_SENSOR_ROTATION_VECTOR failed! Status is: ");
+    SERIAL_PORT.print("INV_ICM20948_SENSOR_ROTATION_VECTOR failed! Status is: ");
     SERIAL_PORT.println( myICM.statusString() );
   }
 }
 
-void loop() {
+void loop()
+{
+  uint16_t count;
+  myICM.getFIFOcount(&count);
+  if( myICM.status == ICM_20948_Stat_Ok )
+  {
+    SERIAL_PORT.print("FIFO count is: ");
+    SERIAL_PORT.println( count );
+  }
+  else
+  {
+    SERIAL_PORT.print("getFIFOcount failed! Status is: ");
+    SERIAL_PORT.println( myICM.statusString() );
+  }
 
+  delay(1000);
 }
 
 

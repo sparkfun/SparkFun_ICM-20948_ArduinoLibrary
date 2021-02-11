@@ -163,7 +163,15 @@ public:
     uint8_t readMag(AK09916_Reg_Addr_e reg);
     ICM_20948_Status_e writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata);
 
+    //FIFO
+    ICM_20948_Status_e enableFIFO(bool enable = true);
+    ICM_20948_Status_e resetFIFO(void);
+    ICM_20948_Status_e setFIFOmode(bool snapshot = false); // Default to Stream (non-Snapshot) mode
+    ICM_20948_Status_e getFIFOcount(uint16_t *count);
+
     //DMP
+    ICM_20948_Status_e enableDMP(bool enable = true);
+    ICM_20948_Status_e resetDMP(void);
     ICM_20948_Status_e loadDMPFirmware(void);
     ICM_20948_Status_e enableSensor(enum inv_icm20948_sensor sensor, bool enable = true);
 };

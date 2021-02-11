@@ -84,6 +84,7 @@ typedef enum{
 		// Break
 	AGB0_REG_FIFO_EN_1 = 0x66,
 	AGB0_REG_FIFO_EN_2,
+	AGB0_REG_FIFO_RST,
 	AGB0_REG_FIFO_MODE,
 		// Break
 	AGB0_REG_FIFO_COUNT_H = 0x70,
