@@ -891,6 +891,18 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
 		if(pdev->_firmware_loaded)
 			return ICM_20948_Stat_Ok; // Bail with no error if firmware is already loaded
 
+		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
     // Write DMP memory
 
     data = data_start;
@@ -939,6 +951,12 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
         memaddr += write_size;
     }
 
+		//Enable LP_EN since we disabled it at begining of this function.
+
+		result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+		if (result != ICM_20948_Stat_Ok)
+				return result;
+
     // if(!flag)
     //     Serial.println("DMP Firmware was updated successfully..");
 
@@ -960,43 +978,24 @@ ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned sh
     unsigned char lBankSelected;
     unsigned char lStartAddrSelected;
 
-    // unsigned char power_state = inv_icm20948_get_chip_power_state(s);
-
     if(!data)
+		{
         return ICM_20948_Stat_NoData;
-
-    // if((power_state & CHIP_AWAKE) == 0)   // Wake up chip since it is asleep
-    //     result = inv_icm20948_set_chip_power_state(s, CHIP_AWAKE, 1);
-
-		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
-		if (result != ICM_20948_Stat_Ok)
-				return result;
-
-    // result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 0);
-
-		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
-		if (result != ICM_20948_Stat_Ok)
-				return result;
-
-		// result |= inv_set_bank(s, 0);
+		}
 
 		result = ICM_20948_set_bank(pdev, 0); // Set bank 0
 		if (result != ICM_20948_Stat_Ok)
+		{
 				return result;
+		}
 
     lBankSelected = (reg >> 8);
 
-		// if (lBankSelected != s->lLastBankSelected)
-		// {
-		// 	result |= inv_icm20948_write_reg(s, REG_MEM_BANK_SEL, &lBankSelected, 1);
-		// 	if (result)
-		// 		return result;
-		// 	s->lLastBankSelected = lBankSelected;
-		// }
-
 		result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
 		if (result != ICM_20948_Stat_Ok)
+		{
 				return result;
+		}
 
     while (bytesWritten < length)
     {
@@ -1007,15 +1006,12 @@ ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned sh
            This register must be written prior to each access to initialize the register to the proper starting address.
            The address will auto increment during burst transactions.  Two consecutive bursts without re-initializing the start address would skip one address. */
 
-				// result |= inv_icm20948_write_reg(s, REG_MEM_START_ADDR, &lStartAddrSelected, 1);
-        // if (result)
-        //     return result;
-
 				result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_START_ADDR, &lStartAddrSelected, 1);
 				if (result != ICM_20948_Stat_Ok)
+				{
 						return result;
+				}
 
-        //thisLen = min(INV_MAX_SERIAL_WRITE, length-bytesWritten);
 				if (length-bytesWritten <= INV_MAX_SERIAL_WRITE)
 						thisLen = length-bytesWritten;
 				else
@@ -1023,25 +1019,15 @@ ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned sh
 
         /* Write data */
 
-        // result |= inv_icm20948_write_reg(s, REG_MEM_R_W, &data[bytesWritten], thisLen);
-        // if (result)
-        //     return result;
-
 				result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_R_W, (uint8_t *)&data[bytesWritten], thisLen);
 				if (result != ICM_20948_Stat_Ok)
+				{
 						return result;
+				}
 
         bytesWritten += thisLen;
         reg += thisLen;
     }
-
-    //Enable LP_EN since we disabled it at begining of this function.
-
-    // result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 1);
-
-		result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-		if (result != ICM_20948_Stat_Ok)
-				return result;
 
     return result;
 }
@@ -1058,50 +1044,27 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 	unsigned int bytesWritten = 0;
 	unsigned int thisLen;
-	//unsigned char i;
 	unsigned char lBankSelected;
 	unsigned char lStartAddrSelected;
 
-	// unsigned char dat[INV_MAX_SERIAL_READ] = {0};
-
-	// unsigned char power_state = inv_icm20948_get_chip_power_state(s);
-
 	if(!data)
-		return ICM_20948_Stat_NoData;
-
-	// if((power_state & CHIP_AWAKE) == 0)   // Wake up chip since it is asleep
-	// 	result = inv_icm20948_set_chip_power_state(s, CHIP_AWAKE, 1);
-
-	result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
-	if (result != ICM_20948_Stat_Ok)
-			return result;
-
-	// if(check_reg_access_lp_disable(s, reg))
-	// 	result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 0);
-
-	result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
-	if (result != ICM_20948_Stat_Ok)
-			return result;
-
-	// result |= inv_set_bank(s, 0);
+	{
+			return ICM_20948_Stat_NoData;
+	}
 
 	result = ICM_20948_set_bank(pdev, 0); // Set bank 0
 	if (result != ICM_20948_Stat_Ok)
+	{
 			return result;
+	}
 
 	lBankSelected = (reg >> 8);
 
-	// if (lBankSelected != s->lLastBankSelected)
-	// {
-	// 	result |= inv_icm20948_write_reg(s, REG_MEM_BANK_SEL, &lBankSelected, 1);
-	// 	if (result)
-	// 		return result;
-	// 	s->lLastBankSelected = lBankSelected;
-	// }
-
 	result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
 	if (result != ICM_20948_Stat_Ok)
+	{
 			return result;
+	}
 
 	while (bytesWritten < length)
 	{
@@ -1112,15 +1075,12 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 		   This register must be written prior to each access to initialize the register to the proper starting address.
 		   The address will auto increment during burst transactions.  Two consecutive bursts without re-initializing the start address would skip one address. */
 
-		// result |= inv_icm20948_write_reg(s, REG_MEM_START_ADDR, &lStartAddrSelected, 1);
-		// if (result)
-		// 	return result;
-
 		result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_START_ADDR, &lStartAddrSelected, 1);
 		if (result != ICM_20948_Stat_Ok)
+		{
 				return result;
+		}
 
-		//thisLen = min(INV_MAX_SERIAL_READ, length-bytesWritten);
 		if (length-bytesWritten <= INV_MAX_SERIAL_READ)
 				thisLen = length-bytesWritten;
 		else
@@ -1128,37 +1088,15 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 
 		/* Read data */
 
-		// if(s->base_state.serial_interface == SERIAL_INTERFACE_SPI) {
-		// 	result |= inv_icm20948_read_reg(s, REG_MEM_R_W, &dat[bytesWritten], thisLen);
-		// } else {
-		// 	result |= inv_icm20948_read_reg(s, REG_MEM_R_W, &data[bytesWritten], thisLen);
-		// }
-		// if (result)
-		// 	return result;
-
 		result = ICM_20948_execute_r(pdev, AGB0_REG_MEM_R_W, &data[bytesWritten], thisLen);
 		if (result != ICM_20948_Stat_Ok)
+		{
 				return result;
+		}
 
 		bytesWritten += thisLen;
 		reg += thisLen;
 	}
-
-	// if(s->base_state.serial_interface == SERIAL_INTERFACE_SPI) {
-	// 	for (i=0; i< length; i++) {
-	// 		*data= dat[i];
-	// 		 data++;
-	// 	}
-	// }
-
-	//Enable LP_EN if we disabled it at begining of this function.
-
-	// if(check_reg_access_lp_disable(s, reg))
-	// 	result |= inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 1);
-
-	result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-	if (result != ICM_20948_Stat_Ok)
-			return result;
 
 	return result;
 }
