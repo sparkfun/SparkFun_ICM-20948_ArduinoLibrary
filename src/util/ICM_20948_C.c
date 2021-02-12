@@ -1186,25 +1186,31 @@ ICM_20948_Status_e ICM_20948_set_dmp_start_address(ICM_20948_Device_t *pdev, uns
 		if (pdev->_dmp_firmware_available == false)
 				return ICM_20948_Stat_DMPNotSupported;
 
-		unsigned char data_output_control_reg1[2];
+		unsigned char start_address[2];
 
-    data_output_control_reg1[0] = (unsigned char)(address >> 8);
-    data_output_control_reg1[1] = (unsigned char)(address & 0xff);
+    start_address[0] = (unsigned char)(address >> 8);
+    start_address[1] = (unsigned char)(address & 0xff);
 
-		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
-		if (result != ICM_20948_Stat_Ok)
-		{
-				return result;
-		}
+		// result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		// if (result != ICM_20948_Stat_Ok)
+		// {
+		// 		return result;
+		// }
+		//
+		// result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		// if (result != ICM_20948_Stat_Ok)
+		// {
+		// 		return result;
+		// }
 
-		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		result = ICM_20948_set_bank(pdev, 2); // Set bank 2
 		if (result != ICM_20948_Stat_Ok)
 		{
 				return result;
 		}
 
 		// Write the sensor control bits into memory address AGB2_REG_PRGM_START_ADDRH
-		result = inv_icm20948_write_mems(pdev, AGB2_REG_PRGM_START_ADDRH, 2, (const unsigned char *)&data_output_control_reg1);
+		result = ICM_20948_execute_w(pdev, AGB2_REG_PRGM_START_ADDRH, (uint8_t *)start_address, 2);
 
 		return result;
 }
@@ -1380,57 +1386,57 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
 	}
 
 	// Set the ODR registers and clear the ODR counters
-	if (delta & DMP_Data_Output_Control_1_Compass_Calibr > 0)
+	if ((delta & DMP_Data_Output_Control_1_Compass_Calibr) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_CPASS_CALIBR, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS_CALIBR, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Gyro_Calibr > 0)
+	if ((delta & DMP_Data_Output_Control_1_Gyro_Calibr) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_GYRO_CALIBR, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO_CALIBR, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Pressure > 0)
+	if ((delta & DMP_Data_Output_Control_1_Pressure) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_PRESSURE, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PRESSURE, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Geomag > 0)
+	if ((delta & DMP_Data_Output_Control_1_Geomag) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_GEOMAG, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GEOMAG, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_PQuat6 > 0)
+	if ((delta & DMP_Data_Output_Control_1_PQuat6) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_PQUAT6, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PQUAT6, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Quat9 > 0)
+	if ((delta & DMP_Data_Output_Control_1_Quat9) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_QUAT9, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT9, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Quat6 > 0)
+	if ((delta & DMP_Data_Output_Control_1_Quat6) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_QUAT6, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT6, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_ALS > 0)
+	if ((delta & DMP_Data_Output_Control_1_ALS) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_ALS, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ALS, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Compass > 0)
+	if ((delta & DMP_Data_Output_Control_1_Compass) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_CPASS, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Gyro > 0)
+	if ((delta & DMP_Data_Output_Control_1_Gyro) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_GYRO, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO, 2, (const unsigned char *)&odr_count_zero);
 	}
-	if (delta & DMP_Data_Output_Control_1_Accel > 0)
+	if ((delta & DMP_Data_Output_Control_1_Accel) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_ACCEL, 2, (const unsigned char *)&odr_reg_val);
 			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ACCEL, 2, (const unsigned char *)&odr_count_zero);
@@ -1502,10 +1508,10 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 		if (delta == 0xFFFF)
 				return ICM_20948_Stat_SensorNotSupported;
 
-		unsigned char data_output_control_reg1[2];
+		unsigned char data_intr_ctl[2];
 
-    data_output_control_reg1[0] = (unsigned char)(delta >> 8);
-    data_output_control_reg1[1] = (unsigned char)(delta & 0xff);
+    data_intr_ctl[0] = (unsigned char)(delta >> 8);
+    data_intr_ctl[1] = (unsigned char)(delta & 0xff);
 
 		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
 		if (result != ICM_20948_Stat_Ok)
@@ -1520,7 +1526,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 		}
 
 		// Write the sensor control bits into memory address DATA_OUT_CTL1
-		result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_output_control_reg1);
+		result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_intr_ctl);
 
 		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
 		// if (result != ICM_20948_Stat_Ok)
