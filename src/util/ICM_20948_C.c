@@ -1347,16 +1347,103 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 	return result;
 }
 
-ICM_20948_Status_e inv_icm20948_set_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint32_t period)
+ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint16_t period)
 {
-		// TO DO: implement this!
+	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 
-		//uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+	if (pdev->_dmp_firmware_available == false)
+			return ICM_20948_Stat_DMPNotSupported;
 
-		return ICM_20948_Stat_Ok;
+	uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+
+	uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
+
+	if (delta == 0xFFFF)
+			return ICM_20948_Stat_SensorNotSupported;
+
+	unsigned char odr_reg_val[2];
+	odr_reg_val[0] = (unsigned char)(period >> 8);
+	odr_reg_val[1] = (unsigned char)(period & 0xff);
+
+	unsigned char odr_count_zero[2] = {0x00, 0x00};
+
+	result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+	if (result != ICM_20948_Stat_Ok)
+	{
+			return result;
+	}
+
+	result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+	if (result != ICM_20948_Stat_Ok)
+	{
+			return result;
+	}
+
+	// Set the ODR registers and clear the ODR counters
+	if (delta & DMP_Data_Output_Control_1_Compass_Calibr > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_CPASS_CALIBR, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS_CALIBR, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Gyro_Calibr > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_GYRO_CALIBR, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO_CALIBR, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Pressure > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_PRESSURE, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PRESSURE, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Geomag > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_GEOMAG, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GEOMAG, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_PQuat6 > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_PQUAT6, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PQUAT6, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Quat9 > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_QUAT9, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT9, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Quat6 > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_QUAT6, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT6, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_ALS > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_ALS, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ALS, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Compass > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_CPASS, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Gyro > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_GYRO, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO, 2, (const unsigned char *)&odr_count_zero);
+	}
+	if (delta & DMP_Data_Output_Control_1_Accel > 0)
+	{
+			result |= inv_icm20948_write_mems(pdev, ODR_ACCEL, 2, (const unsigned char *)&odr_reg_val);
+			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ACCEL, 2, (const unsigned char *)&odr_count_zero);
+	}
+
+	// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+	// if (result != ICM_20948_Stat_Ok)
+	// 		return result;
+
+	return result;
 }
 
-ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
+ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
 {
 		// TO DO: figure out how to disable the sensor if state is 0
 
@@ -1367,59 +1454,9 @@ ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv
 
 		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
 
-		const short inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
-		{
-			// Unsupported Sensors are -1
-			-1, // Meta Data
-			-32760, //0x8008, // Accelerometer
-			0x0028, // Magnetic Field
-			0x0408, // Orientation
-			0x4048, // Gyroscope
-			0x1008, // Light
-			0x0088, // Pressure
-			-1, // Temperature
-			-1, // Proximity <----------- fixme
-			0x0808, // Gravity
-			-30712, // 0x8808, // Linear Acceleration
-			0x0408, // Rotation Vector
-			-1, // Humidity
-			-1, // Ambient Temperature
-			0x2008, // Magnetic Field Uncalibrated
-			0x0808, // Game Rotation Vector
-			0x4008, // Gyroscope Uncalibrated
-			0, // Significant Motion
-			0x0018, // Step Detector
-			0x0010, // Step Counter <----------- fixme
-			0x0108, // Geomagnetic Rotation Vector
-			-1, //ANDROID_SENSOR_HEART_RATE,
-			-1, //ANDROID_SENSOR_PROXIMITY,
+		uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
 
-			-32760, // ANDROID_SENSOR_WAKEUP_ACCELEROMETER,
-			0x0028, // ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD,
-			0x0408, // ANDROID_SENSOR_WAKEUP_ORIENTATION,
-			0x4048, // ANDROID_SENSOR_WAKEUP_GYROSCOPE,
-			0x1008, // ANDROID_SENSOR_WAKEUP_LIGHT,
-			0x0088, // ANDROID_SENSOR_WAKEUP_PRESSURE,
-			0x0808, // ANDROID_SENSOR_WAKEUP_GRAVITY,
-			-30712, // ANDROID_SENSOR_WAKEUP_LINEAR_ACCELERATION,
-			0x0408, // ANDROID_SENSOR_WAKEUP_ROTATION_VECTOR,
-			-1,		// ANDROID_SENSOR_WAKEUP_RELATIVE_HUMIDITY,
-			-1,		// ANDROID_SENSOR_WAKEUP_AMBIENT_TEMPERATURE,
-			0x2008, // ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED,
-			0x0808, // ANDROID_SENSOR_WAKEUP_GAME_ROTATION_VECTOR,
-			0x4008, // ANDROID_SENSOR_WAKEUP_GYROSCOPE_UNCALIBRATED,
-			0x0018, // ANDROID_SENSOR_WAKEUP_STEP_DETECTOR,
-			0x0010, // ANDROID_SENSOR_WAKEUP_STEP_COUNTER,
-			0x0108, // ANDROID_SENSOR_WAKEUP_GEOMAGNETIC_ROTATION_VECTOR
-			-1,		// ANDROID_SENSOR_WAKEUP_HEART_RATE,
-			0,		// ANDROID_SENSOR_WAKEUP_TILT_DETECTOR,
-			0x8008, // Raw Acc
-			0x4048, // Raw Gyr
-		};
-
-		short delta = inv_androidSensor_to_control_bits[androidSensor];
-
-		if (delta == -1)
+		if (delta == 0xFFFF)
 				return ICM_20948_Stat_SensorNotSupported;
 
 		unsigned char data_output_control_reg1[2];
@@ -1442,9 +1479,48 @@ ICM_20948_Status_e inv_icm20948_enable_sensor(ICM_20948_Device_t *pdev, enum inv
 		// Write the sensor control bits into memory address DATA_OUT_CTL1
 		result = inv_icm20948_write_mems(pdev, DATA_OUT_CTL1, 2, (const unsigned char *)&data_output_control_reg1);
 
-		// TO DO: figure out if we need to set the ODR
-		// TO DO: figure out if we need to update REG_PWR_MGMT
-		// TO DO: figure out if we need to set DATA_RDY_STATUS
+		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+		// if (result != ICM_20948_Stat_Ok)
+		// 		return result;
+
+		return result;
+}
+
+ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
+{
+		// TO DO: figure out how to disable the sensor if state is 0
+
+		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+
+		if (pdev->_dmp_firmware_available == false)
+				return ICM_20948_Stat_DMPNotSupported;
+
+		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+
+		uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
+
+		if (delta == 0xFFFF)
+				return ICM_20948_Stat_SensorNotSupported;
+
+		unsigned char data_output_control_reg1[2];
+
+    data_output_control_reg1[0] = (unsigned char)(delta >> 8);
+    data_output_control_reg1[1] = (unsigned char)(delta & 0xff);
+
+		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		// Write the sensor control bits into memory address DATA_OUT_CTL1
+		result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_output_control_reg1);
 
 		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
 		// if (result != ICM_20948_Stat_Ok)

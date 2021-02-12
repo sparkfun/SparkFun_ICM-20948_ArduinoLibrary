@@ -985,11 +985,21 @@ ICM_20948_Status_e ICM_20948::setDMPstartAddress(unsigned short address)
     return ICM_20948_Stat_DMPNotSupported;
 }
 
-ICM_20948_Status_e ICM_20948::enableSensor(enum inv_icm20948_sensor sensor, bool enable)
+ICM_20948_Status_e ICM_20948::enableDMPSensor(enum inv_icm20948_sensor sensor, bool enable)
 {
-  if (_device._dmp_firmware_available == true) // Should we attempt to set the start address?
+  if (_device._dmp_firmware_available == true) // Should we attempt to enable the sensor?
   {
-    status = inv_icm20948_enable_sensor(&_device, sensor, enable == true ? 1 : 0);
+    status = inv_icm20948_enable_dmp_sensor(&_device, sensor, enable == true ? 1 : 0);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::enableDMPSensorInt(enum inv_icm20948_sensor sensor, bool enable)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to enable the sensor interrupt?
+  {
+    status = inv_icm20948_enable_dmp_sensor_int(&_device, sensor, enable == true ? 1 : 0);
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;
@@ -1010,6 +1020,17 @@ ICM_20948_Status_e ICM_20948::readDMPmems(unsigned short reg, unsigned int lengt
   if (_device._dmp_firmware_available == true) // Should we attempt to read from the DMP?
   {
     status = inv_icm20948_read_mems(&_device, reg, length, data);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setDMPODRrate(enum inv_icm20948_sensor sensor, int rate)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to set the DMP ODR?
+  {
+    uint16_t period = (225 / rate) - 1;
+    status = inv_icm20948_set_dmp_sensor_period(&_device, sensor, period);
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;

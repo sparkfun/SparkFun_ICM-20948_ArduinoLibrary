@@ -175,9 +175,11 @@ public:
     ICM_20948_Status_e resetDMP(void);
     ICM_20948_Status_e loadDMPFirmware(void);
     ICM_20948_Status_e setDMPstartAddress(unsigned short address = DMP_START_ADDRESS);
-    ICM_20948_Status_e enableSensor(enum inv_icm20948_sensor sensor, bool enable = true);
+    ICM_20948_Status_e enableDMPSensor(enum inv_icm20948_sensor sensor, bool enable = true);
+    ICM_20948_Status_e enableDMPSensorInt(enum inv_icm20948_sensor sensor, bool enable = true);
     ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
     ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
+    ICM_20948_Status_e setDMPODRrate(enum inv_icm20948_sensor sensor, int rate);
 };
 
 // I2C

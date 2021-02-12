@@ -167,6 +167,11 @@ void setup() {
   // X = raw_x * CPASS_MTX_00 + raw_y * CPASS_MTX_01 + raw_z * CPASS_MTX_02
   // Y = raw_x * CPASS_MTX_10 + raw_y * CPASS_MTX_11 + raw_z * CPASS_MTX_12
   // Z = raw_x * CPASS_MTX_20 + raw_y * CPASS_MTX_21 + raw_z * CPASS_MTX_22
+  // Magnetometer full scale is +/- 4900uT so _I think_ we need to multiply by 2^30 / 4900 = 0x000357FA
+  // The magnetometer Y and Z axes are reversed compared to the accelerometer so we'll invert those
+//  const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
+//  const unsigned char mountMultiplierPlus[4] = {0x00, 0x03, 0x57, 0xFA};
+//  const unsigned char mountMultiplierMinus[4] = {0xFF, 0xFC, 0xA8, 0x05};
   const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
   const unsigned char mountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00};
   const unsigned char mountMultiplierMinus[4] = {0xC0, 0x00, 0x00, 0x00};
@@ -194,6 +199,12 @@ void setup() {
 
   // Enable DMP interrupt
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
+
+  // Enable the DMP orientation sensor
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
+
+  // Set the DMP orientation sensor rate to 25Hz
+  success &= (myICM.setDMPODRrate(INV_ICM20948_SENSOR_ORIENTATION, 25) == ICM_20948_Stat_Ok);
 
   // Check success
   if( success )
