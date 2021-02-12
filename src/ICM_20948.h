@@ -151,7 +151,7 @@ public:
     uint8_t i2cMasterSingleR(uint8_t addr, uint8_t reg);
 
     // Default Setup
-    ICM_20948_Status_e startupDefault(void);
+    ICM_20948_Status_e startupDefault(bool minimal = false); // If minimal is true, several startup steps are skipped. If ICM_20948_USE_DMP is defined, .begin will call startupDefault with minimal set to true.
 
     // direct read/write
     ICM_20948_Status_e read(uint8_t reg, uint8_t *pdata, uint32_t len);
@@ -174,7 +174,10 @@ public:
     ICM_20948_Status_e enableDMP(bool enable = true);
     ICM_20948_Status_e resetDMP(void);
     ICM_20948_Status_e loadDMPFirmware(void);
+    ICM_20948_Status_e setDMPstartAddress(unsigned short address = DMP_START_ADDRESS);
     ICM_20948_Status_e enableSensor(enum inv_icm20948_sensor sensor, bool enable = true);
+    ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
+    ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
 };
 
 // I2C

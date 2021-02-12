@@ -16,6 +16,7 @@ The imementation of the interface is flexible
 #include "ICM_20948_ENUMERATIONS.h" // This is to give users access to usable value definiitons
 #include "AK09916_ENUMERATIONS.h"
 #include "ICM_20948_SensorTypes.h"
+#include "ICM_20948_DMP.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -40,8 +41,6 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 #define INV_MAX_SERIAL_READ 16
 /** @brief Max size that can be written across I2C or SPI data lines */
 #define INV_MAX_SERIAL_WRITE 16
-
-#define DMP_LOAD_START 0x90
 
 	typedef enum
 	{
@@ -253,8 +252,8 @@ callbacks for the user to respond to interrupt events
 
 	ICM_20948_Status_e ICM_20948_enable_DMP(ICM_20948_Device_t *pdev, bool enable);
 	ICM_20948_Status_e ICM_20948_reset_DMP(ICM_20948_Device_t *pdev);
-
 	ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev);
+	ICM_20948_Status_e ICM_20948_set_dmp_start_address(ICM_20948_Device_t *pdev, unsigned short address);
 
 	/** @brief Loads the DMP firmware from SRAM
 	* @param[in] data  pointer where the image

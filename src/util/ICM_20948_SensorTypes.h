@@ -39,15 +39,6 @@ extern "C" {
 #include <stdint.h>
 #include "ICM_20948_InvBool.h" // Defines true and false
 
-// data output control
-#define DATA_OUT_CTL1			(4 * 16)
-#define DATA_OUT_CTL2			(4 * 16 + 2)
-#define DATA_INTR_CTL			(4 * 16 + 12)
-#define FIFO_WATERMARK			(31 * 16 + 14)
-
-// motion event control
-#define MOTION_EVENT_CTL		(4 * 16 + 14)
-
 /** @brief Sensor type identifier definition
  */
 enum inv_sensor_type {

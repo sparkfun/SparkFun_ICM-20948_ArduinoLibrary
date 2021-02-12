@@ -910,7 +910,7 @@ ICM_20948_Status_e ICM_20948_reset_FIFO(ICM_20948_Device_t *pdev)
 		return retval;
 	}
 
-	ctrl.FIFO_RESET = 1; // Datasheet says "FIFO_RESET[4:0]" ???
+	ctrl.FIFO_RESET = 0x1F; // Datasheet says "FIFO_RESET[4:0]"
 
 	retval = ICM_20948_execute_w(pdev, AGB0_REG_FIFO_RST, (uint8_t *)&ctrl, sizeof(ICM_20948_FIFO_RST_t));
 	if (retval != ICM_20948_Stat_Ok)
@@ -949,7 +949,7 @@ ICM_20948_Status_e ICM_20948_set_FIFO_mode(ICM_20948_Device_t *pdev, bool snapsh
 	}
 
 	if (snapshot)
-			ctrl.FIFO_MODE = 1; // Datasheet says "FIFO_MODE[4:0]" ???
+			ctrl.FIFO_MODE = 0x1F; // Datasheet says "FIFO_MODE[4:0]"
 	else
 			ctrl.FIFO_MODE = 0;
 
@@ -1091,12 +1091,15 @@ ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev)
 ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const unsigned char *data_start, unsigned short size_start, unsigned short load_addr)
 {
     int write_size;
-    int result;
+		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned short memaddr;
     const unsigned char *data;
     unsigned short size;
     unsigned char data_cmp[INV_MAX_SERIAL_READ];
     int flag = 0;
+
+		if (pdev->_dmp_firmware_available == false)
+				return ICM_20948_Stat_DMPNotSupported;
 
 		if(pdev->_firmware_loaded)
 			return ICM_20948_Stat_Ok; // Bail with no error if firmware is already loaded
@@ -1167,10 +1170,43 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
 		// if (result != ICM_20948_Stat_Ok)
 		// 		return result;
 
-    // if(!flag)
-    //     Serial.println("DMP Firmware was updated successfully..");
+    if(!flag)
+		{
+    		//Serial.println("DMP Firmware was updated successfully..");
+				pdev->_firmware_loaded = true;
+		}
 
-    return ICM_20948_Stat_Ok;
+    return result;
+}
+
+ICM_20948_Status_e ICM_20948_set_dmp_start_address(ICM_20948_Device_t *pdev, unsigned short address)
+{
+		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+
+		if (pdev->_dmp_firmware_available == false)
+				return ICM_20948_Stat_DMPNotSupported;
+
+		unsigned char data_output_control_reg1[2];
+
+    data_output_control_reg1[0] = (unsigned char)(address >> 8);
+    data_output_control_reg1[1] = (unsigned char)(address & 0xff);
+
+		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		result = ICM_20948_low_power(pdev, false); // Make sure chip is not in low power state
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		// Write the sensor control bits into memory address AGB2_REG_PRGM_START_ADDRH
+		result = inv_icm20948_write_mems(pdev, AGB2_REG_PRGM_START_ADDRH, 2, (const unsigned char *)&data_output_control_reg1);
+
+		return result;
 }
 
 /**

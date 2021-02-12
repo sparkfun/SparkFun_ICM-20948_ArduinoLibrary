@@ -769,7 +769,7 @@ uint8_t ICM_20948::i2cMasterSingleR(uint8_t addr, uint8_t reg)
     return data;
 }
 
-ICM_20948_Status_e ICM_20948::startupDefault(void)
+ICM_20948_Status_e ICM_20948::startupDefault(bool minimal)
 {
     ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
@@ -781,19 +781,6 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         debugPrintln(F(""));
         status = retval;
         return status;
-    }
-
-    if (_device._dmp_firmware_available == true) // Should we attempt to load the DMP firmware?
-    {
-      retval = loadDMPFirmware();
-      if (retval != ICM_20948_Stat_Ok)
-      {
-          debugPrint(F("ICM_20948::startupDefault: loadDMPFirmware returned: "));
-          debugPrintStatus(retval);
-          debugPrintln(F(""));
-          status = retval;
-          return status;
-      }
     }
 
     retval = swReset();
@@ -824,6 +811,12 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         debugPrintStatus(retval);
         debugPrintln(F(""));
         status = retval;
+        return status;
+    }
+
+    if (minimal) // Return now if minimal is true
+    {
+        debugPrintln(F("ICM_20948::startupDefault: minimal startup complete!"));
         return status;
     }
 
@@ -872,6 +865,7 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         status = retval;
         return status;
     }
+
     retval = enableDLPF(ICM_20948_Internal_Gyr, false);
     if (retval != ICM_20948_Stat_Ok)
     {
@@ -881,6 +875,7 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         status = retval;
         return status;
     }
+
     retval = startupMagnetometer();
     if (retval != ICM_20948_Stat_Ok)
     {
@@ -891,7 +886,7 @@ ICM_20948_Status_e ICM_20948::startupDefault(void)
         return status;
     }
 
-    return status; // Leave status unchanged - return whatever it was when startupDefault was called
+    return status;
 }
 
 // direct read/write
@@ -956,8 +951,12 @@ ICM_20948_Status_e ICM_20948::readFIFO(uint8_t *data)
 
 ICM_20948_Status_e ICM_20948::enableDMP(bool enable)
 {
-    status = ICM_20948_enable_DMP(&_device, enable);
-    return status;
+    if (_device._dmp_firmware_available == true) // Should we attempt to enable the DMP?
+    {
+        status = ICM_20948_enable_DMP(&_device, enable);
+        return status;
+    }
+    return ICM_20948_Stat_DMPNotSupported;
 }
 
 ICM_20948_Status_e ICM_20948::resetDMP(void)
@@ -968,14 +967,52 @@ ICM_20948_Status_e ICM_20948::resetDMP(void)
 
 ICM_20948_Status_e ICM_20948::loadDMPFirmware(void)
 {
-    status = ICM_20948_firmware_load(&_device);
-    return status;
+    if (_device._dmp_firmware_available == true) // Should we attempt to load the DMP firmware?
+    {
+        status = ICM_20948_firmware_load(&_device);
+        return status;
+    }
+    return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setDMPstartAddress(unsigned short address)
+{
+    if (_device._dmp_firmware_available == true) // Should we attempt to set the start address?
+    {
+        status = ICM_20948_set_dmp_start_address(&_device, address);
+        return status;
+    }
+    return ICM_20948_Stat_DMPNotSupported;
 }
 
 ICM_20948_Status_e ICM_20948::enableSensor(enum inv_icm20948_sensor sensor, bool enable)
 {
+  if (_device._dmp_firmware_available == true) // Should we attempt to set the start address?
+  {
     status = inv_icm20948_enable_sensor(&_device, sensor, enable == true ? 1 : 0);
     return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to write to the DMP?
+  {
+    status = inv_icm20948_write_mems(&_device, reg, length, data);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::readDMPmems(unsigned short reg, unsigned int length, unsigned char *data)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to read from the DMP?
+  {
+    status = inv_icm20948_read_mems(&_device, reg, length, data);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
 }
 
 // I2C
@@ -1027,7 +1064,8 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
 
     // Perform default startup
-    status = startupDefault();
+    // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.
+    status = startupDefault(_device._dmp_firmware_available);
     if (status != ICM_20948_Stat_Ok)
     {
         debugPrint(F("ICM_20948_I2C::begin: startupDefault returned: "));
@@ -1205,7 +1243,8 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
     _device._firmware_loaded = false; // Initialize _firmware_loaded
 
     // Perform default startup
-    status = startupDefault();
+    // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.
+    status = startupDefault(_device._dmp_firmware_available);
     if (status != ICM_20948_Stat_Ok)
     {
         debugPrint(F("ICM_20948_SPI::begin: startupDefault returned: "));
