@@ -119,7 +119,7 @@ public:
     ICM_20948_Status_e cfgIntLatch(bool latching);         // If not latching then the interrupt is a 50 us pulse
     ICM_20948_Status_e cfgIntAnyReadToClear(bool enabled); // If enabled, *ANY* read will clear the INT_STATUS register. So if you have multiple interrupt sources enabled be sure to read INT_STATUS first
     ICM_20948_Status_e cfgFsyncActiveLow(bool active_low);
-    ICM_20948_Status_e cfgFsyncIntMode(bool interrupt_mode); // Can ue FSYNC as an interrupt input that sets the I2C Master Status register's PASS_THROUGH bit
+    ICM_20948_Status_e cfgFsyncIntMode(bool interrupt_mode); // Can use FSYNC as an interrupt input that sets the I2C Master Status register's PASS_THROUGH bit
 
     ICM_20948_Status_e intEnableI2C(bool enable);
     ICM_20948_Status_e intEnableDMP(bool enable);
@@ -171,6 +171,33 @@ public:
     ICM_20948_Status_e readFIFO(uint8_t *data);
 
     //DMP
+
+    // Done:
+    //  Configure DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
+    //  Load Firmware
+    //  Configure Accel scaling to DMP
+    //  Configure Compass mount matrix and scale to DMP
+    //  Reset FIFO
+    //  Reset DMP
+    //  Enable DMP interrupt
+    //  Configuring DMP to output data to FIFO: set DATA_OUT_CTL1 and DATA_INTR_CTL
+    //  Configuring DMP to output data at multiple ODRs
+
+    // To Do:
+    //  Configure DATA_RDY_STATUS
+    //  Additional FIFO output control: DATA_OUT_CTL2, FIFO_WATERMARK, BM_BATCH_MASK, BM_BATCH_CNTR, BM_BATCH_THLD
+    //  Configuring DMP features: MOTION_EVENT_CTL, PED_STD_STEPCTR, PED_STD_TIMECTR
+    //  Enabling Activity Recognition (BAC) feature
+    //  Enabling Significant Motion Detect (SMD) feature
+    //  Enabling Tilt Detector feature
+    //  Enabling Pick Up Gesture feature
+    //  Enabling Fsync detection feature
+    //  Configuring Accel calibration
+    //  Configuring Compass calibration
+    //  Configuring Gyro gain
+    //  Configuring Accel gain
+    //  Biases
+
     ICM_20948_Status_e enableDMP(bool enable = true);
     ICM_20948_Status_e resetDMP(void);
     ICM_20948_Status_e loadDMPFirmware(void);
@@ -180,6 +207,9 @@ public:
     ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
     ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
     ICM_20948_Status_e setDMPODRrate(enum inv_icm20948_sensor sensor, int rate);
+
+    ICM_20948_Status_e readDMPdataFromFIFO(icm_20948_DMP_data_t *data);
+
 };
 
 // I2C

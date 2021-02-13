@@ -10,12 +10,14 @@
  * ** This example is based on the InvenSense Application Note "Programming Sequence for DMP Hardware Functions".
  * ** We are grateful to InvenSense for providing this.
  * 
- * ** Important note: by default the DMP functionality is disabled in the library. This is to save program memory.
- * ** The DMP firmware takes up 14290 Bytes of program memory. To use the DMP, you will need to:
+ * ** Important note: by default the DMP functionality is disabled in the library
+ * ** as the DMP firmware takes up 14290 Bytes of program memory.
+ * ** To use the DMP, you will need to:
  * ** Edit ICM_20948_C.h
  * ** Uncomment line 29: #define ICM_20948_USE_DMP
  * ** Save changes
- * ** If you are using Windows, you can find ICM_20948_C.h in Documents\Arduino\libraries\SparkFun_ICM-20948_ArduinoLibrary\src\util
+ * ** If you are using Windows, you can find ICM_20948_C.h in:
+ * ** Documents\Arduino\libraries\SparkFun_ICM-20948_ArduinoLibrary\src\util
  *
  * Please see License.md for the license information.
  *
@@ -169,21 +171,18 @@ void setup() {
   // Z = raw_x * CPASS_MTX_20 + raw_y * CPASS_MTX_21 + raw_z * CPASS_MTX_22
   // Magnetometer full scale is +/- 4900uT so _I think_ we need to multiply by 2^30 / 4900 = 0x000357FA
   // The magnetometer Y and Z axes are reversed compared to the accelerometer so we'll invert those
-//  const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
-//  const unsigned char mountMultiplierPlus[4] = {0x00, 0x03, 0x57, 0xFA};
-//  const unsigned char mountMultiplierMinus[4] = {0xFF, 0xFC, 0xA8, 0x05};
   const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
-  const unsigned char mountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00};
-  const unsigned char mountMultiplierMinus[4] = {0xC0, 0x00, 0x00, 0x00};
+  const unsigned char mountMultiplierPlus[4] = {0x00, 0x03, 0x57, 0xFA};
+  const unsigned char mountMultiplierMinus[4] = {0xFF, 0xFC, 0xA8, 0x05};
   success &= (myICM.writeDMPmems(CPASS_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_02, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_10, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(CPASS_MTX_11, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(CPASS_MTX_11, 4, &mountMultiplierMinus[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_12, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_20, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]) == ICM_20948_Stat_Ok);
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -219,20 +218,32 @@ void setup() {
 
 void loop()
 {
-  uint16_t count;
-  myICM.getFIFOcount(&count);
+  icm_20948_DMP_data_t data;
+  myICM.readDMPdataFromFIFO(&data);
   if( myICM.status == ICM_20948_Stat_Ok )
   {
-    SERIAL_PORT.print("FIFO count is: ");
-    SERIAL_PORT.println( count );
+    SERIAL_PORT.print("Received data! Header: ");
+    SERIAL_PORT.println( data.header );
+    if ( data.header == DMP_header_bitmap_Quat9 ) // We have asked for orientation data so we should receive Quat9
+    {
+      SERIAL_PORT.print("Quat9 data is: 0x");
+      for (int i = 0; i < 14; i++) // Quat9 data is 14 bytes long
+      {
+        if ( data.Quat9[i] < 16) SERIAL_PORT.print( "0" ); // Pad the zero
+        SERIAL_PORT.print( data.Quat9[i], HEX );
+      }
+      SERIAL_PORT.println();
+    }
   }
-  else
+  else if ( myICM.status != ICM_20948_Stat_FIFONoDataAvail )
   {
-    SERIAL_PORT.print("getFIFOcount failed! Status is: ");
+    SERIAL_PORT.print("readDMPdataFromFIFO failed! Status is: ");
     SERIAL_PORT.println( myICM.statusString() );
+    SERIAL_PORT.print("Header is: 0x");
+    SERIAL_PORT.println( data.header, HEX );
   }
 
-  delay(1000);
+  delay(10);
 }
 
 

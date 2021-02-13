@@ -34,53 +34,54 @@ extern "C" {
 // Appendix I: DMP register addresses
 
 // data output control
-#define DATA_OUT_CTL1 (4 * 16)
-#define DATA_OUT_CTL2 (4 * 16 + 2)
-#define DATA_INTR_CTL (4 * 16 + 12)
-#define FIFO_WATERMARK (31 * 16 + 14)
+#define DATA_OUT_CTL1 (4 * 16) // 16-bit: Data output control 1 register : configure DMP to output required data
+#define DATA_OUT_CTL2 (4 * 16 + 2) // 16-bit: Data output control 2 register : configure the BM, accel/gyro/compass accuracy and gesture such as Pick-up
+#define DATA_INTR_CTL (4 * 16 + 12) // 16-bit: Determines which sensors can generate interrupt according to bit map defined for DATA_OUT_CTL1
+#define FIFO_WATERMARK (31 * 16 + 14) // 16-bit: DMP will send FIFO interrupt if FIFO count > FIFO watermark. FIFO watermark is set to 80% of actual FIFO size by default
 // motion event control
-#define MOTION_EVENT_CTL (4 * 16 + 14)
-// indicates to DMP which sensors are available
-#define DATA_RDY_STATUS (8 * 16 + 10)
+#define MOTION_EVENT_CTL (4 * 16 + 14) // 16-bit: configure DMP for Android L and Invensense specific features
+#define DATA_RDY_STATUS (8 * 16 + 10) // 16-bit: indicates to DMP which sensors are available
 // batch mode
-#define BM_BATCH_CNTR (27 * 16)
-#define BM_BATCH_THLD (19 * 16 + 12)
-#define BM_BATCH_MASK (21 * 16 + 14)
-// sensor output data rate
-#define ODR_ACCEL (11 * 16 + 14)
-#define ODR_GYRO (11 * 16 + 10)
-#define ODR_CPASS (11 * 16 + 6)
-#define ODR_ALS (11 * 16 + 2)
-#define ODR_QUAT6 (10 * 16 + 12)
-#define ODR_QUAT9 (10 * 16 + 8)
-#define ODR_PQUAT6 (10 * 16 + 4)
-#define ODR_GEOMAG (10 * 16 + 0)
-#define ODR_PRESSURE (11 * 16 + 12)
-#define ODR_GYRO_CALIBR (11 * 16 + 8)
-#define ODR_CPASS_CALIBR (11 * 16 + 4)
-// sensor output data rate counter
-#define ODR_CNTR_ACCEL (9 * 16 + 14)
-#define ODR_CNTR_GYRO (9 * 16 + 10)
-#define ODR_CNTR_CPASS (9 * 16 + 6)
-#define ODR_CNTR_ALS (9 * 16 + 2)
-#define ODR_CNTR_QUAT6 (8 * 16 + 12)
-#define ODR_CNTR_QUAT9 (8 * 16 + 8)
-#define ODR_CNTR_PQUAT6 (8 * 16 + 4)
-#define ODR_CNTR_GEOMAG (8 * 16 + 0)
-#define ODR_CNTR_PRESSURE (9 * 16 + 12)
-#define ODR_CNTR_GYRO_CALIBR (9 * 16 + 8)
-#define ODR_CNTR_CPASS_CALIBR (9 * 16 + 4)
-// mounting matrix
-#define CPASS_MTX_00 (23 * 16)
-#define CPASS_MTX_01 (23 * 16 + 4)
-#define CPASS_MTX_02 (23 * 16 + 8)
-#define CPASS_MTX_10 (23 * 16 + 12)
-#define CPASS_MTX_11 (24 * 16)
-#define CPASS_MTX_12 (24 * 16 + 4)
-#define CPASS_MTX_20 (24 * 16 + 8)
-#define CPASS_MTX_21 (24 * 16 + 12)
-#define CPASS_MTX_22 (25 * 16)
-// bias calibration
+#define BM_BATCH_CNTR (27 * 16) // 32-bit: Batch counter
+#define BM_BATCH_THLD (19 * 16 + 12) // 32-bit: Batch mode threshold
+#define BM_BATCH_MASK (21 * 16 + 14) // 16-bit
+// sensor output data rate: all 16-bit
+#define ODR_ACCEL (11 * 16 + 14) // ODR_ACCEL Register for accel ODR
+#define ODR_GYRO (11 * 16 + 10) // ODR_GYRO Register for gyro ODR
+#define ODR_CPASS (11 * 16 + 6) // ODR_CPASS Register for compass ODR
+#define ODR_ALS (11 * 16 + 2) // ODR_ALS Register for ALS ODR
+#define ODR_QUAT6 (10 * 16 + 12) // ODR_QUAT6 Register for 6-axis quaternion ODR
+#define ODR_QUAT9 (10 * 16 + 8) // ODR_QUAT9 Register for 9-axis quaternion ODR
+#define ODR_PQUAT6 (10 * 16 + 4) // ODR_PQUAT6 Register for 6-axis pedometer quaternion ODR
+#define ODR_GEOMAG (10 * 16 + 0) // ODR_GEOMAG Register for Geomag rv ODR
+#define ODR_PRESSURE (11 * 16 + 12) // ODR_PRESSURE Register for pressure ODR
+#define ODR_GYRO_CALIBR (11 * 16 + 8) // ODR_GYRO_CALIBR Register for calibrated gyro ODR
+#define ODR_CPASS_CALIBR (11 * 16 + 4) // ODR_CPASS_CALIBR Register for calibrated compass ODR
+// sensor output data rate counter: all 16-bit
+#define ODR_CNTR_ACCEL (9 * 16 + 14) // ODR_CNTR_ACCEL Register for accel ODR counter
+#define ODR_CNTR_GYRO (9 * 16 + 10) // ODR_CNTR_GYRO Register for gyro ODR counter
+#define ODR_CNTR_CPASS (9 * 16 + 6) // ODR_CNTR_CPASS Register for compass ODR counter
+#define ODR_CNTR_ALS (9 * 16 + 2) // ODR_CNTR_ALS Register for ALS ODR counter
+#define ODR_CNTR_QUAT6 (8 * 16 + 12) // ODR_CNTR_QUAT6 Register for 6-axis quaternion ODR counter
+#define ODR_CNTR_QUAT9 (8 * 16 + 8) // ODR_CNTR_QUAT9 Register for 9-axis quaternion ODR counter
+#define ODR_CNTR_PQUAT6 (8 * 16 + 4) // ODR_CNTR_PQUAT6 Register for 6-axis pedometer quaternion ODR counter
+#define ODR_CNTR_GEOMAG (8 * 16 + 0) // ODR_CNTR_GEOMAG Register for Geomag rv ODR counter
+#define ODR_CNTR_PRESSURE (9 * 16 + 12) // ODR_CNTR_PRESSURE Register for pressure ODR counter
+#define ODR_CNTR_GYRO_CALIBR (9 * 16 + 8) // ODR_CNTR_GYRO_CALIBR Register for calibrated gyro ODR counter
+#define ODR_CNTR_CPASS_CALIBR (9 * 16 + 4) // ODR_CNTR_CPASS_CALIBR Register for calibrated compass ODR counter
+// mounting matrix: all 32-bit
+#define CPASS_MTX_00 (23 * 16) // Compass mount matrix and scale
+#define CPASS_MTX_01 (23 * 16 + 4) // Compass mount matrix and scale
+#define CPASS_MTX_02 (23 * 16 + 8) // Compass mount matrix and scale
+#define CPASS_MTX_10 (23 * 16 + 12) // Compass mount matrix and scale
+#define CPASS_MTX_11 (24 * 16) // Compass mount matrix and scale
+#define CPASS_MTX_12 (24 * 16 + 4) // Compass mount matrix and scale
+#define CPASS_MTX_20 (24 * 16 + 8) // Compass mount matrix and scale
+#define CPASS_MTX_21 (24 * 16 + 12) // Compass mount matrix and scale
+#define CPASS_MTX_22 (25 * 16) // Compass mount matrix and scale
+// bias calibration: all 32-bit
+// The biases are 32-bits in chip frame in hardware unit scaled by:
+// 2^12 (FSR 4g) for accel, 2^15 for gyro, in uT scaled by 2^16 for compass.
 #define GYRO_BIAS_X (139 * 16 + 4)
 #define GYRO_BIAS_Y (139 * 16 + 8)
 #define GYRO_BIAS_Z (139 * 16 + 12)
@@ -91,22 +92,24 @@ extern "C" {
 #define CPASS_BIAS_Y (126 * 16 + 8)
 #define CPASS_BIAS_Z (126 * 16 + 12)
 // Accel FSR
-#define ACC_SCALE (30 * 16 + 0)
-#define ACC_SCALE2 (79 * 16 + 4)
+// The DMP scales accel raw data internally to align 1g as 2^25.
+// To do this and output hardware unit again as configured FSR, write 0x4000000 to ACC_SCALE DMP register, and write 0x40000 to ACC_SCALE2 DMP register.
+#define ACC_SCALE (30 * 16 + 0) // 32-bit: Write accel scaling value for internal use
+#define ACC_SCALE2 (79 * 16 + 4) // 32-bit: Write accel scaling down value
 // pedometer
-#define PEDSTD_STEPCTR (54 * 16)
-#define PEDSTD_TIMECTR (60 * 16 + 4)
-// Activity Recognition
-#define BAC_RATE (48 * 16 + 10)
+#define PEDSTD_STEPCTR (54 * 16) // 32-bit: step count (big endian)
+#define PEDSTD_TIMECTR (60 * 16 + 4) // 32-bit: walk time (big endian)
+// Activity Recognition (BAC)
+#define BAC_RATE (48 * 16 + 10) // 16-bit
 // parameters for accel calibration
-#define ACCEL_CAL_RATE (94 * 16 + 4)
-#define ACCEL_ALPHA_VAR (91 * 16)
-#define ACCEL_A_VAR (92 * 16)
+#define ACCEL_CAL_RATE (94 * 16 + 4) // 16-bit
+#define ACCEL_ALPHA_VAR (91 * 16) // 32-bit: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
+#define ACCEL_A_VAR (92 * 16) // 32-bit: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
 // parameters for compass calibration
-#define CPASS_TIME_BUFFER (112 * 16 + 14)
+#define CPASS_TIME_BUFFER (112 * 16 + 14) // 16-bit: unning rate of compass. e.g. 70 (70Hz)
 // gains
-#define ACCEL_ONLY_GAIN (16 * 16 + 12)
-#define GYRO_SF (19 * 16)
+#define ACCEL_ONLY_GAIN (16 * 16 + 12) // 32-bit: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
+#define GYRO_SF (19 * 16) // 32-bit: gyro scaling factor
 
 
 /** @brief Sensor identifier for control function
@@ -193,19 +196,86 @@ enum ANDROID_SENSORS {
 	GENERAL_SENSORS_MAX
 };
 
+enum DMP_Data_Ready_Status_Register_Bits
+{
+	DMP_Data_ready_Gyro = 0x0001, // Gyro samples available
+	DMP_Data_ready_Accel = 0x0002, // Accel samples available
+	DMP_Data_ready_Secondary = 0x0008 // Secondary samples available
+};
+
 enum DMP_Data_Output_Control_1_Register_Bits
 {
-	DMP_Data_Output_Control_1_Compass_Calibr = 0x0020,
-	DMP_Data_Output_Control_1_Gyro_Calibr = 0x0040,
-	DMP_Data_Output_Control_1_Pressure = 0x0080,
-	DMP_Data_Output_Control_1_Geomag = 0x0100,
-	DMP_Data_Output_Control_1_PQuat6 = 0x0200,
-	DMP_Data_Output_Control_1_Quat9 = 0x0400,
-	DMP_Data_Output_Control_1_Quat6 = 0x0800,
-	DMP_Data_Output_Control_1_ALS = 0x1000,
-	DMP_Data_Output_Control_1_Compass = 0x2000,
-	DMP_Data_Output_Control_1_Gyro = 0x4000,
-	DMP_Data_Output_Control_1_Accel = 0x8000
+	DMP_Data_Output_Control_1_Step_Ind_0 = 0x0001, // Pedometer Step Indicator Bit 0
+	DMP_Data_Output_Control_1_Step_Ind_1 = 0x0002, // Pedometer Step Indicator Bit 1
+	DMP_Data_Output_Control_1_Step_Ind_2 = 0x0004, // Pedometer Step Indicator Bit 2
+	DMP_Data_Output_Control_1_Header2 = 0x0008, // Header 2
+	DMP_Data_Output_Control_1_Step_Detector = 0x0010, // Pedometer Step Detector
+	DMP_Data_Output_Control_1_Compass_Calibr = 0x0020, // 32-bit calibrated compass
+	DMP_Data_Output_Control_1_Gyro_Calibr = 0x0040, // 32-bit calibrated gyro
+	DMP_Data_Output_Control_1_Pressure = 0x0080, // 16-bit Pressure
+	DMP_Data_Output_Control_1_Geomag = 0x0100, // 32-bit Geomag rv + heading accuracy
+	DMP_Data_Output_Control_1_PQuat6 = 0x0200, // 16-bit pedometer quaternion
+	DMP_Data_Output_Control_1_Quat9 = 0x0400, // 32-bit 9-axis quaternion + heading accuracy
+	DMP_Data_Output_Control_1_Quat6 = 0x0800, // 32-bit 6-axis quaternion
+	DMP_Data_Output_Control_1_ALS = 0x1000, // 16-bit ALS
+	DMP_Data_Output_Control_1_Compass = 0x2000, // 16-bit compass
+	DMP_Data_Output_Control_1_Gyro = 0x4000, // 16-bit gyro
+	DMP_Data_Output_Control_1_Accel = 0x8000 // 16-bit accel
+};
+
+enum DMP_Data_Output_Control_2_Register_Bits
+{
+	DMP_Data_Output_Control_2_Secondary_On_Off = 0x0040,
+	DMP_Data_Output_Control_2_Activity_Recognition_BAC = 0x0080,
+	DMP_Data_Output_Control_2_Batch_Mode_Enable = 0x0100,
+	DMP_Data_Output_Control_2_Pickup = 0x0400,
+	DMP_Data_Output_Control_2_Fsync_detection = 0x0800,
+	DMP_Data_Output_Control_2_Compass_Accuracy = 0x1000,
+	DMP_Data_Output_Control_2_Gyro_Accuracy = 0x2000,
+	DMP_Data_Output_Control_2_Accel_Accuracy = 0x4000
+};
+
+enum DMP_Motion_Event_Control_Register_Bits
+{
+	DMP_Motion_Event_Control_Activity_Recog_Pedom_Accel = 0x0002, // Activity Recognition / Pedometer accel only
+	DMP_Motion_Event_Control_Geomag = 0x0008, // Geomag rv
+	DMP_Motion_Event_Control_Pickup = 0x0010,
+	DMP_Motion_Event_Control_9axis = 0x0040,
+	DMP_Motion_Event_Control_Compass_Calibr = 0x0080,
+	DMP_Motion_Event_Control_Gyro_Calibr = 0x0100,
+	DMP_Motion_Event_Control_Accel_Calibr = 0x0200,
+	DMP_Motion_Event_Control_Significant_Motion_Det = 0x0800,
+	DMP_Motion_Event_Control_Tilt_Interrupt = 0x1000,
+	DMP_Motion_Event_Control_Pedometer_Interrupt = 0x2000,
+	DMP_Motion_Event_Control_Activity_Recog_Pedom = 0x4000
+};
+
+enum DMP_Header_Bitmap
+{
+	DMP_header_bitmap_Header2 = 0x0008,
+	DMP_header_bitmap_Step_Detector = 0x0010,
+	DMP_header_bitmap_Compass_Calibr = 0x0020,
+	DMP_header_bitmap_Gyro_Calibr = 0x0040,
+	DMP_header_bitmap_Pressure = 0x0080,
+	DMP_header_bitmap_Geomag = 0x0100,
+	DMP_header_bitmap_PQuat6 = 0x0200,
+	DMP_header_bitmap_Quat9 = 0x0400,
+	DMP_header_bitmap_Quat6 = 0x0800,
+	DMP_header_bitmap_ALS = 0x1000,
+	DMP_header_bitmap_Compass = 0x2000,
+	DMP_header_bitmap_Gyro = 0x4000,
+	DMP_header_bitmap_Accel = 0x8000
+};
+
+enum DMP_Header2_Bitmap
+{
+	DMP_header2_bitmap_Secondary_On_Off = 0x0040,
+	DMP_header2_bitmap_Activity_Recog = 0x0080,
+	DMP_header2_bitmap_Pickup = 0x0400,
+	DMP_header2_bitmap_Fsync = 0x0800,
+	DMP_header2_bitmap_Compass_Accuracy = 0x1000,
+	DMP_header2_bitmap_Gyro_Accuracy = 0x2000,
+	DMP_header2_bitmap_Accel_Accuracy = 0x4000
 };
 
 const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
@@ -275,7 +345,116 @@ const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
 	0x4048, // Raw Gyr
 };
 
+typedef struct // DMP Activity Recognition data
+{
+	uint8_t Drive : 1;
+	uint8_t Walk : 1;
+	uint8_t Run : 1;
+	uint8_t Bike : 1;
+	uint8_t Tilt : 1;
+	uint8_t Still : 1;
+	uint8_t reserved : 2;
+} icm_20948_DMP_Activity_t;
 
+typedef struct // DMP Secondary On/Off data
+{
+	uint8_t Gyro_Off : 1;
+	uint8_t Gyro_On : 1;
+	uint8_t Compass_Off : 1;
+	uint8_t Compass_On : 1;
+	uint8_t Proximity_Off : 1;
+	uint8_t Proximity_On : 1;
+	uint8_t reserved : 2;
+} icm_20948_DMP_Secondary_On_Off_t;
+
+// Everything is declared as unsigned until I figure out what the true units are... TO DO: fix this!
+typedef struct
+{
+	uint16_t header;
+	uint16_t header2;
+	struct
+	{
+		uint16_t X;
+		uint16_t Y;
+		uint16_t Z;
+	} Raw_Accel;
+	struct
+	{
+		uint16_t X;
+		uint16_t Y;
+		uint16_t Z;
+	} Raw_Gyro;
+	struct
+	{
+		uint16_t X;
+		uint16_t Y;
+		uint16_t Z;
+	} Compass;
+	uint8_t ALS[8]; // Byte[0]: Dummy, Byte[2:1]: Ch0DATA, Byte[4:3]: Ch1DATA, Byte[6:5]: PDATA, Byte[7]: Dummy
+	// The 6-Axis and 9-axis Quaternion outputs each consist of 12 bytes of data.
+	// These 12 bytes in turn consists of three 4-byte elements.
+	// 9-axis quaternion data and Geomag rv is always followed by 2-bytes of heading accuracy, hence the size of Quat9 and Geomag data size in the FIFO is 14 bytes.
+	// Quaternion data for both cases is cumulative/integrated values.
+	// For a given quaternion Q, the ordering of its elements is {Q1, Q2, Q3}.
+	// Each element is represented using Big Endian byte order.
+	// Q0 value is computed from this equation: Q20 + Q21 + Q22 + Q23 = 1.
+	// In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+	// The quaternion data is scaled by 2^30.
+	uint8_t Quat6[12];
+	uint8_t Quat9[14];
+	uint8_t PQuat6[6];
+	uint8_t Geomag[14];
+	uint8_t Pressure[6]; // Byte [2:0]: Pressure data, Byte [5:3]: Temperature data
+	struct
+	{
+		uint32_t X;
+		uint32_t Y;
+		uint32_t Z;
+	} Gyro_Calibr; // Hardware unit scaled by 2^15
+	struct
+	{
+		uint32_t X;
+		uint32_t Y;
+		uint32_t Z;
+	} Compass_Calibr; // The unit is uT scaled by 2^16
+	uint32_t Pedometer_Timestamp; // Timestamp as DMP cycle
+	uint16_t Accel_Accuracy; // The accuracy is expressed as 0~3. The lowest is 0 and 3 is the highest.
+	uint16_t Gyro_Accuracy; // The accuracy is expressed as 0~3. The lowest is 0 and 3 is the highest.
+	uint16_t Compass_Accuracy; // The accuracy is expressed as 0~3. The lowest is 0 and 3 is the highest.
+	uint16_t Fsync_Delay_Time; // The data is delay time between Fsync event and the 1st ODR event after Fsync event.
+	uint16_t Pickup; // The value “2” indicates pick up is detected.
+	// Activity Recognition data
+	// The data include Start and End states, and timestamp as DMP cycle.
+	// Byte [0]: State-Start, Byte [1]: State-End, Byte [5:2]: timestamp.
+	// The states are expressed as below.
+	// Drive: 0x01
+	// Walk: 0x02
+	// Run: 0x04
+	// Bike: 0x08
+	// Tilt: 0x10
+	// Still: 0x20
+	struct
+	{
+		icm_20948_DMP_Activity_t State_Start;
+		icm_20948_DMP_Activity_t State_End;
+		uint32_t Timestamp;
+	} Activity_Recognition;
+	// Secondary On/Off data
+	// BAC algorithm requires sensors on/off through FIFO data to detect activities effectively and save power.
+	// The driver is expected to control sensors accordingly.
+	// The data indicates which sensor and on or off as below.
+	// Gyro Off: 0x01
+	// Gyro On: 0x02
+	// Compass Off: 0x04
+	// Compass On: 0x08
+	// Proximity Off: 0x10
+	// Proximity On: 0x20
+	struct
+	{
+		icm_20948_DMP_Secondary_On_Off_t Sensors; // TO DO: Check this! Should Sensors be uint16_t?
+		uint8_t reserved;
+	} Secondary_On_Off;
+} icm_20948_DMP_data_t;
 
 #ifdef __cplusplus
 }

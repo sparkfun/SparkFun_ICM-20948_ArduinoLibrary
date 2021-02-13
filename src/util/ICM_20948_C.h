@@ -15,7 +15,6 @@ The imementation of the interface is flexible
 #include "ICM_20948_REGISTERS.h"
 #include "ICM_20948_ENUMERATIONS.h" // This is to give users access to usable value definiitons
 #include "AK09916_ENUMERATIONS.h"
-#include "ICM_20948_SensorTypes.h"
 #include "ICM_20948_DMP.h"
 
 #ifdef __cplusplus
@@ -54,6 +53,9 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_SensorNotSupported,
 		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
 		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
+		ICM_20948_Stat_FIFONoDataAvail,
+		ICM_20948_Stat_UnrecognisedDMPHeader,
+		ICM_20948_Stat_UnrecognisedDMPHeader2,
 
 		ICM_20948_Stat_NUM,
 		ICM_20948_Stat_Unknown,
@@ -280,10 +282,12 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data);
 
 	ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint16_t period);
-	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state);
-	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state);
+	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
+	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
 	static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);
 	enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
+
+	ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);
 
 	// ToDo:
 

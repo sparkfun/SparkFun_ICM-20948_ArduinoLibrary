@@ -1386,6 +1386,15 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
 	}
 
 	// Set the ODR registers and clear the ODR counters
+
+	// In order to set an ODR for a given sensor data, write 2-byte value to DMP using key defined above for a particular sensor.
+	// Setting value can be calculated as follows:
+	// Value = (DMP running rate (225Hz) / ODR ) - 1
+	// E.g. For a 25Hz ODR rate, value= (225/25) -1 = 8.
+
+	// During run-time, if an ODR is changed, the corresponding rate counter must be reset.
+	// To reset, write 2-byte {0,0} to DMP using keys below for a particular sensor:
+
 	if ((delta & DMP_Data_Output_Control_1_Compass_Calibr) > 0)
 	{
 			result |= inv_icm20948_write_mems(pdev, ODR_CPASS_CALIBR, 2, (const unsigned char *)&odr_reg_val);
@@ -1449,7 +1458,7 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
 	return result;
 }
 
-ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
+ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state)
 {
 		// TO DO: figure out how to disable the sensor if state is 0
 
@@ -1492,7 +1501,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		return result;
 }
 
-ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, inv_bool_t state)
+ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state)
 {
 		// TO DO: figure out how to disable the sensor if state is 0
 
@@ -1533,6 +1542,378 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 		// 		return result;
 
 		return result;
+}
+
+ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data)
+{
+	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+
+	if (pdev->_dmp_firmware_available == false)
+			return ICM_20948_Stat_DMPNotSupported;
+
+	uint16_t fifo_count;
+
+	result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+	if (result != ICM_20948_Stat_Ok)
+	{
+			return result;
+	}
+
+	if (fifo_count < 2)
+			return ICM_20948_Stat_FIFONoDataAvail; // Bail if no header is available
+
+	uint16_t header;
+
+	result = ICM_20948_read_FIFO(pdev, (uint8_t *)&header);
+	result |= ICM_20948_read_FIFO(pdev, (uint8_t *)(&header + 1));
+	if (result != ICM_20948_Stat_Ok)
+	{
+			return result;
+	}
+
+	data->header = header;
+
+	switch (header)
+	{
+			case DMP_header_bitmap_Header2:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 2)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if no header is available
+					uint16_t header2;
+					result = ICM_20948_read_FIFO(pdev, (uint8_t *)&header2);
+					result |= ICM_20948_read_FIFO(pdev, (uint8_t *)(&header2 + 1));
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->header2 = header2;
+					switch (header2)
+					{
+							// TO DO: implement these!
+							case DMP_header2_bitmap_Secondary_On_Off:
+							case DMP_header2_bitmap_Activity_Recog:
+							case DMP_header2_bitmap_Pickup:
+							case DMP_header2_bitmap_Fsync:
+							case DMP_header2_bitmap_Compass_Accuracy:
+							case DMP_header2_bitmap_Gyro_Accuracy:
+							case DMP_header2_bitmap_Accel_Accuracy:
+							default:
+									return ICM_20948_Stat_UnrecognisedDMPHeader;
+									break;
+					}
+			}
+					break;
+			case DMP_header_bitmap_Step_Detector:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 4)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint32_t aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Pedometer_Timestamp = aWord;
+			}
+					break;
+			case DMP_header_bitmap_Compass_Calibr:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 12)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint32_t aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass_Calibr.X = aWord;
+					aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass_Calibr.Y = aWord;
+					aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass_Calibr.Z = aWord;
+			}
+					break;
+			case DMP_header_bitmap_Gyro_Calibr:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 12)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint32_t aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Gyro_Calibr.X = aWord;
+					aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Gyro_Calibr.Y = aWord;
+					aWord = 0;
+					for (int i = 0; i < 4; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aWord |= ((uint32_t)aByte) << (24 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Gyro_Calibr.Z = aWord;
+			}
+					break;
+			case DMP_header_bitmap_Pressure:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 6)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 6; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->Pressure[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_Geomag:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 14)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 14; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->Geomag[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_PQuat6:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 6)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 6; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->PQuat6[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_Quat9:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 14)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 14; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->Quat9[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_Quat6:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 12)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 12; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->Quat6[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_ALS:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 8)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					for (int i = 0; i < 8; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							data->ALS[i] = aByte;
+					}
+			}
+					break;
+			case DMP_header_bitmap_Compass:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 6)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint16_t aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass.X = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass.Y = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Compass.Z = aShort;
+			}
+					break;
+			case DMP_header_bitmap_Gyro:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 6)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint16_t aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Gyro.X = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Gyro.Y = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Gyro.Z = aShort;
+			}
+					break;
+			case DMP_header_bitmap_Accel:
+			{
+					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					if (fifo_count < 6)
+							return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					uint16_t aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Accel.X = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Accel.Y = aShort;
+					aShort = 0;
+					for (int i = 0; i < 2; i++)
+					{
+							uint8_t aByte;
+							result |= ICM_20948_read_FIFO(pdev, &aByte);
+							aShort |= ((uint16_t)aByte) << (8 - (i * 8));
+					}
+					if (result != ICM_20948_Stat_Ok)
+							return result;
+					data->Raw_Accel.Z = aShort;
+			}
+					break;
+			default:
+					result = ICM_20948_Stat_UnrecognisedDMPHeader;
+					break;
+	};
+
+	return result;
 }
 
 static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)

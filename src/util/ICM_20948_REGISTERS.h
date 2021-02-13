@@ -320,6 +320,14 @@ typedef struct{
 }ICM_20948_I2C_MST_STATUS_t;
 
 typedef struct{
+	uint8_t reserved0 : 1;
+	uint8_t DMP_INT_Motion_Detect_SMD : 1;
+	uint8_t reserved1 : 1;
+	uint8_t DMP_INT_Tilt_Event : 1;
+	uint8_t reserved2					: 4;
+}ICM_20948_DMP_INT_STATUS_t; // Mostly guesswork from InvenSense App Note
+
+typedef struct{
 	uint8_t I2C_MST_INT 				: 1;
 	uint8_t DMP_INT1					: 1;
 	uint8_t PLL_RDY_INT					: 1;

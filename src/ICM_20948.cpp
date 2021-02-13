@@ -953,7 +953,7 @@ ICM_20948_Status_e ICM_20948::enableDMP(bool enable)
 {
     if (_device._dmp_firmware_available == true) // Should we attempt to enable the DMP?
     {
-        status = ICM_20948_enable_DMP(&_device, enable);
+        status = ICM_20948_enable_DMP(&_device, enable == true ? 1 : 0 );
         return status;
     }
     return ICM_20948_Stat_DMPNotSupported;
@@ -1029,8 +1029,23 @@ ICM_20948_Status_e ICM_20948::setDMPODRrate(enum inv_icm20948_sensor sensor, int
 {
   if (_device._dmp_firmware_available == true) // Should we attempt to set the DMP ODR?
   {
+    // In order to set an ODR for a given sensor data, write 2-byte value to DMP using key defined above for a particular sensor.
+  	// Setting value can be calculated as follows:
+  	// Value = (DMP running rate (225Hz) / ODR ) - 1
+  	// E.g. For a 25Hz ODR rate, value= (225/25) - 1 = 8.
+
     uint16_t period = (225 / rate) - 1;
     status = inv_icm20948_set_dmp_sensor_period(&_device, sensor, period);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::readDMPdataFromFIFO(icm_20948_DMP_data_t *data)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to set the data from the FIFO?
+  {
+    status = inv_icm20948_read_dmp_data(&_device, data);
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;
