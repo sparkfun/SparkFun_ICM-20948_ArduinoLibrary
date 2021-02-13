@@ -222,14 +222,17 @@ void loop()
   myICM.readDMPdataFromFIFO(&data);
   if( myICM.status == ICM_20948_Stat_Ok )
   {
-    SERIAL_PORT.print("Received data! Header: ");
-    SERIAL_PORT.println( data.header );
-    if ( data.header == DMP_header_bitmap_Quat9 ) // We have asked for orientation data so we should receive Quat9
+    SERIAL_PORT.print(F("Received data! Header: 0x"));
+    if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
+    if ( data.header < 0x100) SERIAL_PORT.print( "0" );
+    if ( data.header < 0x10) SERIAL_PORT.print( "0" );
+    SERIAL_PORT.println( data.header, HEX );
+    if ( (data.header | DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
     {
-      SERIAL_PORT.print("Quat9 data is: 0x");
+      SERIAL_PORT.print(F("Quat9 data is: 0x"));
       for (int i = 0; i < 14; i++) // Quat9 data is 14 bytes long
       {
-        if ( data.Quat9[i] < 16) SERIAL_PORT.print( "0" ); // Pad the zero
+        if ( data.Quat9[i] < 0x10) SERIAL_PORT.print( "0" ); // Pad the zero
         SERIAL_PORT.print( data.Quat9[i], HEX );
       }
       SERIAL_PORT.println();
@@ -237,10 +240,23 @@ void loop()
   }
   else if ( myICM.status != ICM_20948_Stat_FIFONoDataAvail )
   {
-    SERIAL_PORT.print("readDMPdataFromFIFO failed! Status is: ");
+    SERIAL_PORT.print(F("readDMPdataFromFIFO failed! Status is: "));
+    SERIAL_PORT.print( myICM.status );
+    SERIAL_PORT.print(" : ");
     SERIAL_PORT.println( myICM.statusString() );
-    SERIAL_PORT.print("Header is: 0x");
+    SERIAL_PORT.print(F("Header is: 0x"));
+    if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
+    if ( data.header < 0x100) SERIAL_PORT.print( "0" );
+    if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     SERIAL_PORT.println( data.header, HEX );
+    if ( data.header == DMP_header_bitmap_Header2 )
+    {
+      SERIAL_PORT.print(F("Header2 is: 0x"));
+      if ( data.header2 < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
+      if ( data.header2 < 0x100) SERIAL_PORT.print( "0" );
+      if ( data.header2 < 0x10) SERIAL_PORT.print( "0" );
+      SERIAL_PORT.println( data.header2, HEX );
+    }
   }
 
   delay(10);

@@ -115,7 +115,7 @@ extern "C" {
 /** @brief Sensor identifier for control function
  */
 enum inv_icm20948_sensor {
-	INV_ICM20948_SENSOR_ACCELEROMETER,
+	INV_ICM20948_SENSOR_ACCELEROMETER = 0,
 	INV_ICM20948_SENSOR_GYROSCOPE,
 	INV_ICM20948_SENSOR_RAW_ACCELEROMETER,
 	INV_ICM20948_SENSOR_RAW_GYROSCOPE,
@@ -298,6 +298,7 @@ const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
 	// Pedometer Step Indicator Bit 1              0x0002
 	// Pedometer Step Indicator Bit 0              0x0001
 	// Unsupported Sensors are 0xFFFF
+
 	0xFFFF, // Meta Data
 	0x8008, // Accelerometer
 	0x0028, // Magnetic Field
@@ -347,24 +348,39 @@ const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
 
 typedef struct // DMP Activity Recognition data
 {
-	uint8_t Drive : 1;
-	uint8_t Walk : 1;
-	uint8_t Run : 1;
-	uint8_t Bike : 1;
-	uint8_t Tilt : 1;
-	uint8_t Still : 1;
-	uint8_t reserved : 2;
+	union
+	{
+		uint8_t all;
+		struct
+		{
+				uint8_t Drive : 1;
+				uint8_t Walk : 1;
+				uint8_t Run : 1;
+				uint8_t Bike : 1;
+				uint8_t Tilt : 1;
+				uint8_t Still : 1;
+				uint8_t reserved : 2;
+		} bits;
+	} activities;
 } icm_20948_DMP_Activity_t;
 
 typedef struct // DMP Secondary On/Off data
 {
-	uint8_t Gyro_Off : 1;
-	uint8_t Gyro_On : 1;
-	uint8_t Compass_Off : 1;
-	uint8_t Compass_On : 1;
-	uint8_t Proximity_Off : 1;
-	uint8_t Proximity_On : 1;
-	uint8_t reserved : 2;
+	union
+	{
+		uint8_t all;
+		struct
+		{
+			uint8_t Gyro_Off : 1;
+			uint8_t Gyro_On : 1;
+			uint8_t Compass_Off : 1;
+			uint8_t Compass_On : 1;
+			uint8_t Proximity_Off : 1;
+			uint8_t Proximity_On : 1;
+			uint8_t reserved : 2;
+		} bits;
+	} sensors;
+	uint8_t reserved; // TO DO: Check this! Should sensors be uint16_t?
 } icm_20948_DMP_Secondary_On_Off_t;
 
 // Everything is declared as unsigned until I figure out what the true units are... TO DO: fix this!
@@ -451,8 +467,7 @@ typedef struct
 	// Proximity On: 0x20
 	struct
 	{
-		icm_20948_DMP_Secondary_On_Off_t Sensors; // TO DO: Check this! Should Sensors be uint16_t?
-		uint8_t reserved;
+		icm_20948_DMP_Secondary_On_Off_t Sensors;
 	} Secondary_On_Off;
 } icm_20948_DMP_data_t;
 

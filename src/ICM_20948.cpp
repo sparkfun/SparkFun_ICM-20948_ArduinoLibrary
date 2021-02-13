@@ -113,6 +113,15 @@ void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
     case ICM_20948_Stat_DMPVerifyFail:
         debugPrint(F("DMP Firmware Verification Failed"));
         break;
+    case ICM_20948_Stat_FIFONoDataAvail:
+        debugPrint(F("No FIFO Data Available"));
+        break;
+    case ICM_20948_Stat_UnrecognisedDMPHeader:
+        debugPrint(F("Unrecognised DMP Header"));
+        break;
+    case ICM_20948_Stat_UnrecognisedDMPHeader2:
+        debugPrint(F("Unrecognised DMP Header2"));
+        break;
     default:
         debugPrint(F("Unknown Status"));
         break;
@@ -267,6 +276,21 @@ const char *ICM_20948::statusString(ICM_20948_Status_e stat)
         break;
     case ICM_20948_Stat_SensorNotSupported:
         return "Sensor Not Supported";
+        break;
+    case ICM_20948_Stat_DMPNotSupported:
+        return "DMP Firmware Not Supported. Is #define ICM_20948_USE_DMP commented in util/ICM_20948_C.h?";
+        break;
+    case ICM_20948_Stat_DMPVerifyFail:
+        return "DMP Firmware Verification Failed";
+        break;
+    case ICM_20948_Stat_FIFONoDataAvail:
+        return "No FIFO Data Available";
+        break;
+    case ICM_20948_Stat_UnrecognisedDMPHeader:
+        return "Unrecognised DMP Header";
+        break;
+    case ICM_20948_Stat_UnrecognisedDMPHeader2:
+        return "Unrecognised DMP Header2";
         break;
     default:
         return "Unknown Status";
