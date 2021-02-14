@@ -106,7 +106,7 @@ extern "C" {
 #define ACCEL_ALPHA_VAR (91 * 16) // 32-bit: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
 #define ACCEL_A_VAR (92 * 16) // 32-bit: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
 // parameters for compass calibration
-#define CPASS_TIME_BUFFER (112 * 16 + 14) // 16-bit: unning rate of compass. e.g. 70 (70Hz)
+#define CPASS_TIME_BUFFER (112 * 16 + 14) // 16-bit: running rate of compass. e.g. 70 (70Hz)
 // gains
 #define ACCEL_ONLY_GAIN (16 * 16 + 12) // 32-bit: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
 #define GYRO_SF (19 * 16) // 32-bit: gyro scaling factor
@@ -229,7 +229,7 @@ enum DMP_Data_Output_Control_2_Register_Bits
 	DMP_Data_Output_Control_2_Activity_Recognition_BAC = 0x0080,
 	DMP_Data_Output_Control_2_Batch_Mode_Enable = 0x0100,
 	DMP_Data_Output_Control_2_Pickup = 0x0400,
-	DMP_Data_Output_Control_2_Fsync_detection = 0x0800,
+	DMP_Data_Output_Control_2_Fsync_Detection = 0x0800,
 	DMP_Data_Output_Control_2_Compass_Accuracy = 0x1000,
 	DMP_Data_Output_Control_2_Gyro_Accuracy = 0x2000,
 	DMP_Data_Output_Control_2_Accel_Accuracy = 0x4000
@@ -348,65 +348,105 @@ const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
 
 typedef struct // DMP Activity Recognition data
 {
-	union
-	{
-		uint8_t all;
-		struct
-		{
-				uint8_t Drive : 1;
-				uint8_t Walk : 1;
-				uint8_t Run : 1;
-				uint8_t Bike : 1;
-				uint8_t Tilt : 1;
-				uint8_t Still : 1;
-				uint8_t reserved : 2;
-		} bits;
-	} activities;
+		uint8_t Drive : 1;
+		uint8_t Walk : 1;
+		uint8_t Run : 1;
+		uint8_t Bike : 1;
+		uint8_t Tilt : 1;
+		uint8_t Still : 1;
+		uint8_t reserved : 2;
 } icm_20948_DMP_Activity_t;
 
 typedef struct // DMP Secondary On/Off data
 {
-	union
-	{
-		uint8_t all;
-		struct
-		{
-			uint8_t Gyro_Off : 1;
-			uint8_t Gyro_On : 1;
-			uint8_t Compass_Off : 1;
-			uint8_t Compass_On : 1;
-			uint8_t Proximity_Off : 1;
-			uint8_t Proximity_On : 1;
-			uint8_t reserved : 2;
-		} bits;
-	} sensors;
-	uint8_t reserved; // TO DO: Check this! Should sensors be uint16_t?
+		uint16_t Gyro_Off : 1;
+		uint16_t Gyro_On : 1;
+		uint16_t Compass_Off : 1;
+		uint16_t Compass_On : 1;
+		uint16_t Proximity_Off : 1;
+		uint16_t Proximity_On : 1;
+		uint16_t reserved : 10;
 } icm_20948_DMP_Secondary_On_Off_t;
 
-// Everything is declared as unsigned until I figure out what the true units are... TO DO: fix this!
+#define icm_20948_DMP_Header_Bytes 2
+#define icm_20948_DMP_Header2_Bytes 2
+#define icm_20948_DMP_Raw_Accel_Bytes 6
+#define icm_20948_DMP_Raw_Gyro_Bytes 6
+#define icm_20948_DMP_Compass_Bytes 6
+#define icm_20948_DMP_ALS_Bytes 8
+#define icm_20948_DMP_Quat6_Bytes 12
+#define icm_20948_DMP_Quat9_Bytes 14
+#define icm_20948_DMP_PQuat6_Bytes 6
+#define icm_20948_DMP_Geomag_Bytes 14
+#define icm_20948_DMP_Pressure_Bytes 6
+#define icm_20948_DMP_Gyro_Calibr_Bytes 12
+#define icm_20948_DMP_Compass_Calibr_Bytes 12
+#define icm_20948_DMP_Step_Detector_Bytes 4
+#define icm_20948_DMP_Accel_Accuracy_Bytes 2
+#define icm_20948_DMP_Gyro_Accuracy_Bytes 2
+#define icm_20948_DMP_Compass_Accuracy_Bytes 2
+#define icm_20948_DMP_Fsync_Detection_Bytes 2
+#define icm_20948_DMP_Pickup_Bytes 2
+#define icm_20948_DMP_Activity_Recognition_Bytes 6
+#define icm_20948_DMP_Secondary_On_Off_Bytes 2
+
+// ICM-20948 data is big-endian. We need to make it little-endian when writing into icm_20948_DMP_data_t
+const int DMP_Quat9_Byte_Ordering[icm_20948_DMP_Quat9_Bytes] =
+{
+	3,2,1,0,7,6,5,4,11,10,9,8,13,12 // Also used for Geomag
+};
+const int DMP_Quat6_Byte_Ordering[icm_20948_DMP_Quat6_Bytes] =
+{
+	3,2,1,0,7,6,5,4,11,10,9,8 // Also used for Gyro_Calibr, Compass_Calibr
+};
+const int DMP_PQuat6_Byte_Ordering[icm_20948_DMP_PQuat6_Bytes] =
+{
+	1,0,3,2,5,4 // Also used for Raw_Accel, Raw_Gyro, Compass
+};
+const int DMP_Activity_Recognition_Byte_Ordering[icm_20948_DMP_Activity_Recognition_Bytes] =
+{
+	0,1,5,4,3,2
+};
+const int DMP_Secondary_On_Off_Byte_Ordering[icm_20948_DMP_Secondary_On_Off_Bytes] =
+{
+	1,0
+};
+
 typedef struct
 {
 	uint16_t header;
 	uint16_t header2;
-	struct
+	union
 	{
-		uint16_t X;
-		uint16_t Y;
-		uint16_t Z;
+		uint8_t Bytes[icm_20948_DMP_Raw_Accel_Bytes];
+		struct
+		{
+			int16_t X;
+			int16_t Y;
+			int16_t Z;
+		} Data;
 	} Raw_Accel;
-	struct
+	union
 	{
-		uint16_t X;
-		uint16_t Y;
-		uint16_t Z;
+		uint8_t Bytes[icm_20948_DMP_Raw_Gyro_Bytes];
+		struct
+		{
+			int16_t X;
+			int16_t Y;
+			int16_t Z;
+		} Data;
 	} Raw_Gyro;
-	struct
+	union
 	{
-		uint16_t X;
-		uint16_t Y;
-		uint16_t Z;
+		uint8_t Bytes[icm_20948_DMP_Compass_Bytes];
+		struct
+		{
+			int16_t X;
+			int16_t Y;
+			int16_t Z;
+		} Data;
 	} Compass;
-	uint8_t ALS[8]; // Byte[0]: Dummy, Byte[2:1]: Ch0DATA, Byte[4:3]: Ch1DATA, Byte[6:5]: PDATA, Byte[7]: Dummy
+	uint8_t ALS[icm_20948_DMP_ALS_Bytes]; // Byte[0]: Dummy, Byte[2:1]: Ch0DATA, Byte[4:3]: Ch1DATA, Byte[6:5]: PDATA, Byte[7]: Dummy
 	// The 6-Axis and 9-axis Quaternion outputs each consist of 12 bytes of data.
 	// These 12 bytes in turn consists of three 4-byte elements.
 	// 9-axis quaternion data and Geomag rv is always followed by 2-bytes of heading accuracy, hence the size of Quat9 and Geomag data size in the FIFO is 14 bytes.
@@ -416,22 +456,68 @@ typedef struct
 	// Q0 value is computed from this equation: Q20 + Q21 + Q22 + Q23 = 1.
 	// In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
 	// The quaternion data is scaled by 2^30.
-	uint8_t Quat6[12];
-	uint8_t Quat9[14];
-	uint8_t PQuat6[6];
-	uint8_t Geomag[14];
+	union
+	{
+		uint8_t Bytes[icm_20948_DMP_Quat6_Bytes];
+		struct
+		{
+			int32_t Q1;
+			int32_t Q2;
+			int32_t Q3;
+		} Data;
+	} Quat6;
+	union
+	{
+		uint8_t Bytes[icm_20948_DMP_Quat9_Bytes];
+		struct
+		{
+			int32_t Q1;
+			int32_t Q2;
+			int32_t Q3;
+			int16_t Accuracy;
+		} Data;
+	} Quat9;
+	union
+	{
+		uint8_t Bytes[icm_20948_DMP_PQuat6_Bytes];
+		struct
+		{
+			int16_t Q1;
+			int16_t Q2;
+			int16_t Q3;
+		} Data;
+	} PQuat6;
+	union
+	{
+		uint8_t Bytes[icm_20948_DMP_Geomag_Bytes];
+		struct
+		{
+			int32_t Q1;
+			int32_t Q2;
+			int32_t Q3;
+			int16_t Accuracy;
+		} Data;
+	} Geomag;
 	uint8_t Pressure[6]; // Byte [2:0]: Pressure data, Byte [5:3]: Temperature data
-	struct
+	union
 	{
-		uint32_t X;
-		uint32_t Y;
-		uint32_t Z;
+		uint8_t Bytes[icm_20948_DMP_Gyro_Calibr_Bytes];
+		struct
+		{
+			int32_t X;
+			int32_t Y;
+			int32_t Z;
+		} Data;
 	} Gyro_Calibr; // Hardware unit scaled by 2^15
-	struct
+	union
 	{
-		uint32_t X;
-		uint32_t Y;
-		uint32_t Z;
+		uint8_t Bytes[icm_20948_DMP_Compass_Calibr_Bytes];
+		struct
+		{
+			int32_t X;
+			int32_t Y;
+			int32_t Z;
+		} Data;
 	} Compass_Calibr; // The unit is uT scaled by 2^16
 	uint32_t Pedometer_Timestamp; // Timestamp as DMP cycle
 	uint16_t Accel_Accuracy; // The accuracy is expressed as 0~3. The lowest is 0 and 3 is the highest.
@@ -449,11 +535,15 @@ typedef struct
 	// Bike: 0x08
 	// Tilt: 0x10
 	// Still: 0x20
-	struct
+	union
 	{
-		icm_20948_DMP_Activity_t State_Start;
-		icm_20948_DMP_Activity_t State_End;
-		uint32_t Timestamp;
+		uint8_t Bytes[icm_20948_DMP_Activity_Recognition_Bytes];
+		struct
+		{
+			icm_20948_DMP_Activity_t State_Start;
+			icm_20948_DMP_Activity_t State_End;
+			uint32_t Timestamp;
+		} Data;
 	} Activity_Recognition;
 	// Secondary On/Off data
 	// BAC algorithm requires sensors on/off through FIFO data to detect activities effectively and save power.
@@ -465,8 +555,9 @@ typedef struct
 	// Compass On: 0x08
 	// Proximity Off: 0x10
 	// Proximity On: 0x20
-	struct
+	union
 	{
+		uint8_t Bytes[icm_20948_DMP_Secondary_On_Off_Bytes];
 		icm_20948_DMP_Secondary_On_Off_t Sensors;
 	} Secondary_On_Off;
 } icm_20948_DMP_data_t;

@@ -1,5 +1,5 @@
 /****************************************************************
- * Example5_DMP.ino
+ * Example5_DMP_Quat9_Orientation.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
  * Paul Clark, February 9th 2021
@@ -7,8 +7,8 @@
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
  * 
- * ** This example is based on the InvenSense Application Note "Programming Sequence for DMP Hardware Functions".
- * ** We are grateful to InvenSense for providing this.
+ * ** This example is based on InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
+ * ** We are grateful to InvenSense for sharing this with us.
  * 
  * ** Important note: by default the DMP functionality is disabled in the library
  * ** as the DMP firmware takes up 14290 Bytes of program memory.
@@ -92,11 +92,12 @@ void setup() {
   SERIAL_PORT.println("Device connected!");
 
   // The ICM-20948 is awake and ready but hasn't been configured. Let's step through the configuration
+  // sequence from InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
 
   bool success = true; // Use success to show if the configuration was successful
 
   // Configure clock source through PWR_MGMT_1
-  // Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
+  // ICM_20948_Clock_Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
   success &= (myICM.setClockSource(ICM_20948_Clock_Auto) == ICM_20948_Stat_Ok); // This is shorthand: success will be set to false if setClockSource fails
 
   // Enable accel and gyro sensors through PWR_MGMT_2
@@ -104,7 +105,7 @@ void setup() {
   uint8_t zero = 0;
   success &= (myICM.write(AGB0_REG_PWR_MGMT_2, &zero, 1) == ICM_20948_Stat_Ok); // Write one byte to the PWR_MGMT_2 register
 
-  // Configure Gyro/Accel in Low power mode with LP_CONFIG
+  // Configure Gyro/Accel in Low Power Mode (cycled) with LP_CONFIG
   success &= (myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ) == ICM_20948_Stat_Ok);
 
   // Set Gyro FSR (Full scale range) to 2000dps through GYRO_CONFIG_1
@@ -123,9 +124,10 @@ void setup() {
   success &= (myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS ) == ICM_20948_Stat_Ok);
 
   // Enable interrupt for FIFO overflow from FIFOs through INT_ENABLE_2
+  // If we see this interrupt, we'll need to reset the FIFO
   //success &= (myICM.intEnableOverflowFIFO( 0x1F ) == ICM_20948_Stat_Ok); // Enable the interrupt on all FIFOs
 
-  // Turn off what goes into the FIFO through FIFO_EN, FIFO_EN_2
+  // Turn off what goes into the FIFO through FIFO_EN_1, FIFO_EN_2
   // Stop the peripheral data from being written to the FIFO by writing zero to FIFO_EN_1
   success &= (myICM.write(AGB0_REG_FIFO_EN_1, &zero, 1) == ICM_20948_Stat_Ok);
   // Stop the accelerometer, gyro and temperature data from being written to the FIFO by writing zero to FIFO_EN_2
@@ -184,11 +186,39 @@ void setup() {
   success &= (myICM.writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]) == ICM_20948_Stat_Ok);
 
+  // Enable DMP interrupt
+  // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
+  //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
+
+  // DMP sensor options are defined in ICM_20948_DMP.h
+  //    INV_ICM20948_SENSOR_ACCELEROMETER
+  //    INV_ICM20948_SENSOR_GYROSCOPE
+  //    INV_ICM20948_SENSOR_RAW_ACCELEROMETER
+  //    INV_ICM20948_SENSOR_RAW_GYROSCOPE
+  //    INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED
+  //    INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED
+  //    INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON
+  //    INV_ICM20948_SENSOR_STEP_DETECTOR
+  //    INV_ICM20948_SENSOR_STEP_COUNTER
+  //    INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR
+  //    INV_ICM20948_SENSOR_ROTATION_VECTOR
+  //    INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR
+  //    INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD
+  //    INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION
+  //    INV_ICM20948_SENSOR_FLIP_PICKUP
+  //    INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR
+  //    INV_ICM20948_SENSOR_GRAVITY
+  //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION
+  //    INV_ICM20948_SENSOR_ORIENTATION
+
+  // Enable the DMP orientation sensor
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
+
+  // Set the DMP orientation sensor rate to 25Hz
+  success &= (myICM.setDMPODRrate(INV_ICM20948_SENSOR_ORIENTATION, 25) == ICM_20948_Stat_Ok);
+
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
-
-  // Reset FIFO
-  success &= (myICM.resetFIFO() == ICM_20948_Stat_Ok);
 
   // Enable the DMP
   success &= (myICM.enableDMP() == ICM_20948_Stat_Ok);
@@ -196,14 +226,8 @@ void setup() {
   // Reset DMP
   success &= (myICM.resetDMP() == ICM_20948_Stat_Ok);
 
-  // Enable DMP interrupt
-  //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
-
-  // Enable the DMP orientation sensor
-  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
-
-  // Set the DMP orientation sensor rate to 25Hz
-  success &= (myICM.setDMPODRrate(INV_ICM20948_SENSOR_ORIENTATION, 25) == ICM_20948_Stat_Ok);
+  // Reset FIFO
+  success &= (myICM.resetFIFO() == ICM_20948_Stat_Ok);
 
   // Check success
   if( success )
@@ -218,40 +242,47 @@ void setup() {
 
 void loop()
 {
+  // Read any data waiting in the FIFO
+  // Note:
+  //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFONoDataAvail if no data or incomplete data is available.
+  //    If data is available, readDMPdataFromFIFO will attempt to read _one_ frame of DMP data.
+  //    readDMPdataFromFIFO will return ICM_20948_Stat_Ok if a valid frame was read.
+  //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOMoreDataAvail if a valid frame was read _and_ the FIFO contains more (unread) data.
   icm_20948_DMP_data_t data;
   myICM.readDMPdataFromFIFO(&data);
-  if( myICM.status == ICM_20948_Stat_Ok )
+  
+  if(( myICM.status == ICM_20948_Stat_Ok ) || ( myICM.status == ICM_20948_Stat_FIFOMoreDataAvail )) // Was valid data available?
   {
-    SERIAL_PORT.print(F("Received data! Header: 0x"));
+    SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX
     if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
     if ( data.header < 0x100) SERIAL_PORT.print( "0" );
     if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     SERIAL_PORT.println( data.header, HEX );
-    if ( (data.header | DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
+    
+    if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
     {
-      SERIAL_PORT.print(F("Quat9 data is: 0x"));
-      for (int i = 0; i < 14; i++) // Quat9 data is 14 bytes long
-      {
-        if ( data.Quat9[i] < 0x10) SERIAL_PORT.print( "0" ); // Pad the zero
-        SERIAL_PORT.print( data.Quat9[i], HEX );
-      }
-      SERIAL_PORT.println();
+      // Q0 value is computed from this equation: Q20 + Q21 + Q22 + Q23 = 1.
+      // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+      // The quaternion data is scaled by 2^30.
+      SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
     }
   }
-  else if ( myICM.status != ICM_20948_Stat_FIFONoDataAvail )
+  else if ( myICM.status != ICM_20948_Stat_FIFONoDataAvail ) // Check for an error - but ignore "no data available"
   {
-    SERIAL_PORT.print(F("readDMPdataFromFIFO failed! Status is: "));
+    SERIAL_PORT.print(F("readDMPdataFromFIFO failed! Status is: ")); // We got an error - so print it
     SERIAL_PORT.print( myICM.status );
     SERIAL_PORT.print(" : ");
     SERIAL_PORT.println( myICM.statusString() );
-    SERIAL_PORT.print(F("Header is: 0x"));
+    
+    SERIAL_PORT.print(F("Header is: 0x")); // Print the header so we can check it manually
     if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
     if ( data.header < 0x100) SERIAL_PORT.print( "0" );
     if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     SERIAL_PORT.println( data.header, HEX );
-    if ( data.header == DMP_header_bitmap_Header2 )
+    
+    if ( data.header2  > 0 )
     {
-      SERIAL_PORT.print(F("Header2 is: 0x"));
+      SERIAL_PORT.print(F("Header2 is: 0x")); // Print header2 so we can check it manually
       if ( data.header2 < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
       if ( data.header2 < 0x100) SERIAL_PORT.print( "0" );
       if ( data.header2 < 0x10) SERIAL_PORT.print( "0" );
@@ -259,104 +290,8 @@ void loop()
     }
   }
 
-  delay(10);
-}
-
-
-// Below here are some helper functions to print the data nicely!
-
-void printPaddedInt16b( int16_t val ){
-  if(val > 0){
-    SERIAL_PORT.print(" ");
-    if(val < 10000){ SERIAL_PORT.print("0"); }
-    if(val < 1000 ){ SERIAL_PORT.print("0"); }
-    if(val < 100  ){ SERIAL_PORT.print("0"); }
-    if(val < 10   ){ SERIAL_PORT.print("0"); }
-  }else{
-    SERIAL_PORT.print("-");
-    if(abs(val) < 10000){ SERIAL_PORT.print("0"); }
-    if(abs(val) < 1000 ){ SERIAL_PORT.print("0"); }
-    if(abs(val) < 100  ){ SERIAL_PORT.print("0"); }
-    if(abs(val) < 10   ){ SERIAL_PORT.print("0"); }
+  if ( myICM.status != ICM_20948_Stat_FIFOMoreDataAvail ) // If more data is available then we should read it right away - and not delay
+  {
+    delay(10);
   }
-  SERIAL_PORT.print(abs(val));
-}
-
-void printRawAGMT( ICM_20948_AGMT_t agmt){
-  SERIAL_PORT.print("RAW. Acc [ ");
-  printPaddedInt16b( agmt.acc.axes.x );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.acc.axes.y );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.acc.axes.z );
-  SERIAL_PORT.print(" ], Gyr [ ");
-  printPaddedInt16b( agmt.gyr.axes.x );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.gyr.axes.y );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.gyr.axes.z );
-  SERIAL_PORT.print(" ], Mag [ ");
-  printPaddedInt16b( agmt.mag.axes.x );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.mag.axes.y );
-  SERIAL_PORT.print(", ");
-  printPaddedInt16b( agmt.mag.axes.z );
-  SERIAL_PORT.print(" ], Tmp [ ");
-  printPaddedInt16b( agmt.tmp.val );
-  SERIAL_PORT.print(" ]");
-  SERIAL_PORT.println();
-}
-
-
-void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
-  float aval = abs(val);
-  if(val < 0){
-    SERIAL_PORT.print("-");
-  }else{
-    SERIAL_PORT.print(" ");
-  }
-  for( uint8_t indi = 0; indi < leading; indi++ ){
-    uint32_t tenpow = 0;
-    if( indi < (leading-1) ){
-      tenpow = 1;
-    }
-    for(uint8_t c = 0; c < (leading-1-indi); c++){
-      tenpow *= 10;
-    }
-    if( aval < tenpow){
-      SERIAL_PORT.print("0");
-    }else{
-      break;
-    }
-  }
-  if(val < 0){
-    SERIAL_PORT.print(-val, decimals);
-  }else{
-    SERIAL_PORT.print(val, decimals);
-  }
-}
-
-void printScaledAGMT( ICM_20948_AGMT_t agmt){
-  SERIAL_PORT.print("Scaled. Acc (mg) [ ");
-  printFormattedFloat( myICM.accX(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.accY(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.accZ(), 5, 2 );
-  SERIAL_PORT.print(" ], Gyr (DPS) [ ");
-  printFormattedFloat( myICM.gyrX(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.gyrY(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.gyrZ(), 5, 2 );
-  SERIAL_PORT.print(" ], Mag (uT) [ ");
-  printFormattedFloat( myICM.magX(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.magY(), 5, 2 );
-  SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.magZ(), 5, 2 );
-  SERIAL_PORT.print(" ], Tmp (C) [ ");
-  printFormattedFloat( myICM.temp(), 5, 2 );
-  SERIAL_PORT.print(" ]");
-  SERIAL_PORT.println();
 }

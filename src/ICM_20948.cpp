@@ -116,6 +116,9 @@ void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
     case ICM_20948_Stat_FIFONoDataAvail:
         debugPrint(F("No FIFO Data Available"));
         break;
+    case ICM_20948_Stat_FIFOMoreDataAvail:
+        debugPrint(F("More FIFO Data Available"));
+        break;
     case ICM_20948_Stat_UnrecognisedDMPHeader:
         debugPrint(F("Unrecognised DMP Header"));
         break;
@@ -285,6 +288,9 @@ const char *ICM_20948::statusString(ICM_20948_Status_e stat)
         break;
     case ICM_20948_Stat_FIFONoDataAvail:
         return "No FIFO Data Available";
+        break;
+    case ICM_20948_Stat_FIFOMoreDataAvail:
+        return "More FIFO Data Available";
         break;
     case ICM_20948_Stat_UnrecognisedDMPHeader:
         return "Unrecognised DMP Header";
@@ -1122,6 +1128,8 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
 #endif
 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
+    _device._last_bank = 255;  // Initialize _last_bank. Make it invalid. It will be set by the first call of ICM_20948_set_bank.
+    _device._last_mems_bank = 255;  // Initialize _last_mems_bank. Make it invalid. It will be set by the first call of inv_icm20948_write_mems.
 
     // Perform default startup
     // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.
@@ -1301,6 +1309,8 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
 #endif
 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
+    _device._last_bank = 255;  // Initialize _last_bank. Make it invalid. It will be set by the first call of ICM_20948_set_bank.
+    _device._last_mems_bank = 255;  // Initialize _last_mems_bank. Make it invalid. It will be set by the first call of inv_icm20948_write_mems.
 
     // Perform default startup
     // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.

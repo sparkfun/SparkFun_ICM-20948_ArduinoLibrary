@@ -53,7 +53,8 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_SensorNotSupported,
 		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
 		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
-		ICM_20948_Stat_FIFONoDataAvail,
+		ICM_20948_Stat_FIFONoDataAvail, // FIFO contains no data
+		ICM_20948_Stat_FIFOMoreDataAvail, // FIFO contains more data
 		ICM_20948_Stat_UnrecognisedDMPHeader,
 		ICM_20948_Stat_UnrecognisedDMPHeader2,
 
@@ -157,6 +158,8 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		const ICM_20948_Serif_t *_serif; // Pointer to the assigned Serif (Serial Interface) vtable
 		bool _dmp_firmware_available; // Indicates if the DMP firmware has been included. It
 		bool _firmware_loaded; // Indicates if DMP has been loaded
+		uint8_t _last_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
+		uint8_t _last_mems_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
 	/*
@@ -169,30 +172,6 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	};
 #endif
 
-	// Here's the list of what I want to be able to do:
-	/*
-
-perform a generic startup routine that sets most things in the optimal performance range
-Read / check against Who Am I
-Add magnetometer to auxillary I2C bus and read it's values from the sensor values locations, configure ODR when accelerometer and gyro are both disabled
-read raw accel and gyro values
-configure accel/gyro update rates and dlpf's
-read raw temp values
-configure temperature sensor
-load DMP firmware into the device
-read DMP results from the device
-configure interrupts
-	- configure interrupt and FSYNC pins
-	- configure which interrupts activate the interrupt pin
-respond to interrupts on INT
-configure FIFO (and use it)
-
-
-
-callbacks for the user to respond to interrupt events
-
-
-*/
 
 	// ICM_20948_Status_e ICM_20948_Startup( ICM_20948_Device_t* pdev ); // For the time being this performs a standardized startup routine
 
