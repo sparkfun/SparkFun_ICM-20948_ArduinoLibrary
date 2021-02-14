@@ -1512,8 +1512,6 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 
 ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state)
 {
-		// TO DO: figure out how to disable the sensor if state is 0
-
 		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 
 		if (pdev->_dmp_firmware_available == false)
@@ -1526,6 +1524,9 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 		if (delta == 0xFFFF)
 				return ICM_20948_Stat_SensorNotSupported;
 
+		if (state == 0)
+				delta = 0;
+		
 		unsigned char data_intr_ctl[2];
 
     data_intr_ctl[0] = (unsigned char)(delta >> 8);
