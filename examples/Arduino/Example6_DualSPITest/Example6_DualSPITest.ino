@@ -1,7 +1,7 @@
 /****************************************************************
- * Example1_Basics.ino
+ * Example6_DualSPITest.ino
  * ICM 20948 Arduino Library Demo
- * Use the default configuration to stream 9-axis IMU data
+ * Use the default configuration to stream 9-axis IMU data on two IMUs over SPI
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
  *
@@ -11,52 +11,49 @@
  ***************************************************************/
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
-//#define USE_SPI       // Uncomment this to use SPI
-
 #define SERIAL_PORT Serial
 
-#define SPI_PORT SPI    // Your desired SPI port.       Used only when "USE_SPI" is defined
-#define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
+#define SPI_PORT SPI    // Your desired SPI port.
+#define CS_PIN_1 2        // Which pin you connect CS to for Sensor 1
+#define CS_PIN_2 4        // Which pin you connect CS to for Sensor 2
 
-#define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL   1     // The value of the last bit of the I2C address.
-                        // On the SparkFun 9DoF IMU breakout the default is 1, and when
-                        // the ADR jumper is closed the value becomes 0
-
-#ifdef USE_SPI
-  ICM_20948_SPI myICM;  // If using SPI create an ICM_20948_SPI object
-#else
-  ICM_20948_I2C myICM;  // Otherwise create an ICM_20948_I2C object
-#endif
-
+ICM_20948_SPI myICM1;  // Create an ICM_20948_SPI object
+ICM_20948_SPI myICM2;  // Create an ICM_20948_SPI object
 
 void setup() {
 
   SERIAL_PORT.begin(115200);
   while(!SERIAL_PORT){};
 
-#ifdef USE_SPI
     SPI_PORT.begin();
-#else
-    WIRE_PORT.begin();
-    WIRE_PORT.setClock(400000);
-#endif
 
-  //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  myICM1.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  myICM2.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
   bool initialized = false;
   while( !initialized ){
 
-#ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT );
-#else
-    myICM.begin( WIRE_PORT, AD0_VAL );
-#endif
+    myICM1.begin( CS_PIN_1, SPI_PORT );
 
-    SERIAL_PORT.print( F("Initialization of the sensor returned: ") );
-    SERIAL_PORT.println( myICM.statusString() );
-    if( myICM.status != ICM_20948_Stat_Ok ){
-      SERIAL_PORT.println( "Trying again..." );
+    SERIAL_PORT.print( F("Initialization of sensor 1 returned: ") );
+    SERIAL_PORT.println( myICM1.statusString() );
+    if( myICM1.status != ICM_20948_Stat_Ok ){
+      SERIAL_PORT.println( F("Trying again..." ));
+      delay(500);
+    }else{
+      initialized = true;
+    }
+  }
+
+  initialized = false;
+  while( !initialized ){
+
+    myICM2.begin( CS_PIN_2, SPI_PORT );
+
+    SERIAL_PORT.print( F("Initialization of sensor 2 returned: ") );
+    SERIAL_PORT.println( myICM1.statusString() );
+    if( myICM2.status != ICM_20948_Stat_Ok ){
+      SERIAL_PORT.println( F("Trying again..." ));
       delay(500);
     }else{
       initialized = true;
@@ -64,20 +61,34 @@ void setup() {
   }
 }
 
+bool dataSeen = false;
+
 void loop() {
 
-  if( myICM.dataReady() ){
-    myICM.getAGMT();                // The values are only updated when you call 'getAGMT'
-//    printRawAGMT( myICM.agmt );     // Uncomment this to see the raw values, taken directly from the agmt structure
-    printScaledAGMT( &myICM );   // This function takes into account the scale settings from when the measurement was made to calculate the values with units
+  if( myICM1.dataReady() ){
+    myICM1.getAGMT();                // The values are only updated when you call 'getAGMT'
+    SERIAL_PORT.print( "Sensor 1: " );
+    //printRawAGMT( myICM1.agmt);
+    printScaledAGMT( &myICM1 );
+    dataSeen = true;
+  }
+  if( myICM2.dataReady() ){
+    myICM2.getAGMT();                // The values are only updated when you call 'getAGMT'
+    SERIAL_PORT.print( "Sensor 2: " );
+    //printRawAGMT( myICM2.agmt );
+    printScaledAGMT( &myICM2 );
+    dataSeen = true;
+  }
+  if (dataSeen){
     delay(30);
-  }else{
+    dataSeen = false;
+  }
+  else{
     SERIAL_PORT.println("Waiting for data");
     delay(500);
   }
 
 }
-
 
 // Below here are some helper functions to print the data nicely!
 
@@ -123,7 +134,6 @@ void printRawAGMT( ICM_20948_AGMT_t agmt){
   SERIAL_PORT.println();
 }
 
-
 void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
   float aval = abs(val);
   if(val < 0){
@@ -152,11 +162,7 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
   }
 }
 
-#ifdef USE_SPI
 void printScaledAGMT( ICM_20948_SPI *sensor ){
-#else
-void printScaledAGMT( ICM_20948_I2C *sensor ){
-#endif
   SERIAL_PORT.print("Scaled. Acc (mg) [ ");
   printFormattedFloat( sensor->accX(), 5, 2 );
   SERIAL_PORT.print(", ");
