@@ -16,7 +16,7 @@
 #define SERIAL_PORT Serial
 
 #define SPI_PORT SPI    // Your desired SPI port.       Used only when "USE_SPI" is defined
-#define SPI_FREQ 10000000// You can override the default SPI frequency
+#define SPI_FREQ 5000000// You can override the default SPI frequency
 #define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
@@ -146,6 +146,13 @@ void setup() {
   SERIAL_PORT.print(F("Enable DLPF for Accelerometer returned: ")); SERIAL_PORT.println(myICM.statusString(accDLPEnableStat));
   SERIAL_PORT.print(F("Enable DLPF for Gyroscope returned: ")); SERIAL_PORT.println(myICM.statusString(gyrDLPEnableStat));
 
+  // Choose whether or not to start the magnetometer
+  myICM.startupMagnetometer();
+  if( myICM.status != ICM_20948_Stat_Ok){
+    SERIAL_PORT.print(F("startupMagnetometer returned: "));
+    SERIAL_PORT.println(myICM.statusString());
+  }
+
   SERIAL_PORT.println();
   SERIAL_PORT.println(F("Configuration complete!"));
 }
@@ -155,10 +162,10 @@ void loop() {
   if( myICM.dataReady() ){
     myICM.getAGMT();                // The values are only updated when you call 'getAGMT'
 //    printRawAGMT( myICM.agmt );     // Uncomment this to see the raw values, taken directly from the agmt structure
-    printScaledAGMT( myICM.agmt);   // This function takes into account the sclae settings from when the measurement was made to calculate the values with units
+    printScaledAGMT( &myICM );   // This function takes into account the scale settings from when the measurement was made to calculate the values with units
     delay(30);
   }else{
-    Serial.println("Waiting for data");
+    SERIAL_PORT.println("Waiting for data");
     delay(500);
   }
 
@@ -209,7 +216,6 @@ void printRawAGMT( ICM_20948_AGMT_t agmt){
   SERIAL_PORT.println();
 }
 
-
 void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
   float aval = abs(val);
   if(val < 0){
@@ -238,27 +244,31 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
   }
 }
 
-void printScaledAGMT( ICM_20948_AGMT_t agmt){
+#ifdef USE_SPI
+void printScaledAGMT( ICM_20948_SPI *sensor ){
+#else
+void printScaledAGMT( ICM_20948_I2C *sensor ){
+#endif
   SERIAL_PORT.print("Scaled. Acc (mg) [ ");
-  printFormattedFloat( myICM.accX(), 5, 2 );
+  printFormattedFloat( sensor->accX(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.accY(), 5, 2 );
+  printFormattedFloat( sensor->accY(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.accZ(), 5, 2 );
+  printFormattedFloat( sensor->accZ(), 5, 2 );
   SERIAL_PORT.print(" ], Gyr (DPS) [ ");
-  printFormattedFloat( myICM.gyrX(), 5, 2 );
+  printFormattedFloat( sensor->gyrX(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.gyrY(), 5, 2 );
+  printFormattedFloat( sensor->gyrY(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.gyrZ(), 5, 2 );
+  printFormattedFloat( sensor->gyrZ(), 5, 2 );
   SERIAL_PORT.print(" ], Mag (uT) [ ");
-  printFormattedFloat( myICM.magX(), 5, 2 );
+  printFormattedFloat( sensor->magX(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.magY(), 5, 2 );
+  printFormattedFloat( sensor->magY(), 5, 2 );
   SERIAL_PORT.print(", ");
-  printFormattedFloat( myICM.magZ(), 5, 2 );
+  printFormattedFloat( sensor->magZ(), 5, 2 );
   SERIAL_PORT.print(" ], Tmp (C) [ ");
-  printFormattedFloat( myICM.temp(), 5, 2 );
+  printFormattedFloat( sensor->temp(), 5, 2 );
   SERIAL_PORT.print(" ]");
   SERIAL_PORT.println();
 }

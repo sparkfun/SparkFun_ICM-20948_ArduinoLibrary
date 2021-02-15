@@ -140,31 +140,31 @@ void loop() {
 
 #ifdef USE_SPI
   ICM_20948_Status_e my_write_spi(uint8_t reg, uint8_t* data, uint32_t len, void* user){
+    SPI_PORT.beginTransaction(mySettings);
     digitalWrite(CS_PIN, LOW);
     delayMicroseconds(5);
-    SPI_PORT.beginTransaction(mySettings);
     SPI_PORT.transfer( ((reg & 0x7F) | 0x00) );
     for(uint32_t indi = 0; indi < len; indi++){
       SPI_PORT.transfer(*(data + indi));
     }
-    SPI_PORT.endTransaction();
     delayMicroseconds(5);
     digitalWrite(CS_PIN, HIGH);
+    SPI_PORT.endTransaction();
 
     return ICM_20948_Stat_Ok;
   }
 
   ICM_20948_Status_e my_read_spi(uint8_t reg, uint8_t* buff, uint32_t len, void* user){
+    SPI_PORT.beginTransaction(mySettings);
     digitalWrite(CS_PIN, LOW);
     delayMicroseconds(5);
-    SPI_PORT.beginTransaction(mySettings);
     SPI_PORT.transfer( ((reg & 0x7F) | 0x80) );
     for(uint32_t indi = 0; indi < len; indi++){
       *(buff + indi) = SPI_PORT.transfer(0x00);
     }
-    SPI_PORT.endTransaction();
     delayMicroseconds(5);
     digitalWrite(CS_PIN, HIGH);
+    SPI_PORT.endTransaction();
 
     return ICM_20948_Stat_Ok;
   }
