@@ -20,6 +20,7 @@ typedef enum{
 	// Gyroscope and Accelerometer
 	// User Bank 0
 	AGB0_REG_WHO_AM_I = 0x00,
+	AGB0_REG_LPF,
 		// Break
 	AGB0_REG_USER_CTRL = 0x03,
 		// Break
@@ -34,11 +35,13 @@ typedef enum{
 	AGB0_REG_INT_ENABLE_3,
 		// Break
 	AGB0_REG_I2C_MST_STATUS = 0x17,
-		// Break
-	AGB0_REG_INT_STATUS = 0x19,
+	AGB0_REG_DMP_INT_STATUS,
+	AGB0_REG_INT_STATUS,
 	AGB0_REG_INT_STATUS_1,
 	AGB0_REG_INT_STATUS_2,
 	AGB0_REG_INT_STATUS_3,
+		// Break
+	AGB0_REG_SINGLE_FIFO_PRIORITY_SEL = 0x26,
 		// Break
 	AGB0_REG_DELAY_TIMEH = 0x28,
 	AGB0_REG_DELAY_TIMEL,
@@ -82,8 +85,11 @@ typedef enum{
 	AGB0_REG_EXT_PERIPH_SENS_DATA_22,
 	AGB0_REG_EXT_PERIPH_SENS_DATA_23,
 		// Break
+	AGB0_REG_TEMP_CONFIG = 0x53,
+		// Break
 	AGB0_REG_FIFO_EN_1 = 0x66,
 	AGB0_REG_FIFO_EN_2,
+	AGB0_REG_FIFO_RST,
 	AGB0_REG_FIFO_MODE,
 		// Break
 	AGB0_REG_FIFO_COUNT_H = 0x70,
@@ -91,8 +97,8 @@ typedef enum{
 	AGB0_REG_FIFO_R_W,
 		// Break
 	AGB0_REG_DATA_RDY_STATUS = 0x74,
-		// Break
-	AGB0_REG_FIFO_CFG = 0x76,
+	AGB0_REG_HW_FIX_DISABLE,
+	AGB0_REG_FIFO_CFG,
 		// Break
 	AGB0_REG_MEM_START_ADDR 	= 0x7C,		// Hmm, Invensense thought they were sneaky not listing these locations on the datasheet...
 	AGB0_REG_MEM_R_W 			= 0x7D,		// These three locations seem to be able to access some memory within the device
@@ -140,7 +146,11 @@ typedef enum{
 	AGB2_REG_ACCEL_CONFIG,
 	AGB2_REG_ACCEL_CONFIG_2,
 		// Break
-	AGB2_REG_FSYNC_CONFIG = 0x52,
+	AGB2_REG_PRS_ODR_CONFIG = 0x20,
+		// Break
+	AGB2_REG_PRGM_START_ADDRH = 0x50,
+	AGB2_REG_PRGM_START_ADDRL,
+	AGB2_REG_FSYNC_CONFIG,
 	AGB2_REG_TEMP_CONFIG,
 	AGB2_REG_MOD_CTRL_USR,
 		// Break
@@ -308,6 +318,14 @@ typedef struct{
 	uint8_t I2C_PERIPH4_DONE				: 1;
 	uint8_t PASS_THROUGH				: 1;
 }ICM_20948_I2C_MST_STATUS_t;
+
+typedef struct{
+	uint8_t reserved0 : 1;
+	uint8_t DMP_INT_Motion_Detect_SMD : 1;
+	uint8_t reserved1 : 1;
+	uint8_t DMP_INT_Tilt_Event : 1;
+	uint8_t reserved2					: 4;
+}ICM_20948_DMP_INT_STATUS_t; // Mostly guesswork from InvenSense App Note
 
 typedef struct{
 	uint8_t I2C_MST_INT 				: 1;

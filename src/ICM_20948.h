@@ -7,7 +7,7 @@ A C++ interface to the ICM-20948
 #ifndef _ICM_20948_H_
 #define _ICM_20948_H_
 
-#include "util/ICM_20948_C.h" // The C backbone
+#include "util/ICM_20948_C.h" // The C backbone. ICM_20948_USE_DMP is defined in here.
 #include "util/AK09916_REGISTERS.h"
 
 #include "Arduino.h" // Arduino support
@@ -119,7 +119,7 @@ public:
     ICM_20948_Status_e cfgIntLatch(bool latching);         // If not latching then the interrupt is a 50 us pulse
     ICM_20948_Status_e cfgIntAnyReadToClear(bool enabled); // If enabled, *ANY* read will clear the INT_STATUS register. So if you have multiple interrupt sources enabled be sure to read INT_STATUS first
     ICM_20948_Status_e cfgFsyncActiveLow(bool active_low);
-    ICM_20948_Status_e cfgFsyncIntMode(bool interrupt_mode); // Can ue FSYNC as an interrupt input that sets the I2C Master Status register's PASS_THROUGH bit
+    ICM_20948_Status_e cfgFsyncIntMode(bool interrupt_mode); // Can use FSYNC as an interrupt input that sets the I2C Master Status register's PASS_THROUGH bit
 
     ICM_20948_Status_e intEnableI2C(bool enable);
     ICM_20948_Status_e intEnableDMP(bool enable);
@@ -151,7 +151,7 @@ public:
     uint8_t i2cMasterSingleR(uint8_t addr, uint8_t reg);
 
     // Default Setup
-    ICM_20948_Status_e startupDefault(void);
+    ICM_20948_Status_e startupDefault(bool minimal = false); // If minimal is true, several startup steps are skipped. If ICM_20948_USE_DMP is defined, .begin will call startupDefault with minimal set to true.
 
     // direct read/write
     ICM_20948_Status_e read(uint8_t reg, uint8_t *pdata, uint32_t len);
@@ -162,6 +162,53 @@ public:
     ICM_20948_Status_e magWhoIAm(void);
     uint8_t readMag(AK09916_Reg_Addr_e reg);
     ICM_20948_Status_e writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata);
+
+    //FIFO
+    ICM_20948_Status_e enableFIFO(bool enable = true);
+    ICM_20948_Status_e resetFIFO(void);
+    ICM_20948_Status_e setFIFOmode(bool snapshot = false); // Default to Stream (non-Snapshot) mode
+    ICM_20948_Status_e getFIFOcount(uint16_t *count);
+    ICM_20948_Status_e readFIFO(uint8_t *data);
+
+    //DMP
+
+    // Done:
+    //  Configure DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
+    //  Load Firmware
+    //  Configure Accel scaling to DMP
+    //  Configure Compass mount matrix and scale to DMP
+    //  Reset FIFO
+    //  Reset DMP
+    //  Enable DMP interrupt
+    //  Configuring DMP to output data to FIFO: set DATA_OUT_CTL1 and DATA_INTR_CTL
+    //  Configuring DMP to output data at multiple ODRs
+
+    // To Do:
+    //  Configure DATA_RDY_STATUS
+    //  Additional FIFO output control: DATA_OUT_CTL2, FIFO_WATERMARK, BM_BATCH_MASK, BM_BATCH_CNTR, BM_BATCH_THLD
+    //  Configuring DMP features: MOTION_EVENT_CTL, PED_STD_STEPCTR, PED_STD_TIMECTR
+    //  Enabling Activity Recognition (BAC) feature
+    //  Enabling Significant Motion Detect (SMD) feature
+    //  Enabling Tilt Detector feature
+    //  Enabling Pick Up Gesture feature
+    //  Enabling Fsync detection feature
+    //  Configuring Accel calibration
+    //  Configuring Compass calibration
+    //  Configuring Gyro gain
+    //  Configuring Accel gain
+    //  Biases
+
+    ICM_20948_Status_e enableDMP(bool enable = true);
+    ICM_20948_Status_e resetDMP(void);
+    ICM_20948_Status_e loadDMPFirmware(void);
+    ICM_20948_Status_e setDMPstartAddress(unsigned short address = DMP_START_ADDRESS);
+    ICM_20948_Status_e enableDMPSensor(enum inv_icm20948_sensor sensor, bool enable = true);
+    ICM_20948_Status_e enableDMPSensorInt(enum inv_icm20948_sensor sensor, bool enable = true);
+    ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
+    ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
+    ICM_20948_Status_e setDMPODRrate(enum DMP_ODR_Registers odr_reg, int rate);
+    ICM_20948_Status_e readDMPdataFromFIFO(icm_20948_DMP_data_t *data);
+
 };
 
 // I2C

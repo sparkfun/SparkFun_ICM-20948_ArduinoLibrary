@@ -15,11 +15,18 @@ The imementation of the interface is flexible
 #include "ICM_20948_REGISTERS.h"
 #include "ICM_20948_ENUMERATIONS.h" // This is to give users access to usable value definiitons
 #include "AK09916_ENUMERATIONS.h"
+#include "ICM_20948_DMP.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
+
+extern int memcmp(const void *, const void *, size_t); // Avoid compiler warnings
+
+// Define if the DMP will be supported
+// Note: you must have 14290 Bytes of program memory available to store the DMP firmware!
+//#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
@@ -28,6 +35,11 @@ extern "C"
 #define MAG_AK09916_I2C_ADDR 0x0C
 #define MAG_AK09916_WHO_AM_I 0x4809
 #define MAG_REG_WHO_AM_I 0x00
+
+/** @brief Max size that can be read across I2C or SPI data lines */
+#define INV_MAX_SERIAL_READ 16
+/** @brief Max size that can be written across I2C or SPI data lines */
+#define INV_MAX_SERIAL_WRITE 16
 
 	typedef enum
 	{
@@ -39,6 +51,13 @@ extern "C"
 		ICM_20948_Stat_InvalSensor, // Tried to apply a function to a sensor that does not support it (e.g. DLPF to the temperature sensor)
 		ICM_20948_Stat_NoData,
 		ICM_20948_Stat_SensorNotSupported,
+		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
+		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
+		ICM_20948_Stat_FIFONoDataAvail, // FIFO contains no data
+		ICM_20948_Stat_FIFOMoreDataAvail, // FIFO contains more data
+		ICM_20948_Stat_UnrecognisedDMPHeader,
+		ICM_20948_Stat_UnrecognisedDMPHeader2,
+		ICM_20948_Stat_InvalDMPRegister, // Invalid DMP Register
 
 		ICM_20948_Stat_NUM,
 		ICM_20948_Stat_Unknown,
@@ -138,32 +157,22 @@ extern "C"
 	typedef struct
 	{
 		const ICM_20948_Serif_t *_serif; // Pointer to the assigned Serif (Serial Interface) vtable
+		bool _dmp_firmware_available; // Indicates if the DMP firmware has been included. It
+		bool _firmware_loaded; // Indicates if DMP has been loaded
+		uint8_t _last_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
+		uint8_t _last_mems_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
-	// Here's the list of what I want to be able to do:
 	/*
+	 * Icm20948 device require a DMP image to be loaded on init
+	 * Provide such images by mean of a byte array
+	 */
+#if defined(ICM_20948_USE_DMP) // Only include the 93KBytes of DMP if ICM_20948_USE_DMP is defined
+	const uint8_t dmp3_image[] = {
+	  #include "icm20948_img.dmp3a.h"
+	};
+#endif
 
-perform a generic startup routine that sets most things in the optimal performance range
-Read / check against Who Am I
-Add magnetometer to auxillary I2C bus and read it's values from the sensor values locations, configure ODR when accelerometer and gyro are both disabled
-read raw accel and gyro values
-configure accel/gyro update rates and dlpf's
-read raw temp values
-configure temperature sensor
-load DMP firmware into the device
-read DMP results from the device
-configure interrupts
-	- configure interrupt and FSYNC pins
-	- configure which interrupts activate the interrupt pin
-respond to interrupts on INT
-configure FIFO (and use it)
-
-
-
-callbacks for the user to respond to interrupt events
-
-
-*/
 
 	// ICM_20948_Status_e ICM_20948_Startup( ICM_20948_Device_t* pdev ); // For the time being this performs a standardized startup routine
 
@@ -194,7 +203,7 @@ callbacks for the user to respond to interrupt events
 
 	// WoM Threshold Level Configuration
 	ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read); // Write and or read the Wake on Motion threshold. If non-null the write operation occurs before the read, so as to verify that the write was successful
-	
+
 	// Internal Sensor Options
 	ICM_20948_Status_e ICM_20948_set_sample_mode(ICM_20948_Device_t *pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_LP_CONFIG_CYCLE_e mode); // Use to set accel, gyro, and I2C master into cycled or continuous modes
 	ICM_20948_Status_e ICM_20948_set_full_scale(ICM_20948_Device_t *pdev, ICM_20948_InternalSensorID_bm sensors, ICM_20948_fss_t fss);
@@ -212,6 +221,53 @@ callbacks for the user to respond to interrupt events
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
 
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
+
+	// FIFO
+
+	ICM_20948_Status_e ICM_20948_enable_FIFO(ICM_20948_Device_t *pdev, bool enable);
+	ICM_20948_Status_e ICM_20948_reset_FIFO(ICM_20948_Device_t *pdev);
+	ICM_20948_Status_e ICM_20948_set_FIFO_mode(ICM_20948_Device_t *pdev, bool snapshot);
+	ICM_20948_Status_e ICM_20948_get_FIFO_count(ICM_20948_Device_t *pdev, uint16_t *count);
+	ICM_20948_Status_e ICM_20948_read_FIFO(ICM_20948_Device_t *pdev, uint8_t *data);
+
+	// DMP
+
+	ICM_20948_Status_e ICM_20948_enable_DMP(ICM_20948_Device_t *pdev, bool enable);
+	ICM_20948_Status_e ICM_20948_reset_DMP(ICM_20948_Device_t *pdev);
+	ICM_20948_Status_e ICM_20948_firmware_load(ICM_20948_Device_t *pdev);
+	ICM_20948_Status_e ICM_20948_set_dmp_start_address(ICM_20948_Device_t *pdev, unsigned short address);
+
+	/** @brief Loads the DMP firmware from SRAM
+	* @param[in] data  pointer where the image
+	* @param[in] size  size if the image
+	* @param[in] load_addr  address to loading the image
+	* @return 0 in case of success, -1 for any error
+	*/
+	ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const unsigned char *data, unsigned short size, unsigned short load_addr);
+	/**
+	*  @brief       Write data to a register in DMP memory
+	*  @param[in]   DMP memory address
+	*  @param[in]   number of byte to be written
+	*  @param[out]  output data from the register
+	*  @return     0 if successful.
+	*/
+	ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, const unsigned char *data);
+	/**
+	*  @brief      Read data from a register in DMP memory
+	*  @param[in]  DMP memory address
+	*  @param[in]  number of byte to be read
+	*  @param[in]  input data from the register
+	*  @return     0 if successful.
+	*/
+	ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data);
+
+	ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum DMP_ODR_Registers odr_reg, uint16_t interval);
+	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
+	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
+	static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);
+	enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
+
+	ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);
 
 	// ToDo:
 
