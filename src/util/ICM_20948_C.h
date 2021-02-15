@@ -26,7 +26,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 
 // Define if the DMP will be supported
 // Note: you must have 14290 Bytes of program memory available to store the DMP firmware!
-#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
+//#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
@@ -57,6 +57,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_FIFOMoreDataAvail, // FIFO contains more data
 		ICM_20948_Stat_UnrecognisedDMPHeader,
 		ICM_20948_Stat_UnrecognisedDMPHeader2,
+		ICM_20948_Stat_InvalDMPRegister, // Invalid DMP Register
 
 		ICM_20948_Stat_NUM,
 		ICM_20948_Stat_Unknown,
@@ -260,7 +261,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	*/
 	ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data);
 
-	ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint16_t period);
+	ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum DMP_ODR_Registers odr_reg, uint16_t interval);
 	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
 	ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
 	static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);

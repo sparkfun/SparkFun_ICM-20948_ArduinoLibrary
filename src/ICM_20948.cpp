@@ -125,6 +125,9 @@ void ICM_20948::debugPrintStatus(ICM_20948_Status_e stat)
     case ICM_20948_Stat_UnrecognisedDMPHeader2:
         debugPrint(F("Unrecognised DMP Header2"));
         break;
+    case ICM_20948_Stat_InvalDMPRegister:
+        debugPrint(F("Invalid DMP Register"));
+        break;
     default:
         debugPrint(F("Unknown Status"));
         break;
@@ -297,6 +300,9 @@ const char *ICM_20948::statusString(ICM_20948_Status_e stat)
         break;
     case ICM_20948_Stat_UnrecognisedDMPHeader2:
         return "Unrecognised DMP Header2";
+        break;
+    case ICM_20948_Stat_InvalDMPRegister:
+        return "Invalid DMP Register";
         break;
     default:
         return "Unknown Status";
@@ -1055,7 +1061,7 @@ ICM_20948_Status_e ICM_20948::readDMPmems(unsigned short reg, unsigned int lengt
   return ICM_20948_Stat_DMPNotSupported;
 }
 
-ICM_20948_Status_e ICM_20948::setDMPODRrate(enum inv_icm20948_sensor sensor, int rate)
+ICM_20948_Status_e ICM_20948::setDMPODRrate(enum DMP_ODR_Registers odr_reg, int rate)
 {
   if (_device._dmp_firmware_available == true) // Should we attempt to set the DMP ODR?
   {
@@ -1064,8 +1070,12 @@ ICM_20948_Status_e ICM_20948::setDMPODRrate(enum inv_icm20948_sensor sensor, int
   	// Value = (DMP running rate (225Hz) / ODR ) - 1
   	// E.g. For a 25Hz ODR rate, value= (225/25) - 1 = 8.
 
-    uint16_t period = (225 / rate) - 1;
-    status = inv_icm20948_set_dmp_sensor_period(&_device, sensor, period);
+    if (rate <= 0) // Check rate is valid
+        rate = 1;
+    if (rate > 225)
+        rate = 225;
+    uint16_t interval = (225 / rate) - 1;
+    status = inv_icm20948_set_dmp_sensor_period(&_device, odr_reg, interval);
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;

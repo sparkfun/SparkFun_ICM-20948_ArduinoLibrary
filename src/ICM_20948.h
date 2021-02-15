@@ -206,8 +206,7 @@ public:
     ICM_20948_Status_e enableDMPSensorInt(enum inv_icm20948_sensor sensor, bool enable = true);
     ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
     ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
-    ICM_20948_Status_e setDMPODRrate(enum inv_icm20948_sensor sensor, int rate);
-
+    ICM_20948_Status_e setDMPODRrate(enum DMP_ODR_Registers odr_reg, int rate);
     ICM_20948_Status_e readDMPdataFromFIFO(icm_20948_DMP_data_t *data);
 
 };

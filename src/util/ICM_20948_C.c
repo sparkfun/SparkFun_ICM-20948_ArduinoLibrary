@@ -1362,23 +1362,27 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 	return result;
 }
 
-ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, uint16_t period)
+ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum DMP_ODR_Registers odr_reg, uint16_t interval)
 {
+	// Set the ODR registersand clear the ODR counter
+
+	// In order to set an ODR for a given sensor data, write 2-byte value to DMP using key defined above for a particular sensor.
+	// Setting value can be calculated as follows:
+	// Value = (DMP running rate (225Hz) / ODR ) - 1
+	// E.g. For a 25Hz ODR rate, value= (225/25) -1 = 8.
+
+	// During run-time, if an ODR is changed, the corresponding rate counter must be reset.
+	// To reset, write 2-byte {0,0} to DMP using keys below for a particular sensor:
+
 	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+	ICM_20948_Status_e result2 = ICM_20948_Stat_Ok;
 
 	if (pdev->_dmp_firmware_available == false)
 			return ICM_20948_Stat_DMPNotSupported;
 
-	uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
-
-	uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
-
-	if (delta == 0xFFFF)
-			return ICM_20948_Stat_SensorNotSupported;
-
 	unsigned char odr_reg_val[2];
-	odr_reg_val[0] = (unsigned char)(period >> 8);
-	odr_reg_val[1] = (unsigned char)(period & 0xff);
+	odr_reg_val[0] = (unsigned char)(interval >> 8);
+	odr_reg_val[1] = (unsigned char)(interval & 0xff);
 
 	unsigned char odr_count_zero[2] = {0x00, 0x00};
 
@@ -1394,75 +1398,85 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
 			return result;
 	}
 
-	// Set the ODR registers and clear the ODR counters
-
-	// In order to set an ODR for a given sensor data, write 2-byte value to DMP using key defined above for a particular sensor.
-	// Setting value can be calculated as follows:
-	// Value = (DMP running rate (225Hz) / ODR ) - 1
-	// E.g. For a 25Hz ODR rate, value= (225/25) -1 = 8.
-
-	// During run-time, if an ODR is changed, the corresponding rate counter must be reset.
-	// To reset, write 2-byte {0,0} to DMP using keys below for a particular sensor:
-
-	if ((delta & DMP_Data_Output_Control_1_Compass_Calibr) > 0)
+	switch (odr_reg)
 	{
-			result |= inv_icm20948_write_mems(pdev, ODR_CPASS_CALIBR, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS_CALIBR, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Gyro_Calibr) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_GYRO_CALIBR, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO_CALIBR, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Pressure) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_PRESSURE, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PRESSURE, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Geomag) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_GEOMAG, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GEOMAG, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_PQuat6) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_PQUAT6, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_PQUAT6, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Quat9) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_QUAT9, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT9, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Quat6) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_QUAT6, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT6, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_ALS) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_ALS, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ALS, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Compass) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_CPASS, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Gyro) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_GYRO, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO, 2, (const unsigned char *)&odr_count_zero);
-	}
-	if ((delta & DMP_Data_Output_Control_1_Accel) > 0)
-	{
-			result |= inv_icm20948_write_mems(pdev, ODR_ACCEL, 2, (const unsigned char *)&odr_reg_val);
-			result |= inv_icm20948_write_mems(pdev, ODR_CNTR_ACCEL, 2, (const unsigned char *)&odr_count_zero);
+			case DMP_ODR_Reg_Cpass_Calibr:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_CPASS_CALIBR, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS_CALIBR, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Gyro_Calibr:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_GYRO_CALIBR, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO_CALIBR, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Pressure:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_PRESSURE, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_PRESSURE, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Geomag:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_GEOMAG, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_GEOMAG, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_PQuat6:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_PQUAT6, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_PQUAT6, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Quat9:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_QUAT9, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT9, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Quat6:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_QUAT6, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_QUAT6, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_ALS:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_ALS, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_ALS, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Cpass:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_CPASS, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_CPASS, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Gyro:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_GYRO, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_GYRO, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			case DMP_ODR_Reg_Accel:
+			{
+					result = inv_icm20948_write_mems(pdev, ODR_ACCEL, 2, (const unsigned char *)&odr_reg_val);
+					result2 = inv_icm20948_write_mems(pdev, ODR_CNTR_ACCEL, 2, (const unsigned char *)&odr_count_zero);
+			}
+			break;
+			default:
+					result = ICM_20948_Stat_InvalDMPRegister;
+			break;
 	}
 
 	// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
 	// if (result != ICM_20948_Stat_Ok)
 	// 		return result;
+
+	if (result2 > result)
+			result = result2; // Return the highest error
 
 	return result;
 }
@@ -1526,7 +1540,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 
 		if (state == 0)
 				delta = 0;
-		
+
 		unsigned char data_intr_ctl[2];
 
     data_intr_ctl[0] = (unsigned char)(delta >> 8);

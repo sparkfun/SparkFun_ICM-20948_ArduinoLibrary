@@ -111,6 +111,19 @@ extern "C" {
 #define ACCEL_ONLY_GAIN (16 * 16 + 12) // 32-bit: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
 #define GYRO_SF (19 * 16) // 32-bit: gyro scaling factor
 
+enum DMP_ODR_Registers {
+	DMP_ODR_Reg_Accel = ODR_ACCEL, // ODR_ACCEL Register for accel ODR
+	DMP_ODR_Reg_Gyro = ODR_GYRO, // ODR_GYRO Register for gyro ODR
+	DMP_ODR_Reg_Cpass = ODR_CPASS, // ODR_CPASS Register for compass ODR
+	DMP_ODR_Reg_ALS = ODR_ALS, // ODR_ALS Register for ALS ODR
+	DMP_ODR_Reg_Quat6 = ODR_QUAT6, // ODR_QUAT6 Register for 6-axis quaternion ODR
+	DMP_ODR_Reg_Quat9 = ODR_QUAT9, // ODR_QUAT9 Register for 9-axis quaternion ODR
+	DMP_ODR_Reg_PQuat6 = ODR_PQUAT6, // ODR_PQUAT6 Register for 6-axis pedometer quaternion ODR
+	DMP_ODR_Reg_Geomag = ODR_GEOMAG, // ODR_GEOMAG Register for Geomag RV ODR
+	DMP_ODR_Reg_Pressure = ODR_PRESSURE, // ODR_PRESSURE Register for pressure ODR
+	DMP_ODR_Reg_Gyro_Calibr = ODR_GYRO_CALIBR, // ODR_GYRO_CALIBR Register for calibrated gyro ODR
+	DMP_ODR_Reg_Cpass_Calibr = ODR_CPASS_CALIBR // ODR_CPASS_CALIBR Register for calibrated compass ODR
+};
 
 /** @brief Sensor identifier for control function
  */

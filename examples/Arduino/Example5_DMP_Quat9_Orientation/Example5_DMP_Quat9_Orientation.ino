@@ -2,7 +2,7 @@
  * Example5_DMP_Quat9_Orientation.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
- * Paul Clark, February 9th 2021
+ * Paul Clark, February 15th 2021
  * Based on original code by:
  * Owen Lyke @ SparkFun Electronics
  * Original Creation Date: April 17 2019
@@ -23,9 +23,10 @@
  *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
+
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
-#define USE_SPI       // Uncomment this to use SPI
+//#define USE_SPI       // Uncomment this to use SPI
 
 #define SERIAL_PORT Serial
 
@@ -66,7 +67,7 @@ void setup() {
     WIRE_PORT.setClock(400000);
 #endif
 
-  myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
   bool initialized = false;
   while( !initialized ){
@@ -144,7 +145,7 @@ void setup() {
   ICM_20948_smplrt_t mySmplrt;
   mySmplrt.g = 43; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 43 = 25Hz
   mySmplrt.a = 44; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 44 = 25Hz
-  myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt );
+  //myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt ); // ** Note: comment this line to leave the sample rates at the maximum **
   
   // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   success &= (myICM.setDMPstartAddress() == ICM_20948_Stat_Ok); // Defaults to DMP_START_ADDRESS
@@ -214,8 +215,10 @@ void setup() {
   // Enable the DMP orientation sensor
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
 
-  // Set the DMP orientation sensor rate to 25Hz
-  success &= (myICM.setDMPODRrate(INV_ICM20948_SENSOR_ORIENTATION, 25) == ICM_20948_Stat_Ok);
+  // Configuring DMP to output data at multiple ODRs:
+  // DMP is capable of outputting multiple sensor data at different rates to FIFO.
+  // Set the DMP Output Data Rate for Quat9 to 12Hz.
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 12) == ICM_20948_Stat_Ok);
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -234,15 +237,14 @@ void setup() {
     SERIAL_PORT.println("DMP enabled!");
   else
   {
-    SERIAL_PORT.print("Enable DMP failed! Status is: ");
-    SERIAL_PORT.println( myICM.statusString() );
+    SERIAL_PORT.println("Enable DMP failed!");
   }
   
 }
 
 void loop()
 {
-  // Read any data waiting in the FIFO
+  // Read any DMP data waiting in the FIFO
   // Note:
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFONoDataAvail if no data or incomplete data is available.
   //    If data is available, readDMPdataFromFIFO will attempt to read _one_ frame of DMP data.
@@ -253,40 +255,26 @@ void loop()
   
   if(( myICM.status == ICM_20948_Stat_Ok ) || ( myICM.status == ICM_20948_Stat_FIFOMoreDataAvail )) // Was valid data available?
   {
-    SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX
-    if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
-    if ( data.header < 0x100) SERIAL_PORT.print( "0" );
-    if ( data.header < 0x10) SERIAL_PORT.print( "0" );
-    SERIAL_PORT.println( data.header, HEX );
+    //SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
+    //if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
+    //if ( data.header < 0x100) SERIAL_PORT.print( "0" );
+    //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
+    //SERIAL_PORT.println( data.header, HEX );
     
     if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
     {
-      // Q0 value is computed from this equation: Q20 + Q21 + Q22 + Q23 = 1.
+      // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
       // The quaternion data is scaled by 2^30.
-      SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
-    }
-  }
-  else if ( myICM.status != ICM_20948_Stat_FIFONoDataAvail ) // Check for an error - but ignore "no data available"
-  {
-    SERIAL_PORT.print(F("readDMPdataFromFIFO failed! Status is: ")); // We got an error - so print it
-    SERIAL_PORT.print( myICM.status );
-    SERIAL_PORT.print(" : ");
-    SERIAL_PORT.println( myICM.statusString() );
-    
-    SERIAL_PORT.print(F("Header is: 0x")); // Print the header so we can check it manually
-    if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
-    if ( data.header < 0x100) SERIAL_PORT.print( "0" );
-    if ( data.header < 0x10) SERIAL_PORT.print( "0" );
-    SERIAL_PORT.println( data.header, HEX );
-    
-    if ( data.header2  > 0 )
-    {
-      SERIAL_PORT.print(F("Header2 is: 0x")); // Print header2 so we can check it manually
-      if ( data.header2 < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
-      if ( data.header2 < 0x100) SERIAL_PORT.print( "0" );
-      if ( data.header2 < 0x10) SERIAL_PORT.print( "0" );
-      SERIAL_PORT.println( data.header2, HEX );
+
+      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+
+      // Scale to +/- 1
+      float q1 = ((float)data.Quat9.Data.Q1) / 1073741824.0; // Convert to float. Divide by 2^30
+      float q2 = ((float)data.Quat9.Data.Q2) / 1073741824.0; // Convert to float. Divide by 2^30
+      float q3 = ((float)data.Quat9.Data.Q3) / 1073741824.0; // Convert to float. Divide by 2^30
+      
+      SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f\r\n", q1, q2, q3);
     }
   }
 
