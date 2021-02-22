@@ -187,30 +187,42 @@ void setup() {
   success &= (myICM.writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]) == ICM_20948_Stat_Ok);
 
+//  // Configure the biases
+//  // The biases are 32-bits in chip frame in hardware unit scaled by:
+//  // 2^12 (FSR 4g) for accel, 2^15 for gyro, in uT scaled by 2^16 for compass.
+//  const unsigned char accelBiasOne[4] = {0x00, 0x00, 0x10, 0x00};
+//  const unsigned char gyroBiasOne[4] = {0x00, 0x00, 0x80, 0x00};
+//  const unsigned char compassBiasOne[4] = {0x00, 0x01, 0x00, 0x00};
+//  success &= (myICM.writeDMPmems(GYRO_BIAS_X, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(GYRO_BIAS_Y, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(GYRO_BIAS_Z, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(ACCEL_BIAS_X, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(ACCEL_BIAS_Y, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(ACCEL_BIAS_Z, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(CPASS_BIAS_X, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(CPASS_BIAS_Y, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
+//  success &= (myICM.writeDMPmems(CPASS_BIAS_Z, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
+
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
 
   // DMP sensor options are defined in ICM_20948_DMP.h
-  //    INV_ICM20948_SENSOR_ACCELEROMETER
-  //    INV_ICM20948_SENSOR_GYROSCOPE
-  //    INV_ICM20948_SENSOR_RAW_ACCELEROMETER
-  //    INV_ICM20948_SENSOR_RAW_GYROSCOPE
-  //    INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED
-  //    INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED
-  //    INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON
-  //    INV_ICM20948_SENSOR_STEP_DETECTOR
-  //    INV_ICM20948_SENSOR_STEP_COUNTER
-  //    INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR
-  //    INV_ICM20948_SENSOR_ROTATION_VECTOR
-  //    INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR
-  //    INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD
-  //    INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION
-  //    INV_ICM20948_SENSOR_FLIP_PICKUP
-  //    INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR
-  //    INV_ICM20948_SENSOR_GRAVITY
-  //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION
-  //    INV_ICM20948_SENSOR_ORIENTATION
+  //    INV_ICM20948_SENSOR_ACCELEROMETER               (16-bit accel)
+  //    INV_ICM20948_SENSOR_GYROSCOPE                   (16-bit gyro + 32-bit calibrated gyro)
+  //    INV_ICM20948_SENSOR_RAW_ACCELEROMETER           (16-bit accel)
+  //    INV_ICM20948_SENSOR_RAW_GYROSCOPE               (16-bit gyro + 32-bit calibrated gyro)
+  //    INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED (16-bit compass)
+  //    INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED      (16-bit gyro)
+  //    INV_ICM20948_SENSOR_STEP_DETECTOR               (Pedometer Step Detector)
+  //    INV_ICM20948_SENSOR_STEP_COUNTER                (Pedometer Step Detector)
+  //    INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR        (32-bit 6-axis quaternion)
+  //    INV_ICM20948_SENSOR_ROTATION_VECTOR             (32-bit 9-axis quaternion + heading accuracy)
+  //    INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR (32-bit Geomag RV + heading accuracy)
+  //    INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD           (32-bit calibrated compass)
+  //    INV_ICM20948_SENSOR_GRAVITY                     (32-bit 6-axis quaternion)
+  //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
+  //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
   // Enable the DMP orientation sensor
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
