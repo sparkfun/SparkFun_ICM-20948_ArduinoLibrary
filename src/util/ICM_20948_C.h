@@ -26,7 +26,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 
 // Define if the DMP will be supported
 // Note: you must have 14301 Bytes of program memory available to store the DMP firmware!
-#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
+//#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
