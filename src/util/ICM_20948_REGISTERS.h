@@ -484,10 +484,6 @@ typedef struct{
 }ICM_20948_FIFO_COUNTL_t;
 
 typedef struct{
-	uint8_t FIFO_R_W;	// Reading from or writing to this register actually reads from or writes to the FIFO
-}ICM_20948_FIFO_R_W_t;
-
-typedef struct{
 	uint8_t RAW_DATA_RDY 			: 4;
 	uint8_t reserved_0				: 3;
 	uint8_t WOF_STATUS				: 1;

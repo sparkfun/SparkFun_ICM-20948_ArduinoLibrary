@@ -850,6 +850,16 @@ ICM_20948_Status_e ICM_20948::startupDefault(bool minimal)
         return status;
     }
 
+    retval = startupMagnetometer();
+    if (retval != ICM_20948_Stat_Ok)
+    {
+        debugPrint(F("ICM_20948::startupDefault: startupMagnetometer returned: "));
+        debugPrintStatus(retval);
+        debugPrintln(F(""));
+        status = retval;
+        return status;
+    }
+
     if (minimal) // Return now if minimal is true
     {
         debugPrintln(F("ICM_20948::startupDefault: minimal startup complete!"));
@@ -912,16 +922,6 @@ ICM_20948_Status_e ICM_20948::startupDefault(bool minimal)
         return status;
     }
 
-    retval = startupMagnetometer();
-    if (retval != ICM_20948_Stat_Ok)
-    {
-        debugPrint(F("ICM_20948::startupDefault: startupMagnetometer returned: "));
-        debugPrintStatus(retval);
-        debugPrintln(F(""));
-        status = retval;
-        return status;
-    }
-
     return status;
 }
 
@@ -977,9 +977,9 @@ ICM_20948_Status_e ICM_20948::getFIFOcount(uint16_t *count)
   return status;
 }
 
-ICM_20948_Status_e ICM_20948::readFIFO(uint8_t *data)
+ICM_20948_Status_e ICM_20948::readFIFO(uint8_t *data, uint8_t len)
 {
-  status = ICM_20948_read_FIFO(&_device, data);
+  status = ICM_20948_read_FIFO(&_device, data, len);
   return status;
 }
 

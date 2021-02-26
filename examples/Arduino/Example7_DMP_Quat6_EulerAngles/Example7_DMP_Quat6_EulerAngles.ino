@@ -1,5 +1,5 @@
 /****************************************************************
- * Example5_DMP_Quat9_Orientation.ino
+ * Example7_DMP_Quat6_EulerAngles.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
  * Paul Clark, February 15th 2021
@@ -83,14 +83,14 @@ void setup() {
     SERIAL_PORT.print( F("Initialization of the sensor returned: ") );
     SERIAL_PORT.println( myICM.statusString() );
     if( myICM.status != ICM_20948_Stat_Ok ){
-      SERIAL_PORT.println( "Trying again..." );
+      SERIAL_PORT.println( F("Trying again...") );
       delay(500);
     }else{
       initialized = true;
     }
   }
 
-  SERIAL_PORT.println("Device connected!");
+  SERIAL_PORT.println(F("Device connected!"));
 
   // The ICM-20948 is awake and ready but hasn't been configured. Let's step through the configuration
   // sequence from InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
@@ -106,8 +106,14 @@ void setup() {
   uint8_t zero = 0;
   success &= (myICM.write(AGB0_REG_PWR_MGMT_2, &zero, 1) == ICM_20948_Stat_Ok); // Write one byte to the PWR_MGMT_2 register
 
-  // Configure Gyro/Accel in Low Power Mode (cycled) with LP_CONFIG
-  success &= (myICM.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ) == ICM_20948_Stat_Ok);
+  // Configure I2C_Master/Gyro/Accel in Low Power Mode (cycled) with LP_CONFIG
+  success &= (myICM.setSampleMode( (ICM_20948_Internal_Mst | ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ) == ICM_20948_Stat_Ok);
+
+  // Disable the FIFO
+  success &= (myICM.enableFIFO(false) == ICM_20948_Stat_Ok);
+
+  // Disable the DMP
+  success &= (myICM.enableDMP(false) == ICM_20948_Stat_Ok);
 
   // Set Gyro FSR (Full scale range) to 2000dps through GYRO_CONFIG_1
   // Set Accel FSR (Full scale range) to 4g through ACCEL_CONFIG
@@ -143,9 +149,9 @@ void setup() {
   // Set gyro sample rate divider with GYRO_SMPLRT_DIV
   // Set accel sample rate divider with ACCEL_SMPLRT_DIV_2
   ICM_20948_smplrt_t mySmplrt;
-  mySmplrt.g = 43; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 43 = 25Hz
-  mySmplrt.a = 44; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 44 = 25Hz
-  //myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt ); // ** Note: comment this line to leave the sample rates at the maximum **
+  mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz
+  mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz
+  myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt ); // ** Note: comment this line to leave the sample rates at the maximum **
   
   // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   success &= (myICM.setDMPstartAddress() == ICM_20948_Stat_Ok); // Defaults to DMP_START_ADDRESS
@@ -172,11 +178,9 @@ void setup() {
   // X = raw_x * CPASS_MTX_00 + raw_y * CPASS_MTX_01 + raw_z * CPASS_MTX_02
   // Y = raw_x * CPASS_MTX_10 + raw_y * CPASS_MTX_11 + raw_z * CPASS_MTX_12
   // Z = raw_x * CPASS_MTX_20 + raw_y * CPASS_MTX_21 + raw_z * CPASS_MTX_22
-  // Magnetometer full scale is +/- 4900uT so _I think_ we need to multiply by 2^30 / 4900 = 0x000357FA
-  // The magnetometer Y and Z axes are reversed compared to the accelerometer so we'll invert those
   const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
-  const unsigned char mountMultiplierPlus[4] = {0x00, 0x03, 0x57, 0xFA};
-  const unsigned char mountMultiplierMinus[4] = {0xFF, 0xFC, 0xA8, 0x05};
+  const unsigned char mountMultiplierPlus[4] = {0x09, 0x99, 0x99, 0x99}; // Value taken from InvenSense Nucleo example
+  const unsigned char mountMultiplierMinus[4] = {0xF6, 0x66, 0x66, 0x67}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(CPASS_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_02, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
@@ -187,22 +191,27 @@ void setup() {
   success &= (myICM.writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]) == ICM_20948_Stat_Ok);
 
-//  // Configure the biases
-//  // The biases are 32-bits in chip frame in hardware unit scaled by:
-//  // 2^12 (FSR 4g) for accel, 2^15 for gyro, in uT scaled by 2^16 for compass.
-//  const unsigned char accelBiasOne[4] = {0x00, 0x00, 0x10, 0x00};
-//  const unsigned char gyroBiasOne[4] = {0x00, 0x00, 0x80, 0x00};
-//  const unsigned char compassBiasOne[4] = {0x00, 0x01, 0x00, 0x00};
-//  success &= (myICM.writeDMPmems(GYRO_BIAS_X, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(GYRO_BIAS_Y, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(GYRO_BIAS_Z, 4, &gyroBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(ACCEL_BIAS_X, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(ACCEL_BIAS_Y, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(ACCEL_BIAS_Z, 4, &accelBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(CPASS_BIAS_X, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(CPASS_BIAS_Y, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
-//  success &= (myICM.writeDMPmems(CPASS_BIAS_Z, 4, &compassBiasOne[0]) == ICM_20948_Stat_Ok);
+  // Configure the B2S Mounting Matrix
+  const unsigned char b2sMountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
+  const unsigned char b2sMountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(B2S_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_02, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_10, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_11, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_12, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_20, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_22, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
 
+  // Configure the Gyro scaling factor
+  const unsigned char gyroScalingFactor[4] = {0x26, 0xFA, 0xB4, 0xB1}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(GYRO_SF, 4, &gyroScalingFactor[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Gyro full scale
+  const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]) == ICM_20948_Stat_Ok);
+  
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
@@ -224,13 +233,13 @@ void setup() {
   //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
   //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
-  // Enable the DMP orientation sensor
-  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
+  // Enable the DMP Game Rotation Vector sensor
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs:
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
-  // Set the DMP Output Data Rate for Quat9 to 12Hz.
-  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 12) == ICM_20948_Stat_Ok);
+  // Set the DMP Output Data Rate for Quat6 to 12Hz.
+  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 12) == ICM_20948_Stat_Ok);
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -246,12 +255,12 @@ void setup() {
 
   // Check success
   if( success )
-    SERIAL_PORT.println("DMP enabled!");
+    SERIAL_PORT.println(F("DMP enabled!"));
   else
   {
-    SERIAL_PORT.println("Enable DMP failed!");
+    SERIAL_PORT.println(F("Enable DMP failed!"));
+    SERIAL_PORT.println(F("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
   }
-  
 }
 
 void loop()
@@ -273,20 +282,43 @@ void loop()
     //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     //SERIAL_PORT.println( data.header, HEX );
     
-    if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
+    if ( (data.header & DMP_header_bitmap_Quat6) > 0 ) // We have asked for GRV data so we should receive Quat6
     {
       // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
       // The quaternion data is scaled by 2^30.
 
-      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+      //SERIAL_PORT.printf("Quat6 data is: Q1:%ld Q2:%ld Q3:%ld\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat6.Data.Q3);
 
       // Scale to +/- 1
-      float q1 = ((float)data.Quat9.Data.Q1) / 1073741824.0; // Convert to float. Divide by 2^30
-      float q2 = ((float)data.Quat9.Data.Q2) / 1073741824.0; // Convert to float. Divide by 2^30
-      float q3 = ((float)data.Quat9.Data.Q3) / 1073741824.0; // Convert to float. Divide by 2^30
+      double q1 = ((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q2 = ((double)data.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q3 = ((double)data.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
       
-      SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f\r\n", q1, q2, q3);
+      //SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f\r\n", q1, q2, q3);
+
+      // Convert the quaternions to Euler angles (roll, pitch, yaw)
+      double q0 = sqrt( 1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+
+      double q2sqr = q2 * q2;
+
+      // roll (x-axis rotation)
+      double t0 = +2.0 * (q0 * q1 + q2 * q3);
+      double t1 = +1.0 - 2.0 * (q1 * q1 + q2sqr);
+      double roll = atan2(t0, t1) * 180.0 / PI;
+
+      // pitch (y-axis rotation)
+      double t2 = +2.0 * (q0 * q2 - q3 * q1);
+      t2 = t2 > 1.0 ? 1.0 : t2;
+      t2 = t2 < -1.0 ? -1.0 : t2;
+      double pitch = asin(t2) * 180.0 / PI;
+
+      // yaw (z-axis rotation)
+      double t3 = +2.0 * (q0 * q3 + q1 * q2);
+      double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
+      double yaw = atan2(t3, t4) * 180.0 / PI;
+
+      SERIAL_PORT.printf("Roll:%.1f Pitch:%.1f Yaw:%.1f\r\n", roll, pitch, yaw);
     }
   }
 

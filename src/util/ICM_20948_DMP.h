@@ -573,17 +573,18 @@ typedef struct // DMP Secondary On/Off data
 #define icm_20948_DMP_PQuat6_Bytes 6
 #define icm_20948_DMP_Geomag_Bytes 14
 #define icm_20948_DMP_Pressure_Bytes 6
-#define icm_20948_DMP_Gyro_Calibr_Bytes 12 // lcm20948MPUFifoControl.c suggests icm_20948_DMP_Gyro_Calibr_Bytes does not exist?
+#define icm_20948_DMP_Gyro_Calibr_Bytes 12 // lcm20948MPUFifoControl.c suggests icm_20948_DMP_Gyro_Calibr_Bytes is not supported?
 #define icm_20948_DMP_Compass_Calibr_Bytes 12
 #define icm_20948_DMP_Step_Detector_Bytes 4 // See note above
 #define icm_20948_DMP_Accel_Accuracy_Bytes 2
 #define icm_20948_DMP_Gyro_Accuracy_Bytes 2
 #define icm_20948_DMP_Compass_Accuracy_Bytes 2
-#define icm_20948_DMP_Fsync_Detection_Bytes 2 // lcm20948MPUFifoControl.c suggests icm_20948_DMP_Fsync_Detection_Bytes does not exist?
+#define icm_20948_DMP_Fsync_Detection_Bytes 2 // lcm20948MPUFifoControl.c suggests icm_20948_DMP_Fsync_Detection_Bytes is not supported?
 #define icm_20948_DMP_Pickup_Bytes 2
 #define icm_20948_DMP_Activity_Recognition_Bytes 6
 #define icm_20948_DMP_Secondary_On_Off_Bytes 2
 #define icm_20948_DMP_Footer_Bytes 2
+#define icm_20948_DMP_Maximum_Bytes 14 // The most bytes we will attempt to read from the FIFO in one go
 
 // ICM-20948 data is big-endian. We need to make it little-endian when writing into icm_20948_DMP_data_t
 const int DMP_Quat9_Byte_Ordering[icm_20948_DMP_Quat9_Bytes] =
@@ -596,7 +597,11 @@ const int DMP_Quat6_Byte_Ordering[icm_20948_DMP_Quat6_Bytes] =
 };
 const int DMP_PQuat6_Byte_Ordering[icm_20948_DMP_PQuat6_Bytes] =
 {
-	1,0,3,2,5,4 // Also used for Raw_Accel, Raw_Gyro, Compass
+	1,0,3,2,5,4 // Also used for Raw_Accel, Compass
+};
+const int DMP_Raw_Gyro_Byte_Ordering[icm_20948_DMP_Raw_Gyro_Bytes + icm_20948_DMP_Gyro_Bias_Bytes] =
+{
+	1,0,3,2,5,4,7,6,9,8,11,10
 };
 const int DMP_Activity_Recognition_Byte_Ordering[icm_20948_DMP_Activity_Recognition_Bytes] =
 {
@@ -623,14 +628,17 @@ typedef struct
 	} Raw_Accel;
 	union
 	{
-		uint8_t Bytes[icm_20948_DMP_Raw_Gyro_Bytes];
+		uint8_t Bytes[icm_20948_DMP_Raw_Gyro_Bytes + icm_20948_DMP_Gyro_Bias_Bytes];
 		struct
 		{
 			int16_t X;
 			int16_t Y;
 			int16_t Z;
+			int16_t BiasX;
+			int16_t BiasY;
+			int16_t BiasZ;
 		} Data;
-	} Raw_Gyro; // Note: may also include 3*16 gyro bias?
+	} Raw_Gyro;
 	union
 	{
 		uint8_t Bytes[icm_20948_DMP_Compass_Bytes];
@@ -755,6 +763,7 @@ typedef struct
 		uint8_t Bytes[icm_20948_DMP_Secondary_On_Off_Bytes];
 		icm_20948_DMP_Secondary_On_Off_t Sensors;
 	} Secondary_On_Off;
+	uint16_t Footer; // Gyro count?
 } icm_20948_DMP_data_t;
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /****************************************************************
- * Example6_DualSPITest.ino
+ * Example5_DualSPITest.ino
  * ICM 20948 Arduino Library Demo
  * Use the default configuration to stream 9-axis IMU data on two IMUs over SPI
  * Owen Lyke @ SparkFun Electronics
