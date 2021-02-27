@@ -56,7 +56,8 @@ The DMP firmware is loaded into the ICM-20948's processor memory space via three
 - **AGB0_REG_MEM_R_W** (0x7D) - the memory read/write register
 - **AGB0_REG_MEM_BANK_SEL** (0x7E) - the memory bank select. The complete read/write address is: (AGB0_REG_MEM_BANK_SEL * 256) + AGB0_REG_MEM_START_ADDR
 
-The firmware binary (14301 Bytes) is written into processor memory starting at address 0x90. ```loadDMPFirmware``` automatically breaks the code up into 256 byte blocks and increments **AGB0_REG_MEM_BANK_SEL** during the writing.
+The firmware binary (14301 Bytes) is written into processor memory starting at address 0x90. ```loadDMPFirmware``` automatically breaks the code up into 256 byte blocks and increments
+**AGB0_REG_MEM_BANK_SEL** during the writing.
 
 Before the DMP is enabled, the 16-bit register **AGB2_REG_PRGM_START_ADDRH** (Bank 2, 0x50) needs to be loaded with the program start address. ```setDMPstartAddress``` does this for you.
 
@@ -66,7 +67,8 @@ The helper functions ```readDMPmems``` and ```writeDMPmems``` will let you read 
 
 ## How do I access the DMP data?
 
-The DMP data is returned via the FIFO (First In First Out). ```readDMPdataFromFIFO``` checks if any data is present in the FIFO (by calling ```getFIFOcount``` which reads the 16-bit register **AGB0_REG_FIFO_COUNT_H** (0x70)). If data is present, it is copied into a ```icm_20948_DMP_data_t``` struct.
+The DMP data is returned via the FIFO (First In First Out). ```readDMPdataFromFIFO``` checks if any data is present in the FIFO (by calling ```getFIFOcount``` which reads the 16-bit register
+**AGB0_REG_FIFO_COUNT_H** (0x70)). If data is present, it is copied into a ```icm_20948_DMP_data_t``` struct.
 
 ```readDMPdataFromFIFO``` will return:
 - ```ICM_20948_Stat_FIFONoDataAvail``` if no data or incomplete data is available
@@ -108,7 +110,9 @@ Yes it can, but you might find that they are not fully supported as we have not 
 
 ## How is the DMP data rate set?
 
-We don't know the complete answer to this. As we understand it, it is a _combination_ of the raw sensor rate (set by ```setSampleRate```) and the multiple DMP Output Data Rate (ODR) registers (set by ```setDMPODRrate```). The documentation says that the "DMP is capable of outputting multiple sensor data at different rates to FIFO". So, in theory, you can have (e.g.) raw accelerometer data and Quaternion data arriving at different rates, but we have not tested that.
+We don't know the complete answer to this. As we understand it, it is a _combination_ of the raw sensor rate (set by ```setSampleRate```) and the multiple DMP Output Data Rate (ODR) registers
+(set by ```setDMPODRrate```). The documentation says that the "DMP is capable of outputting multiple sensor data at different rates to FIFO". So, in theory, you can have (e.g.) raw accelerometer
+data and Quaternion data arriving at different rates, but we have not tested that.
 
 ## Can I contribute to this library?
 
@@ -117,6 +121,9 @@ Absolutely! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for further details.
 ## Can I see the full DMP configuration captured from @ericalbers code?
 
 Brace yourself. Here it is:
+
+- **.....** - indicates where I've omitted some of the bus transactions. There are _many_ writes to the Power Management 1 register to enable and disable low power mode. I have omitted many of those.
+- **#####** - indicates an interval in the I<sup>2</sup>C bus traffic.
 
 ```
 /*
