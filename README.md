@@ -1,4 +1,4 @@
-# SparkFun ICM-20948 ArduinoLibrary
+# SparkFun ICM-20948 Arduino Library
 
 This is the SparkFun library for the TDK InvenSense ICM-20948 Inertial Measurement Unit 9-Degree Of Freedom sensor as used on the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335).
 
