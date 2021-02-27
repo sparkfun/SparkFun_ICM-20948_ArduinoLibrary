@@ -1,30 +1,31 @@
-SparkFun_ICM-20948_ArduinoLibrary
-========================================
+# SparkFun_ICM-20948_ArduinoLibrary
 
 This is the library for the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335).
 
+## Contributing
 
-Repository Contents
--------------------
+If you would like to contribute to this library: please do, we truly appreciate it, but please follow [these guidelines](./CONTRIBUTING.md). Thanks!
 
-* **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
-* **/src** - Source files for the library (.cpp, .h).
-* **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE.
-* **library.properties** - General library properties for the Arduino package manager.
+## Repository Contents
 
-Documentation
---------------
+* [**/examples**](./examples) - Example sketches for the library (.ino). Run these from the Arduino IDE.
+* [**/src**](./src) - Source files for the library (.cpp, .h).
+* [**keywords.txt**](./keywords.txt) - Keywords from this library that will be highlighted in the Arduino IDE.
+* [**library.properties**](./library.properties) - General library properties for the Arduino package manager.
+* [**CONTRIBUTING.md**](./CONTRIBUTING.md) - Guidelines on how to contribute to this library.
+
+## Documentation
 
 * **[Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-9dof-imu-icm-20948-breakout-hookup-guide)** - Basic hookup guide for the SparkFun 9DoF IMU Breakout.
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
-Products that use this Library
----------------------------------
-* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335)
+## Products that use this Library
 
+* [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic) - SEN-15335](https://www.sparkfun.com/products/15335)
+* [SparkFun OpenLog Artemis - DEV-16832](https://www.sparkfun.com/products/16832)
+* [SparkFun MicroMod Asset Tracker Carrier Board - DEV-17272](https://www.sparkfun.com/products/17272)
 
-License Information
--------------------
+## License Information
 
 This product is _**open source**_!
 
