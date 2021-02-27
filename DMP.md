@@ -92,6 +92,28 @@ You can examine the 16-bit ```icm_20948_DMP_data_t data.header``` to see what da
 - **DMP_header2_bitmap_Gyro_Accuracy** (0x2000)
 - **DMP_header2_bitmap_Accel_Accuracy** (0x4000)
 
+## Which DMP features are currently supported?
+
+All of the following _should_ work, but we have not tested them all:
+
+```
+INV_ICM20948_SENSOR_ACCELEROMETER               (16-bit accel)
+INV_ICM20948_SENSOR_GYROSCOPE                   (16-bit gyro + 32-bit calibrated gyro)
+INV_ICM20948_SENSOR_RAW_ACCELEROMETER           (16-bit accel)
+INV_ICM20948_SENSOR_RAW_GYROSCOPE               (16-bit gyro + 32-bit calibrated gyro)
+INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED (16-bit compass)
+INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED      (16-bit gyro)
+INV_ICM20948_SENSOR_STEP_DETECTOR               (Pedometer Step Detector)
+INV_ICM20948_SENSOR_STEP_COUNTER                (Pedometer Step Detector)
+INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR        (32-bit 6-axis quaternion)
+INV_ICM20948_SENSOR_ROTATION_VECTOR             (32-bit 9-axis quaternion + heading accuracy)
+INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR (32-bit Geomag RV + heading accuracy)
+INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD           (32-bit calibrated compass)
+INV_ICM20948_SENSOR_GRAVITY                     (32-bit 6-axis quaternion)
+INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
+INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
+```
+
 ## The DMP examples are verbose. Is that deliberate?
 
 Yes, it certainly is! As you can tell from the examples, we are still gaining experience with the DMP. We have _deliberately_ written the examples so you can follow each step as the DMP is configured.
@@ -122,8 +144,8 @@ Absolutely! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for further details.
 
 Brace yourself. Here it is:
 
-- **.....** - indicates where I've omitted some of the bus transactions. There are _many_ writes to the Power Management 1 register to enable and disable low power mode. I have omitted many of those.
-- **#####** - indicates an interval in the I<sup>2</sup>C bus traffic.
+- **.....** indicates where I've omitted some of the bus transactions. There are _many_ writes to the Power Management 1 register to enable and disable low power mode. I have omitted many of those.
+- **#####** indicates an interval in the I<sup>2</sup>C bus traffic.
 
 ```
 /*
