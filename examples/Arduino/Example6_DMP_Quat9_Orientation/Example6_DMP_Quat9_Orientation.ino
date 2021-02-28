@@ -212,6 +212,18 @@ void setup() {
   const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]) == ICM_20948_Stat_Ok);
   
+  // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
+  const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
+  const unsigned char accelAlphaVar[4] = {0x06, 0x66, 0x66, 0x66}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
+  const unsigned char accelAVar[4] = {0x39, 0x99, 0x99, 0x9A}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
@@ -240,6 +252,11 @@ void setup() {
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
   // Set the DMP Output Data Rate for Quat9 to 12Hz.
   success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 12) == ICM_20948_Stat_Ok);
+
+  // Set the DMP Data Ready Status register
+  const uint16_t dsrBits = DMP_Data_ready_Gyro | DMP_Data_ready_Accel | DMP_Data_ready_Secondary_Compass;
+  const unsigned char drsReg[2] = {(const unsigned char)(dsrBits >> 8), (const unsigned char)(dsrBits & 0xFF)};
+  success &= (myICM.writeDMPmems(DATA_RDY_STATUS, 2, &drsReg[0]) == ICM_20948_Stat_Ok);  
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -295,7 +312,14 @@ void loop()
       float q2 = ((float)data.Quat9.Data.Q2) / 1073741824.0; // Convert to float. Divide by 2^30
       float q3 = ((float)data.Quat9.Data.Q3) / 1073741824.0; // Convert to float. Divide by 2^30
       
-      SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f\r\n", q1, q2, q3);
+      SERIAL_PORT.print(F("Q1:"));
+      SERIAL_PORT.print(q1, 3);
+      SERIAL_PORT.print(F(" Q2:"));
+      SERIAL_PORT.print(q2, 3);
+      SERIAL_PORT.print(F(" Q3:"));
+      SERIAL_PORT.print(q3, 3);
+      SERIAL_PORT.print(F(" Accuracy:"));
+      SERIAL_PORT.println(data.Quat9.Data.Accuracy);
     }
   }
 

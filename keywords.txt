@@ -184,3 +184,6 @@ DMP_header2_bitmap_Fsync	LITERAL1
 DMP_header2_bitmap_Compass_Accuracy	LITERAL1
 DMP_header2_bitmap_Gyro_Accuracy	LITERAL1
 DMP_header2_bitmap_Accel_Accuracy	LITERAL1
+DMP_Data_ready_Gyro	LITERAL1
+DMP_Data_ready_Accel	LITERAL1
+DMP_Data_ready_Secondary_Compass	LITERAL1

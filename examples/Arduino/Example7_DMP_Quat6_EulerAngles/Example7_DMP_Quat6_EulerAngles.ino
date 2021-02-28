@@ -212,6 +212,18 @@ void setup() {
   const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]) == ICM_20948_Stat_Ok);
   
+  // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
+  const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
+  const unsigned char accelAlphaVar[4] = {0x06, 0x66, 0x66, 0x66}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
+  const unsigned char accelAVar[4] = {0x39, 0x99, 0x99, 0x9A}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
@@ -318,7 +330,12 @@ void loop()
       double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
       double yaw = atan2(t3, t4) * 180.0 / PI;
 
-      SERIAL_PORT.printf("Roll:%.1f Pitch:%.1f Yaw:%.1f\r\n", roll, pitch, yaw);
+      SERIAL_PORT.print(F("Roll:"));
+      SERIAL_PORT.print(roll, 1);
+      SERIAL_PORT.print(F(" Pitch:"));
+      SERIAL_PORT.print(pitch, 1);
+      SERIAL_PORT.print(F(" Yaw:"));
+      SERIAL_PORT.println(yaw, 1);
     }
   }
 

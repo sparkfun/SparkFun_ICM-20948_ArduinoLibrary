@@ -212,6 +212,18 @@ void setup() {
   const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]) == ICM_20948_Stat_Ok);
   
+  // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
+  const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
+  const unsigned char accelAlphaVar[4] = {0x06, 0x66, 0x66, 0x66}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
+  // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
+  const unsigned char accelAVar[4] = {0x39, 0x99, 0x99, 0x9A}; // Value taken from InvenSense Nucleo example
+  success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
@@ -240,11 +252,6 @@ void setup() {
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
   // Set the DMP Output Data Rates to 2Hz
   //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 2) == ICM_20948_Stat_Ok); // ** Note: comment this line to leave the data rate at the maximum **
-
-  // Set the DMP Data Ready Status register
-  const uint16_t dsrBits = DMP_Data_ready_Gyro | DMP_Data_ready_Accel; // Value taken from InvenSense Nucleo example
-  const unsigned char drsReg[2] = {(const unsigned char)(dsrBits >> 8), (const unsigned char)(dsrBits & 0xFF)};
-  success &= (myICM.writeDMPmems(DATA_RDY_STATUS, 2, &drsReg[0]) == ICM_20948_Stat_Ok);  
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -293,7 +300,12 @@ void loop()
       float acc_y = (float)data.Raw_Accel.Data.Y; 
       float acc_z = (float)data.Raw_Accel.Data.Z; 
     
-      SERIAL_PORT.printf("X:%f Y:%f Z:%f\r\n", acc_x, acc_y, acc_z);
+      SERIAL_PORT.print(F("X:"));
+      SERIAL_PORT.print(acc_x);
+      SERIAL_PORT.print(F(" Y:"));
+      SERIAL_PORT.print(acc_y);
+      SERIAL_PORT.print(F(" Z:"));
+      SERIAL_PORT.println(acc_z);
     }
   }
 

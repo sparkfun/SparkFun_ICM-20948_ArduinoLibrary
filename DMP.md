@@ -516,7 +516,7 @@ Brace yourself. Here it is:
  *  Set register 0x7C (Memory Start Address) to 0xB0
  *  Write 0x06666666 to memory (91 * 16 + 0 == Accel Alpha Var)
  *  Set register 0x7C (Memory Start Address) to 0xC0
- *  Write 0x39999A to memory (92 * 16 + 0 == Accel A Var)
+ *  Write 0x3999999A to memory (92 * 16 + 0 == Accel A Var)
  *  Set register 0x7C (Memory Start Address) to 0xE4
  *  Write 0x0000 to memory (94 * 16 + 4 == Accel Cal Rate)
  *  .....
