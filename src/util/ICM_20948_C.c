@@ -1484,6 +1484,9 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 
 		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 
+		uint16_t inv_event_control = 0;
+		uint16_t data_rdy_status = 0;
+
 		if (pdev->_dmp_firmware_available == false)
 				return ICM_20948_Stat_DMPNotSupported;
 
@@ -1540,6 +1543,81 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		data_output_control_reg[0] = (unsigned char)(delta2 >> 8);
     data_output_control_reg[1] = (unsigned char)(delta2 & 0xff);
 		result = inv_icm20948_write_mems(pdev, DATA_OUT_CTL2, 2, (const unsigned char *)&data_output_control_reg);
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		// Check which bits need to be set in the Data Ready Status and Motion Event Control registers
+		// Convert androidSensor into a bit mask and compare to INV_NEEDS_ACCEL_MASK, INV_NEEDS_GYRO_MASK and INV_NEEDS_COMPASS_MASK
+		unsigned long androidSensorAsBitMask;
+		if (androidSensor < 32)
+		{
+				androidSensorAsBitMask = 1L << androidSensor;
+				if ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Accel;
+						inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
+				}
+				if ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Gyro;
+						inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
+				}
+				if ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Secondary_Compass;
+						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
+				}
+		}
+		else
+		{
+				androidSensorAsBitMask = 1L << (androidSensor - 32);
+				if ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK1) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Accel;
+						inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
+				}
+				if ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK1) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Gyro;
+						inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
+				}
+				if ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK1) > 0)
+				{
+						data_rdy_status |= DMP_Data_ready_Secondary_Compass;
+						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
+				}
+		}
+		data_output_control_reg[0] = (unsigned char)(data_rdy_status >> 8);
+    data_output_control_reg[1] = (unsigned char)(data_rdy_status & 0xff);
+		result = inv_icm20948_write_mems(pdev, DATA_RDY_STATUS, 2, (const unsigned char *)&data_output_control_reg);
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
+
+		// Check which extra bits need to be set in the Motion Event Control register
+		if ((delta & DMP_Data_Output_Control_1_Quat9) > 0)
+		{
+				inv_event_control |= DMP_Motion_Event_Control_9axis;
+		}
+		if (((delta & DMP_Data_Output_Control_1_Step_Detector) > 0) || ((delta & DMP_Data_Output_Control_1_Step_Ind_0) > 0)
+				 || ((delta & DMP_Data_Output_Control_1_Step_Ind_1) > 0) || ((delta & DMP_Data_Output_Control_1_Step_Ind_2) > 0))
+		{
+				inv_event_control |= DMP_Motion_Event_Control_Pedometer_Interrupt;
+		}
+		if ((delta & DMP_Data_Output_Control_1_Geomag) > 0)
+		{
+				inv_event_control |= DMP_Motion_Event_Control_Geomag;
+		}
+		data_output_control_reg[0] = (unsigned char)(inv_event_control >> 8);
+    data_output_control_reg[1] = (unsigned char)(inv_event_control & 0xff);
+		result = inv_icm20948_write_mems(pdev, MOTION_EVENT_CTL, 2, (const unsigned char *)&data_output_control_reg);
+		if (result != ICM_20948_Stat_Ok)
+		{
+				return result;
+		}
 
 		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
 		// if (result != ICM_20948_Stat_Ok)

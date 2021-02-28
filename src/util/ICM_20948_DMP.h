@@ -47,7 +47,7 @@ extern "C" {
 // indicates to DMP which sensors are available
 /*	1: gyro samples available
 	2: accel samples available
-	8: secondary samples available	*/
+	8: secondary compass samples available	*/
 #define DATA_RDY_STATUS (8 * 16 + 10) // 16-bit: indicates to DMP which sensors are available
 
 // batch mode
@@ -388,6 +388,17 @@ enum ANDROID_SENSORS {
 	GENERAL_SENSORS_MAX // 51
 };
 
+// Determines which base sensor needs to be on based upon ANDROID_SENSORS 0-31
+#define INV_NEEDS_ACCEL_MASK   ((1L<<1)|        (1L<<3)|        (1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|         (1L<<17)|(1L<<18)|(1L<<19)|(1L<<20)|(1<<23)|       (1<<25)|        (1<<29)|(1<<30)|(1<<31))
+#define INV_NEEDS_GYRO_MASK		 (                (1L<<3)|(1L<<4)|(1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|(1L<<16)|                                                   (1<<25)|(1<<26)|(1<<29)|(1<<30)|(1<<31))
+#define INV_NEEDS_COMPASS_MASK (        (1L<<2)|(1L<<3)|                         (1L<<11)|(1L<<14)|                                             (1L<<20)|       (1<<24)|(1<<25)|                        (1<<31))
+#define INV_NEEDS_PRESSURE		 ((1L<<6)|(1<<28))
+
+// Determines which base sensor needs to be on based upon ANDROID_SENSORS 32-
+#define INV_NEEDS_ACCEL_MASK1	  (       (1<<3)|      (1<<5)|(1<<6)|(1<<7)|(1<<9)|(1<<10)) // I.e. 35, 37, 38, 39, 41, 42
+#define INV_NEEDS_GYRO_MASK1	  (       (1<<3)|(1<<4)                                   |(1<<11)) // I.e. 35, 36, 43
+#define INV_NEEDS_COMPASS_MASK1	((1<<2)|                           (1<<7)) // I.e. 34 and 39
+
 enum DMP_Data_Ready_Status_Register_Bits
 {
 	DMP_Data_ready_Gyro = 0x0001, // Gyro samples available
@@ -430,8 +441,10 @@ enum DMP_Data_Output_Control_2_Register_Bits
 enum DMP_Motion_Event_Control_Register_Bits
 {
 	DMP_Motion_Event_Control_Activity_Recog_Pedom_Accel = 0x0002, // Activity Recognition / Pedometer accel only
+	DMP_Motion_Event_Control_Bring_Look_To_See = 0x0004,
 	DMP_Motion_Event_Control_Geomag = 0x0008, // Geomag rv
 	DMP_Motion_Event_Control_Pickup = 0x0010,
+	DMP_Motion_Event_Control_BTS = 0x0020,
 	DMP_Motion_Event_Control_9axis = 0x0040,
 	DMP_Motion_Event_Control_Compass_Calibr = 0x0080,
 	DMP_Motion_Event_Control_Gyro_Calibr = 0x0100,
@@ -439,7 +452,8 @@ enum DMP_Motion_Event_Control_Register_Bits
 	DMP_Motion_Event_Control_Significant_Motion_Det = 0x0800,
 	DMP_Motion_Event_Control_Tilt_Interrupt = 0x1000,
 	DMP_Motion_Event_Control_Pedometer_Interrupt = 0x2000,
-	DMP_Motion_Event_Control_Activity_Recog_Pedom = 0x4000
+	DMP_Motion_Event_Control_Activity_Recog_Pedom = 0x4000,
+	DMP_Motion_Event_Control_BAC_Wearable = 0x8000
 };
 
 enum DMP_Header_Bitmap
