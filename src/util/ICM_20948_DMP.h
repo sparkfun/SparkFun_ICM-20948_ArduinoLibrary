@@ -392,7 +392,7 @@ enum DMP_Data_Ready_Status_Register_Bits
 {
 	DMP_Data_ready_Gyro = 0x0001, // Gyro samples available
 	DMP_Data_ready_Accel = 0x0002, // Accel samples available
-	DMP_Data_ready_Secondary = 0x0008 // Secondary samples available
+	DMP_Data_ready_Secondary_Compass = 0x0008 // Secondary compass samples available
 };
 
 enum DMP_Data_Output_Control_1_Register_Bits

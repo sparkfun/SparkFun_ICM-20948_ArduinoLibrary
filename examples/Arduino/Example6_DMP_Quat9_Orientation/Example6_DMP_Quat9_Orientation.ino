@@ -241,6 +241,11 @@ void setup() {
   // Set the DMP Output Data Rate for Quat9 to 12Hz.
   success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 12) == ICM_20948_Stat_Ok);
 
+  // Set the DMP Data Ready Status register
+  const uint16_t dsrBits = DMP_Data_ready_Gyro | DMP_Data_ready_Accel | DMP_Data_ready_Secondary_Compass;
+  const unsigned char drsReg[2] = {(const unsigned char)(dsrBits >> 8), (const unsigned char)(dsrBits & 0xFF)};
+  success &= (myICM.writeDMPmems(DATA_RDY_STATUS, 2, &drsReg[0]) == ICM_20948_Stat_Ok);  
+
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
 
@@ -295,7 +300,7 @@ void loop()
       float q2 = ((float)data.Quat9.Data.Q2) / 1073741824.0; // Convert to float. Divide by 2^30
       float q3 = ((float)data.Quat9.Data.Q3) / 1073741824.0; // Convert to float. Divide by 2^30
       
-      SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f\r\n", q1, q2, q3);
+      SERIAL_PORT.printf("Q1:%.3f Q2:%.3f Q3:%.3f Accuracy:%d\r\n", q1, q2, q3, data.Quat9.Data.Accuracy);
     }
   }
 

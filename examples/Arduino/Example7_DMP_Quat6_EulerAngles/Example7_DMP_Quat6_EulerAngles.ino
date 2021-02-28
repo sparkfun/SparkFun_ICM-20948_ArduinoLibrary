@@ -241,6 +241,11 @@ void setup() {
   // Set the DMP Output Data Rate for Quat6 to 12Hz.
   //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 12) == ICM_20948_Stat_Ok);
 
+  // Set the DMP Data Ready Status register
+  const uint16_t dsrBits = DMP_Data_ready_Gyro | DMP_Data_ready_Accel;
+  const unsigned char drsReg[2] = {(const unsigned char)(dsrBits >> 8), (const unsigned char)(dsrBits & 0xFF)};
+  success &= (myICM.writeDMPmems(DATA_RDY_STATUS, 2, &drsReg[0]) == ICM_20948_Stat_Ok);  
+
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
 
