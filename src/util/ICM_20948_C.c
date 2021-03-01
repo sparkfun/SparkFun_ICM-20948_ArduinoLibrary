@@ -1300,7 +1300,7 @@ ICM_20948_Status_e inv_icm20948_write_mems(ICM_20948_Device_t *pdev, unsigned sh
 ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned short reg, unsigned int length, unsigned char *data)
 {
 	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
-	unsigned int bytesWritten = 0;
+	unsigned int bytesRead = 0;
 	unsigned int thisLen;
 	unsigned char lBankSelected;
 	unsigned char lStartAddrSelected;
@@ -1318,13 +1318,17 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 
 	lBankSelected = (reg >> 8);
 
-	result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
-	if (result != ICM_20948_Stat_Ok)
+	if (lBankSelected != pdev->_last_mems_bank)
 	{
-			return result;
+			pdev->_last_mems_bank = lBankSelected;
+			result = ICM_20948_execute_w(pdev, AGB0_REG_MEM_BANK_SEL, &lBankSelected, 1);
+			if (result != ICM_20948_Stat_Ok)
+			{
+					return result;
+			}
 	}
 
-	while (bytesWritten < length)
+	while (bytesRead < length)
 	{
 		lStartAddrSelected = (reg & 0xff);
 
@@ -1339,20 +1343,20 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 				return result;
 		}
 
-		if (length-bytesWritten <= INV_MAX_SERIAL_READ)
-				thisLen = length-bytesWritten;
+		if (length-bytesRead <= INV_MAX_SERIAL_READ)
+				thisLen = length-bytesRead;
 		else
 				thisLen = INV_MAX_SERIAL_READ;
 
 		/* Read data */
 
-		result = ICM_20948_execute_r(pdev, AGB0_REG_MEM_R_W, &data[bytesWritten], thisLen);
+		result = ICM_20948_execute_r(pdev, AGB0_REG_MEM_R_W, &data[bytesRead], thisLen);
 		if (result != ICM_20948_Stat_Ok)
 		{
 				return result;
 		}
 
-		bytesWritten += thisLen;
+		bytesRead += thisLen;
 		reg += thisLen;
 	}
 
@@ -1361,7 +1365,7 @@ ICM_20948_Status_e inv_icm20948_read_mems(ICM_20948_Device_t *pdev, unsigned sho
 
 ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum DMP_ODR_Registers odr_reg, uint16_t interval)
 {
-	// Set the ODR registersand clear the ODR counter
+	// Set the ODR registers and clear the ODR counter
 
 	// In order to set an ODR for a given sensor data, write 2-byte value to DMP using key defined above for a particular sensor.
 	// Setting value can be calculated as follows:
@@ -1529,6 +1533,10 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		}
 		// TO DO: Add DMP_Data_Output_Control_2_Pickup etc. if required
 
+		// Keep a record of DATA_OUT_CTL1 so multiple sensors can be configured
+		delta |= pdev->_DATA_OUT_CTL1;
+		pdev->_DATA_OUT_CTL1 = delta;
+
 		// Write the sensor control bits into memory address DATA_OUT_CTL1
 		unsigned char data_output_control_reg[2];
     data_output_control_reg[0] = (unsigned char)(delta >> 8);
@@ -1538,6 +1546,10 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		{
 				return result;
 		}
+
+		// Keep a record of DATA_OUT_CTL2 so multiple sensors can be configured
+		delta2 |= pdev->_DATA_OUT_CTL2;
+		pdev->_DATA_OUT_CTL2 = delta2;
 
 		// Write the 'header2' sensor control bits into memory address DATA_OUT_CTL2
 		data_output_control_reg[0] = (unsigned char)(delta2 >> 8);
@@ -1589,6 +1601,11 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
 				}
 		}
+
+		// Keep a record of _DATA_RDY_STATUS so multiple sensors can be configured
+		data_rdy_status |= pdev->_DATA_RDY_STATUS;
+		pdev->_DATA_RDY_STATUS = data_rdy_status;
+
 		data_output_control_reg[0] = (unsigned char)(data_rdy_status >> 8);
     data_output_control_reg[1] = (unsigned char)(data_rdy_status & 0xff);
 		result = inv_icm20948_write_mems(pdev, DATA_RDY_STATUS, 2, (const unsigned char *)&data_output_control_reg);
@@ -1611,6 +1628,11 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		{
 				inv_event_control |= DMP_Motion_Event_Control_Geomag;
 		}
+
+		// Keep a record of _MOTION_EVENT_CTL so multiple sensors can be configured
+		inv_event_control |= pdev->_MOTION_EVENT_CTL;
+		pdev->_MOTION_EVENT_CTL = inv_event_control;
+
 		data_output_control_reg[0] = (unsigned char)(inv_event_control >> 8);
     data_output_control_reg[1] = (unsigned char)(inv_event_control & 0xff);
 		result = inv_icm20948_write_mems(pdev, MOTION_EVENT_CTL, 2, (const unsigned char *)&data_output_control_reg);
@@ -2171,6 +2193,7 @@ static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
 	case INV_ICM20948_SENSOR_LINEAR_ACCELERATION:           return ANDROID_SENSOR_LINEAR_ACCELERATION; // 10
 	case INV_ICM20948_SENSOR_ORIENTATION:                   return ANDROID_SENSOR_ORIENTATION; // 3
 	case INV_ICM20948_SENSOR_B2S:                           return ANDROID_SENSOR_B2S; // 45
+	case INV_ICM20948_SENSOR_RAW_MAGNETOMETER:              return ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED; // 34
 	default:                                                return ANDROID_SENSOR_NUM_MAX;
 	}
 }
@@ -2198,6 +2221,65 @@ enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor)
 	case ANDROID_SENSOR_LINEAR_ACCELERATION:              return INV_ICM20948_SENSOR_LINEAR_ACCELERATION;
 	case ANDROID_SENSOR_ORIENTATION:                      return INV_ICM20948_SENSOR_ORIENTATION;
 	case ANDROID_SENSOR_B2S:                              return INV_ICM20948_SENSOR_B2S;
+	case ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED: return INV_ICM20948_SENSOR_RAW_MAGNETOMETER;
 	default:                                              return INV_ICM20948_SENSOR_MAX;
 	}
+}
+
+ICM_20948_Status_e inv_icm20948_set_gyro_sf(ICM_20948_Device_t *pdev, unsigned char div, int gyro_level)
+{
+	ICM_20948_Status_e result = ICM_20948_Stat_Ok;
+
+	if (pdev->_dmp_firmware_available == false)
+			return ICM_20948_Stat_DMPNotSupported;
+
+	// gyro_level should be set to 4 regardless of fullscale, due to the addition of API dmp_icm20648_set_gyro_fsr()
+	gyro_level = 4;
+
+	// First read the TIMEBASE_CORRECTION_PLL register from Bank 1
+	int8_t pll; // Signed. Typical value is 0x18
+	result = ICM_20948_set_bank(pdev, 1);
+	result = ICM_20948_execute_r(pdev, AGB1_REG_TIMEBASE_CORRECTION_PLL, (uint8_t *)&pll, 1);
+	if (result != ICM_20948_Stat_Ok)
+	{
+			return result;
+	}
+
+	pdev->_gyroSFpll = pll; // Record the PLL value so we can debug print it
+
+	// Now calculate the Gyro SF using code taken from the InvenSense example (inv_icm20948_set_gyro_sf)
+
+	long gyro_sf;
+
+	unsigned long long const MagicConstant = 264446880937391LL;
+	unsigned long long const MagicConstantScale = 100000LL;
+	unsigned long long ResultLL;
+
+	if (pll & 0x80) {
+		ResultLL = (MagicConstant * (long long)(1ULL << gyro_level) * (1 + div) / (1270 - (pll & 0x7F)) / MagicConstantScale);
+	}
+	else {
+		ResultLL = (MagicConstant * (long long)(1ULL << gyro_level) * (1 + div) / (1270 + pll) / MagicConstantScale);
+	}
+	/*
+	    In above deprecated FP version, worst case arguments can produce a result that overflows a signed long.
+	    Here, for such cases, we emulate the FP behavior of setting the result to the maximum positive value, as
+	    the compiler's conversion of a u64 to an s32 is simple truncation of the u64's high half, sadly....
+	*/
+	if  (ResultLL > 0x7FFFFFFF)
+		gyro_sf = 0x7FFFFFFF;
+	else
+		gyro_sf = (long)ResultLL;
+
+	pdev->_gyroSF = gyro_sf; // Record value so we can debug print it
+
+	// Finally, write the value to the DMP GYRO_SF register
+	unsigned char gyro_sf_reg[4];
+	gyro_sf_reg[0] = (unsigned char)(gyro_sf >> 24);
+	gyro_sf_reg[1] = (unsigned char)(gyro_sf >> 16);
+	gyro_sf_reg[2] = (unsigned char)(gyro_sf >> 8);
+	gyro_sf_reg[3] = (unsigned char)(gyro_sf & 0xff);
+	result = inv_icm20948_write_mems(pdev, GYRO_SF, 4, (const unsigned char *)&gyro_sf_reg);
+
+	return result;
 }

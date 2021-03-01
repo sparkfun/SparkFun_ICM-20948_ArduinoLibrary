@@ -161,6 +161,12 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		bool _firmware_loaded; // Indicates if DMP has been loaded
 		uint8_t _last_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
 		uint8_t _last_mems_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
+		int32_t _gyroSF; // Use this to record the GyroSF, calculated by inv_icm20948_set_gyro_sf
+		int8_t _gyroSFpll;
+		uint16_t _DATA_OUT_CTL1; // Keep a record of what sensors are enabled
+		uint16_t _DATA_OUT_CTL2; // Keep a record of what header2 items are enabled
+		uint16_t _DATA_RDY_STATUS; // Keep a record of how Data Ready Status is configured
+		uint16_t _MOTION_EVENT_CTL; // Keep a record of how Motion Event Ctrl is configured
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
 	/*
@@ -268,6 +274,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
 
 	ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);
+	ICM_20948_Status_e inv_icm20948_set_gyro_sf(ICM_20948_Device_t *pdev, unsigned char div, int gyro_level);
 
 	// ToDo:
 

@@ -1026,6 +1026,15 @@ ICM_20948_Status_e ICM_20948::enableDMPSensor(enum inv_icm20948_sensor sensor, b
   if (_device._dmp_firmware_available == true) // Should we attempt to enable the sensor?
   {
     status = inv_icm20948_enable_dmp_sensor(&_device, sensor, enable == true ? 1 : 0);
+    debugPrint(F("ICM_20948::enableDMPSensor:  _DATA_OUT_CTL1: "));
+    debugPrintf((int)_device._DATA_OUT_CTL1);
+    debugPrint(F("  _DATA_OUT_CTL2: "));
+    debugPrintf((int)_device._DATA_OUT_CTL2);
+    debugPrint(F("  _DATA_RDY_STATUS: "));
+    debugPrintf((int)_device._DATA_RDY_STATUS);
+    debugPrint(F("  _MOTION_EVENT_CTL: "));
+    debugPrintf((int)_device._MOTION_EVENT_CTL);
+    debugPrintln(F(""));
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;
@@ -1061,7 +1070,7 @@ ICM_20948_Status_e ICM_20948::readDMPmems(unsigned short reg, unsigned int lengt
   return ICM_20948_Stat_DMPNotSupported;
 }
 
-ICM_20948_Status_e ICM_20948::setDMPODRrate(enum DMP_ODR_Registers odr_reg, int rate)
+ICM_20948_Status_e ICM_20948::setDMPODRrate(enum DMP_ODR_Registers odr_reg, int interval)
 {
   if (_device._dmp_firmware_available == true) // Should we attempt to set the DMP ODR?
   {
@@ -1070,11 +1079,6 @@ ICM_20948_Status_e ICM_20948::setDMPODRrate(enum DMP_ODR_Registers odr_reg, int 
   	// Value = (DMP running rate (225Hz) / ODR ) - 1
   	// E.g. For a 25Hz ODR rate, value= (225/25) - 1 = 8.
 
-    if (rate <= 0) // Check rate is valid
-        rate = 1;
-    if (rate > 225)
-        rate = 225;
-    uint16_t interval = (225 / rate) - 1;
     status = inv_icm20948_set_dmp_sensor_period(&_device, odr_reg, interval);
     return status;
   }
@@ -1086,6 +1090,21 @@ ICM_20948_Status_e ICM_20948::readDMPdataFromFIFO(icm_20948_DMP_data_t *data)
   if (_device._dmp_firmware_available == true) // Should we attempt to set the data from the FIFO?
   {
     status = inv_icm20948_read_dmp_data(&_device, data);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setGyroSF(unsigned char div, int gyro_level)
+{
+  if (_device._dmp_firmware_available == true) // Should we attempt to set the Gyro SF?
+  {
+    status = inv_icm20948_set_gyro_sf(&_device, div, gyro_level);
+    debugPrint(F("ICM_20948::setGyroSF:  pll: "));
+    debugPrintf((int)_device._gyroSFpll);
+    debugPrint(F("  Gyro SF is: "));
+    debugPrintf((int)_device._gyroSF);
+    debugPrintln(F(""));
     return status;
   }
   return ICM_20948_Stat_DMPNotSupported;
@@ -1140,6 +1159,12 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
     _device._firmware_loaded = false; // Initialize _firmware_loaded
     _device._last_bank = 255;  // Initialize _last_bank. Make it invalid. It will be set by the first call of ICM_20948_set_bank.
     _device._last_mems_bank = 255;  // Initialize _last_mems_bank. Make it invalid. It will be set by the first call of inv_icm20948_write_mems.
+    _device._gyroSF = 0; // Use this to record the GyroSF, calculated by inv_icm20948_set_gyro_sf
+		_device._gyroSFpll = 0;
+		_device._DATA_OUT_CTL1 = 0; // Keep a record of what sensors are enabled
+		_device._DATA_OUT_CTL2 = 0; // Keep a record of what header2 items are enabled
+		_device._DATA_RDY_STATUS = 0; // Keep a record of how Data Ready Status is configured
+		_device._MOTION_EVENT_CTL = 0; // Keep a record of how Motion Event Ctrl is configured
 
     // Perform default startup
     // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.
@@ -1321,6 +1346,12 @@ ICM_20948_Status_e ICM_20948_SPI::begin(uint8_t csPin, SPIClass &spiPort, uint32
     _device._firmware_loaded = false; // Initialize _firmware_loaded
     _device._last_bank = 255;  // Initialize _last_bank. Make it invalid. It will be set by the first call of ICM_20948_set_bank.
     _device._last_mems_bank = 255;  // Initialize _last_mems_bank. Make it invalid. It will be set by the first call of inv_icm20948_write_mems.
+    _device._gyroSF = 0; // Use this to record the GyroSF, calculated by inv_icm20948_set_gyro_sf
+		_device._gyroSFpll = 0;
+		_device._DATA_OUT_CTL1 = 0; // Keep a record of what sensors are enabled
+		_device._DATA_OUT_CTL2 = 0; // Keep a record of what header2 items are enabled
+		_device._DATA_RDY_STATUS = 0; // Keep a record of how Data Ready Status is configured
+		_device._MOTION_EVENT_CTL = 0; // Keep a record of how Motion Event Ctrl is configured
 
     // Perform default startup
     // Do a minimal startupDefault if using the DMP. User can always call startupDefault(false) manually if required.
