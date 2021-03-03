@@ -1,5 +1,5 @@
 /****************************************************************
- * Example8_DMP_RawAccel.ino
+ * Example9_DMP_MultipleSensors.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
  * Paul Clark, February 15th 2021
@@ -281,15 +281,25 @@ void setup() {
   //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
   //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
-  // Enable the DMP accelerometer
-  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ACCELEROMETER) == ICM_20948_Stat_Ok);
+  // Enable the DMP Game Rotation Vector sensor
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
+
+  // Enable additional sensors / features
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs:
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
   // Setting value can be calculated as follows:
   // Value = (DMP running rate / ODR ) - 1
   // E.g. For a 5Hz ODR rate when DMP is running at 55Hz, value = (55/5) - 1 = 10.
-  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 10) == ICM_20948_Stat_Ok); // Set to 5Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -326,7 +336,7 @@ void loop()
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOMoreDataAvail if a valid frame was read _and_ the FIFO contains more (unread) data.
   icm_20948_DMP_data_t data;
   myICM.readDMPdataFromFIFO(&data);
-  
+
   if(( myICM.status == ICM_20948_Stat_Ok ) || ( myICM.status == ICM_20948_Stat_FIFOMoreDataAvail )) // Was valid data available?
   {
     //SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
@@ -334,20 +344,72 @@ void loop()
     //if ( data.header < 0x100) SERIAL_PORT.print( "0" );
     //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     //SERIAL_PORT.println( data.header, HEX );
-    
-    if ( (data.header & DMP_header_bitmap_Accel) > 0 ) // Check the packet contains Accel data
+
+    if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // Check for orientation data (Quat9)
+    {
+      // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+      // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+      // The quaternion data is scaled by 2^30.
+
+      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+
+      // Scale to +/- 1
+      double q1 = ((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q2 = ((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q3 = ((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+      
+      SERIAL_PORT.print(F("Q1:"));
+      SERIAL_PORT.print(q1, 3);
+      SERIAL_PORT.print(F(" Q2:"));
+      SERIAL_PORT.print(q2, 3);
+      SERIAL_PORT.print(F(" Q3:"));
+      SERIAL_PORT.print(q3, 3);
+      SERIAL_PORT.print(F(" Accuracy:"));
+      SERIAL_PORT.println(data.Quat9.Data.Accuracy);
+    }
+
+    if ( (data.header & DMP_header_bitmap_Accel) > 0 ) // Check for Accel
     {
       float acc_x = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
       float acc_y = (float)data.Raw_Accel.Data.Y; 
       float acc_z = (float)data.Raw_Accel.Data.Z; 
     
-      SERIAL_PORT.print(F("X:"));
+      SERIAL_PORT.print(F("Accel: X:"));
       SERIAL_PORT.print(acc_x);
       SERIAL_PORT.print(F(" Y:"));
       SERIAL_PORT.print(acc_y);
       SERIAL_PORT.print(F(" Z:"));
       SERIAL_PORT.println(acc_z);
     }
+
+    if ( (data.header & DMP_header_bitmap_Gyro) > 0 ) // Check for Gyro
+    {
+      float x = (float)data.Raw_Gyro.Data.X; // Extract the raw gyro data
+      float y = (float)data.Raw_Gyro.Data.Y; 
+      float z = (float)data.Raw_Gyro.Data.Z; 
+    
+      SERIAL_PORT.print(F("Gyro: X:"));
+      SERIAL_PORT.print(x);
+      SERIAL_PORT.print(F(" Y:"));
+      SERIAL_PORT.print(y);
+      SERIAL_PORT.print(F(" Z:"));
+      SERIAL_PORT.println(z);
+    }
+
+    if ( (data.header & DMP_header_bitmap_Compass) > 0 ) // Check for Compass
+    {
+      float x = (float)data.Compass.Data.X; // Extract the compass data
+      float y = (float)data.Compass.Data.Y; 
+      float z = (float)data.Compass.Data.Z; 
+    
+      SERIAL_PORT.print(F("Compass: X:"));
+      SERIAL_PORT.print(x);
+      SERIAL_PORT.print(F(" Y:"));
+      SERIAL_PORT.print(y);
+      SERIAL_PORT.print(F(" Z:"));
+      SERIAL_PORT.println(z);
+    }
+
   }
 
   if ( myICM.status != ICM_20948_Stat_FIFOMoreDataAvail ) // If more data is available then we should read it right away - and not delay

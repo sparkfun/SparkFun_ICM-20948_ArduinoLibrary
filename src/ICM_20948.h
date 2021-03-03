@@ -180,23 +180,23 @@ public:
     //  Reset FIFO
     //  Reset DMP
     //  Enable DMP interrupt
-    //  Configuring DMP to output data to FIFO: set DATA_OUT_CTL1 and DATA_INTR_CTL
+    //  Configuring DMP to output data to FIFO: set DATA_OUT_CTL1, DATA_OUT_CTL2, DATA_INTR_CTL and MOTION_EVENT_CTL
     //  Configuring DMP to output data at multiple ODRs
+    //  Configure DATA_RDY_STATUS
+    //  Configuring Accel calibration
+    //  Configuring Compass calibration
+    //  Configuring Gyro gain
+    //  Configuring Accel gain
 
     // To Do:
-    //  Configure DATA_RDY_STATUS
-    //  Additional FIFO output control: DATA_OUT_CTL2, FIFO_WATERMARK, BM_BATCH_MASK, BM_BATCH_CNTR, BM_BATCH_THLD
-    //  Configuring DMP features: MOTION_EVENT_CTL, PED_STD_STEPCTR, PED_STD_TIMECTR
+    //  Additional FIFO output control: FIFO_WATERMARK, BM_BATCH_MASK, BM_BATCH_CNTR, BM_BATCH_THLD
+    //  Configuring DMP features: PED_STD_STEPCTR, PED_STD_TIMECTR
     //  Enabling Activity Recognition (BAC) feature
     //  Enabling Significant Motion Detect (SMD) feature
     //  Enabling Tilt Detector feature
     //  Enabling Pick Up Gesture feature
     //  Enabling Fsync detection feature
-    //  Configuring Accel calibration
-    //  Configuring Compass calibration
-    //  Configuring Gyro gain
-    //  Configuring Accel gain
-    //  Biases
+    //  Biases?
 
     ICM_20948_Status_e enableDMP(bool enable = true);
     ICM_20948_Status_e resetDMP(void);
@@ -206,8 +206,9 @@ public:
     ICM_20948_Status_e enableDMPSensorInt(enum inv_icm20948_sensor sensor, bool enable = true);
     ICM_20948_Status_e writeDMPmems(unsigned short reg, unsigned int length, const unsigned char *data);
     ICM_20948_Status_e readDMPmems(unsigned short reg, unsigned int length, unsigned char *data);
-    ICM_20948_Status_e setDMPODRrate(enum DMP_ODR_Registers odr_reg, int rate);
+    ICM_20948_Status_e setDMPODRrate(enum DMP_ODR_Registers odr_reg, int interval);
     ICM_20948_Status_e readDMPdataFromFIFO(icm_20948_DMP_data_t *data);
+    ICM_20948_Status_e setGyroSF(unsigned char div, int gyro_level);
 
 };
 

@@ -94,6 +94,7 @@ writeDMPmems	KEYWORD2
 readDMPmems	KEYWORD2
 setDMPODRrate	KEYWORD2
 readDMPdataFromFIFO	KEYWORD2
+setGyroSF	KEYWORD2
 begin	KEYWORD2
 
 #######################################
@@ -122,6 +123,7 @@ ICM_20948_Stat_SensorNotSupported	LITERAL1
 ICM_20948_Stat_DMPNotSupported	LITERAL1
 ICM_20948_Stat_DMPVerifyFail	LITERAL1
 ICM_20948_Stat_FIFONoDataAvail	LITERAL1
+ICM_20948_Stat_FIFOIncompleteData	LITERAL1
 ICM_20948_Stat_FIFOMoreDataAvail	LITERAL1
 ICM_20948_Stat_UnrecognisedDMPHeader	LITERAL1
 ICM_20948_Stat_UnrecognisedDMPHeader2	LITERAL1

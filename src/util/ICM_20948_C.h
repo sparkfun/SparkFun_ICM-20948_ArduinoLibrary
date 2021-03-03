@@ -54,6 +54,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
 		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
 		ICM_20948_Stat_FIFONoDataAvail, // FIFO contains no data
+		ICM_20948_Stat_FIFOIncompleteData, // FIFO contained incomplete data
 		ICM_20948_Stat_FIFOMoreDataAvail, // FIFO contains more data
 		ICM_20948_Stat_UnrecognisedDMPHeader,
 		ICM_20948_Stat_UnrecognisedDMPHeader2,
@@ -161,6 +162,12 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		bool _firmware_loaded; // Indicates if DMP has been loaded
 		uint8_t _last_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
 		uint8_t _last_mems_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
+		int32_t _gyroSF; // Use this to record the GyroSF, calculated by inv_icm20948_set_gyro_sf
+		int8_t _gyroSFpll;
+		uint32_t _enabled_Android_0; // Keep track of which Android sensors are enabled: 0-31
+		uint32_t _enabled_Android_1; // Keep track of which Android sensors are enabled: 32-
+		uint32_t _enabled_Android_intr_0; // Keep track of which Android sensor interrupts are enabled: 0-31
+		uint32_t _enabled_Android_intr_1; // Keep track of which Android sensor interrupts are enabled: 32-
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
 	/*
@@ -268,6 +275,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
 
 	ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);
+	ICM_20948_Status_e inv_icm20948_set_gyro_sf(ICM_20948_Device_t *pdev, unsigned char div, int gyro_level);
 
 	// ToDo:
 
