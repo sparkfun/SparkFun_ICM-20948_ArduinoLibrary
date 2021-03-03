@@ -54,6 +54,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		ICM_20948_Stat_DMPNotSupported, // DMP not supported (no #define ICM_20948_USE_DMP)
 		ICM_20948_Stat_DMPVerifyFail, // DMP was written but did not verify correctly
 		ICM_20948_Stat_FIFONoDataAvail, // FIFO contains no data
+		ICM_20948_Stat_FIFOIncompleteData, // FIFO contained incomplete data
 		ICM_20948_Stat_FIFOMoreDataAvail, // FIFO contains more data
 		ICM_20948_Stat_UnrecognisedDMPHeader,
 		ICM_20948_Stat_UnrecognisedDMPHeader2,
@@ -163,10 +164,10 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		uint8_t _last_mems_bank; // Keep track of which bank was selected last - to avoid unnecessary writes
 		int32_t _gyroSF; // Use this to record the GyroSF, calculated by inv_icm20948_set_gyro_sf
 		int8_t _gyroSFpll;
-		uint16_t _DATA_OUT_CTL1; // Keep a record of what sensors are enabled
-		uint16_t _DATA_OUT_CTL2; // Keep a record of what header2 items are enabled
-		uint16_t _DATA_RDY_STATUS; // Keep a record of how Data Ready Status is configured
-		uint16_t _MOTION_EVENT_CTL; // Keep a record of how Motion Event Ctrl is configured
+		uint32_t _enabled_Android_0; // Keep track of which Android sensors are enabled: 0-31
+		uint32_t _enabled_Android_1; // Keep track of which Android sensors are enabled: 32-
+		uint32_t _enabled_Android_intr_0; // Keep track of which Android sensor interrupts are enabled: 0-31
+		uint32_t _enabled_Android_intr_1; // Keep track of which Android sensor interrupts are enabled: 32-
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
 	/*

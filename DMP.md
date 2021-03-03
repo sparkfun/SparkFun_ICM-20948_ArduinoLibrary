@@ -74,6 +74,7 @@ The DMP data is returned via the FIFO (First In First Out). ```readDMPdataFromFI
 - ```ICM_20948_Stat_FIFONoDataAvail``` if no data or incomplete data is available
 - ```ICM_20948_Stat_Ok``` if a valid frame was read
 - ```ICM_20948_Stat_FIFOMoreDataAvail``` if a valid frame was read _and_ the FIFO contains more (unread) data
+- ```ICM_20948_Stat_FIFOIncompleteData``` if a frame was present in the FIFO but it was incomplete
 
 You can examine the 16-bit ```icm_20948_DMP_data_t data.header``` to see what data the frame contained. ```data.header``` is a bit field; each bit indicates what data is present:
 - **DMP_header_bitmap_Compass_Calibr** (0x0020)

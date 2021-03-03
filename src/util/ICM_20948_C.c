@@ -1484,25 +1484,82 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
 
 ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state)
 {
-		// TO DO: figure out how to disable the sensor if state is 0
-
 		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 
-		uint16_t inv_event_control = 0;
-		uint16_t data_rdy_status = 0;
+		uint16_t inv_event_control = 0; // Use this to store the value for MOTION_EVENT_CTL
+		uint16_t data_rdy_status = 0; // Use this to store the value for DATA_RDY_STATUS
 
 		if (pdev->_dmp_firmware_available == false)
-				return ICM_20948_Stat_DMPNotSupported;
+				return ICM_20948_Stat_DMPNotSupported; // Bail if DMP is not supported
 
-		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+		uint8_t androidSensor = sensor_type_2_android_sensor(sensor); // Convert sensor from enum inv_icm20948_sensor to Android numbering
 
-		if (androidSensor > ANDROID_SENSOR_NUM_MAX)
-				return ICM_20948_Stat_SensorNotSupported;
+		if (androidSensor >= ANDROID_SENSOR_NUM_MAX)
+				return ICM_20948_Stat_SensorNotSupported; // Bail if the sensor is not supported (TO DO: Support B2S etc)
 
+		// Convert the Android sensor into a bit mask for DATA_OUT_CTL1
 		uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
-
 		if (delta == 0xFFFF)
-				return ICM_20948_Stat_SensorNotSupported;
+				return ICM_20948_Stat_SensorNotSupported; // Bail if the sensor is not supported
+
+		// Convert the Android sensor number into a bitmask and set or clear that bit in _enabled_Android_0 / _enabled_Android_1
+		unsigned long androidSensorAsBitMask;
+		if (androidSensor < 32) // Sensors 0-31
+		{
+				androidSensorAsBitMask = 1L << androidSensor;
+				if (state == 0) // Should we disable the sensor?
+				{
+						pdev->_enabled_Android_0 &= ~androidSensorAsBitMask; // Clear the bit to disable the sensor
+				}
+				else
+				{
+						pdev->_enabled_Android_0 |= androidSensorAsBitMask; // Set the bit to enable the sensor
+				}
+		}
+		else // Sensors 32-
+		{
+				androidSensorAsBitMask = 1L << (androidSensor - 32);
+				if (state == 0) // Should we disable the sensor?
+				{
+						pdev->_enabled_Android_1 &= ~androidSensorAsBitMask; // Clear the bit to disable the sensor
+				}
+				else
+				{
+						pdev->_enabled_Android_1 |= androidSensorAsBitMask; // Set the bit to enable the sensor
+				}
+		}
+
+		// Now we know androidSensor is valid, reconstruct the value for DATA_OUT_CTL1 from _enabled_Android_0 and _enabled_Android_0
+		delta = 0; // Clear delta
+		for (int i = 0; i < 32; i++)
+		{
+				androidSensorAsBitMask = 1L << i;
+				if ((pdev->_enabled_Android_0 & androidSensorAsBitMask) > 0) // Check if the Android sensor (0-31) is enabled
+				{
+						delta |= inv_androidSensor_to_control_bits[i]; // If it is, or the required bits into delta
+				}
+				if ((pdev->_enabled_Android_1 & androidSensorAsBitMask) > 0) // Check if the Android sensor (32-) is enabled
+				{
+						delta |= inv_androidSensor_to_control_bits[i+32]; // If it is, or the required bits into delta
+				}
+				// Also check which bits need to be set in the Data Ready Status and Motion Event Control registers
+				// Compare to INV_NEEDS_ACCEL_MASK, INV_NEEDS_GYRO_MASK and INV_NEEDS_COMPASS_MASK
+				if (((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK1) > 0))
+				{
+						data_rdy_status |= DMP_Data_ready_Accel;
+						inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
+				}
+				if (((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK1) > 0))
+				{
+						data_rdy_status |= DMP_Data_ready_Gyro;
+						inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
+				}
+				if (((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK1) > 0))
+				{
+						data_rdy_status |= DMP_Data_ready_Secondary_Compass;
+						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
+				}
+		}
 
 		result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
 		if (result != ICM_20948_Stat_Ok)
@@ -1516,7 +1573,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 				return result;
 		}
 
-		// Check if Accel, Gyro/Gyro_Calibr or Compass_Calibr/Quat9/GeoMag/Compass were enabled. If they were then we need to request the accuracy data via header2.
+		// Check if Accel, Gyro/Gyro_Calibr or Compass_Calibr/Quat9/GeoMag/Compass are to be enabled. If they are then we need to request the accuracy data via header2.
 		uint16_t delta2 = 0;
 		if ((delta & DMP_Data_Output_Control_1_Accel) > 0)
 		{
@@ -1533,10 +1590,6 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 		}
 		// TO DO: Add DMP_Data_Output_Control_2_Pickup etc. if required
 
-		// Keep a record of DATA_OUT_CTL1 so multiple sensors can be configured
-		delta |= pdev->_DATA_OUT_CTL1;
-		pdev->_DATA_OUT_CTL1 = delta;
-
 		// Write the sensor control bits into memory address DATA_OUT_CTL1
 		unsigned char data_output_control_reg[2];
     data_output_control_reg[0] = (unsigned char)(delta >> 8);
@@ -1547,10 +1600,6 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 				return result;
 		}
 
-		// Keep a record of DATA_OUT_CTL2 so multiple sensors can be configured
-		delta2 |= pdev->_DATA_OUT_CTL2;
-		pdev->_DATA_OUT_CTL2 = delta2;
-
 		// Write the 'header2' sensor control bits into memory address DATA_OUT_CTL2
 		data_output_control_reg[0] = (unsigned char)(delta2 >> 8);
     data_output_control_reg[1] = (unsigned char)(delta2 & 0xff);
@@ -1560,52 +1609,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 				return result;
 		}
 
-		// Check which bits need to be set in the Data Ready Status and Motion Event Control registers
-		// Convert androidSensor into a bit mask and compare to INV_NEEDS_ACCEL_MASK, INV_NEEDS_GYRO_MASK and INV_NEEDS_COMPASS_MASK
-		unsigned long androidSensorAsBitMask;
-		if (androidSensor < 32)
-		{
-				androidSensorAsBitMask = 1L << androidSensor;
-				if ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Accel;
-						inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
-				}
-				if ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Gyro;
-						inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
-				}
-				if ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Secondary_Compass;
-						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
-				}
-		}
-		else
-		{
-				androidSensorAsBitMask = 1L << (androidSensor - 32);
-				if ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK1) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Accel;
-						inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
-				}
-				if ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK1) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Gyro;
-						inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
-				}
-				if ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK1) > 0)
-				{
-						data_rdy_status |= DMP_Data_ready_Secondary_Compass;
-						inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
-				}
-		}
-
-		// Keep a record of _DATA_RDY_STATUS so multiple sensors can be configured
-		data_rdy_status |= pdev->_DATA_RDY_STATUS;
-		pdev->_DATA_RDY_STATUS = data_rdy_status;
-
+		// Set the DATA_RDY_STATUS register
 		data_output_control_reg[0] = (unsigned char)(data_rdy_status >> 8);
     data_output_control_reg[1] = (unsigned char)(data_rdy_status & 0xff);
 		result = inv_icm20948_write_mems(pdev, DATA_RDY_STATUS, 2, (const unsigned char *)&data_output_control_reg);
@@ -1629,10 +1633,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
 				inv_event_control |= DMP_Motion_Event_Control_Geomag;
 		}
 
-		// Keep a record of _MOTION_EVENT_CTL so multiple sensors can be configured
-		inv_event_control |= pdev->_MOTION_EVENT_CTL;
-		pdev->_MOTION_EVENT_CTL = inv_event_control;
-
+		// Set the MOTION_EVENT_CTL register
 		data_output_control_reg[0] = (unsigned char)(inv_event_control >> 8);
     data_output_control_reg[1] = (unsigned char)(inv_event_control & 0xff);
 		result = inv_icm20948_write_mems(pdev, MOTION_EVENT_CTL, 2, (const unsigned char *)&data_output_control_reg);
@@ -1653,20 +1654,59 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 		ICM_20948_Status_e result = ICM_20948_Stat_Ok;
 
 		if (pdev->_dmp_firmware_available == false)
-				return ICM_20948_Stat_DMPNotSupported;
+				return ICM_20948_Stat_DMPNotSupported; // Bail if DMP is not supported
 
-		uint8_t androidSensor = sensor_type_2_android_sensor(sensor);
+		uint8_t androidSensor = sensor_type_2_android_sensor(sensor); // Convert sensor from enum inv_icm20948_sensor to Android numbering
 
 		if (androidSensor > ANDROID_SENSOR_NUM_MAX)
-				return ICM_20948_Stat_SensorNotSupported;
+				return ICM_20948_Stat_SensorNotSupported; // Bail if the sensor is not supported
 
+		// Convert the Android sensor into a bit mask for DATA_OUT_CTL1
 		uint16_t delta = inv_androidSensor_to_control_bits[androidSensor];
-
 		if (delta == 0xFFFF)
-				return ICM_20948_Stat_SensorNotSupported;
+				return ICM_20948_Stat_SensorNotSupported; // Bail if the sensor is not supported
 
-		if (state == 0)
-				delta = 0;
+		// Convert the Android sensor number into a bitmask and set or clear that bit in _enabled_Android_intr_0 / _enabled_Android_intr_1
+		unsigned long androidSensorAsBitMask;
+		if (androidSensor < 32) // Sensors 0-31
+		{
+				androidSensorAsBitMask = 1L << androidSensor;
+				if (state == 0) // Should we disable the sensor interrupt?
+				{
+						pdev->_enabled_Android_intr_0 &= ~androidSensorAsBitMask; // Clear the bit to disable the sensor interrupt
+				}
+				else
+				{
+						pdev->_enabled_Android_intr_0 |= androidSensorAsBitMask; // Set the bit to enable the sensor interrupt
+				}
+		}
+		else // Sensors 32-
+		{
+				androidSensorAsBitMask = 1L << (androidSensor - 32);
+				if (state == 0) // Should we disable the sensor?
+				{
+						pdev->_enabled_Android_intr_1 &= ~androidSensorAsBitMask; // Clear the bit to disable the sensor interrupt
+				}
+				else
+				{
+						pdev->_enabled_Android_intr_1 |= androidSensorAsBitMask; // Set the bit to enable the sensor interrupt
+				}
+		}
+
+		// Now we know androidSensor is valid, reconstruct the value for DATA_INTR_CTL from _enabled_Android_intr_0 and _enabled_Android_intr_0
+		delta = 0; // Clear delta
+		for (int i = 0; i < 32; i++)
+		{
+				androidSensorAsBitMask = 1L << i;
+				if ((pdev->_enabled_Android_intr_0 & androidSensorAsBitMask) > 0) // Check if the Android sensor (0-31) interrupt is enabled
+				{
+						delta |= inv_androidSensor_to_control_bits[i]; // If it is, or the required bits into delta
+				}
+				if ((pdev->_enabled_Android_intr_1 & androidSensorAsBitMask) > 0) // Check if the Android sensor (32-) interrupt is enabled
+				{
+						delta |= inv_androidSensor_to_control_bits[i+32]; // If it is, or the required bits into delta
+				}
+		}
 
 		unsigned char data_intr_ctl[2];
 
@@ -1685,7 +1725,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
 				return result;
 		}
 
-		// Write the sensor control bits into memory address DATA_OUT_CTL1
+		// Write the interrupt control bits into memory address DATA_INTR_CTL
 		result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_intr_ctl);
 
 		// result = ICM_20948_low_power(pdev, true); // Put chip into low power state
@@ -1736,7 +1776,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Header2_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if no header2 is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if no header2 is available
 			// Read the header (2 bytes)
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Header2_Bytes);
@@ -1759,7 +1799,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Raw_Accel_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Raw_Accel_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1779,7 +1819,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < (icm_20948_DMP_Raw_Gyro_Bytes + icm_20948_DMP_Gyro_Bias_Bytes))
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], (icm_20948_DMP_Raw_Gyro_Bytes + icm_20948_DMP_Gyro_Bias_Bytes));
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1799,7 +1839,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Compass_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Compass_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1819,7 +1859,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_ALS_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_ALS_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1839,7 +1879,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Quat6_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Quat6_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1859,7 +1899,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Quat9_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Quat9_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1879,7 +1919,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_PQuat6_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_PQuat6_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1899,7 +1939,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Geomag_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Geomag_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1919,7 +1959,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Pressure_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Pressure_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1932,6 +1972,10 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 
 	if ((data->header & DMP_header_bitmap_Gyro_Calibr) > 0) // case DMP_header_bitmap_Gyro_Calibr:
 	{
+			// lcm20948MPUFifoControl.c suggests icm_20948_DMP_Gyro_Calibr_Bytes is not supported
+			// and looking at DMP frames which have the Gyro_Calibr bit set, that certainly seems to be true.
+			// So, we'll skip this...:
+			/*
 			if (fifo_count < icm_20948_DMP_Gyro_Calibr_Bytes) // Check if we need to read the FIFO count again
 			{
 					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
@@ -1939,7 +1983,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Gyro_Calibr_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Gyro_Calibr_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1948,6 +1992,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 					data->Gyro_Calibr.Bytes[DMP_Quat6_Byte_Ordering[i]] = fifoBytes[i]; // Correct the byte order (map big endian to little endian)
 			}
 			fifo_count -= icm_20948_DMP_Gyro_Calibr_Bytes; // Decrement the count
+			*/
 	}
 
 	if ((data->header & DMP_header_bitmap_Compass_Calibr) > 0) // case DMP_header_bitmap_Compass_Calibr:
@@ -1959,7 +2004,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Compass_Calibr_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Compass_Calibr_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -1979,7 +2024,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Step_Detector_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Step_Detector_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -2003,7 +2048,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Accel_Accuracy_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Accel_Accuracy_Bytes);
 			if (result != ICM_20948_Stat_Ok)
@@ -2025,7 +2070,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Gyro_Accuracy_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Gyro_Accuracy_Bytes);
 			if (result != ICM_20948_Stat_Ok)
@@ -2047,7 +2092,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Compass_Accuracy_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Compass_Accuracy_Bytes);
 			if (result != ICM_20948_Stat_Ok)
@@ -2062,6 +2107,9 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 
 	if ((data->header2 & DMP_header2_bitmap_Fsync) > 0) // case DMP_header2_bitmap_Fsync:
 	{
+			// lcm20948MPUFifoControl.c suggests icm_20948_DMP_Fsync_Detection_Bytes is not supported.
+			// So, we'll skip this just in case...:
+			/*
 			if (fifo_count < icm_20948_DMP_Fsync_Detection_Bytes) // Check if we need to read the FIFO count again
 			{
 					result = ICM_20948_get_FIFO_count(pdev, &fifo_count);
@@ -2069,7 +2117,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Fsync_Detection_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Fsync_Detection_Bytes);
 			if (result != ICM_20948_Stat_Ok)
@@ -2080,6 +2128,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 			}
 			data->Fsync_Delay_Time = aShort;
 			fifo_count -= icm_20948_DMP_Fsync_Detection_Bytes; // Decrement the count
+			*/
 	}
 
 	if ((data->header2 & DMP_header2_bitmap_Pickup) > 0) // case DMP_header2_bitmap_Pickup:
@@ -2091,7 +2140,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Pickup_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			aShort = 0;
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Pickup_Bytes);
 			if (result != ICM_20948_Stat_Ok)
@@ -2113,7 +2162,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 						return result;
 		}
 		if (fifo_count < icm_20948_DMP_Activity_Recognition_Bytes)
-				return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+				return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 		result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Activity_Recognition_Bytes);
 		if (result != ICM_20948_Stat_Ok)
 				return result;
@@ -2133,7 +2182,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 							return result;
 			}
 			if (fifo_count < icm_20948_DMP_Secondary_On_Off_Bytes)
-					return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+					return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 			result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Secondary_On_Off_Bytes);
 			if (result != ICM_20948_Stat_Ok)
 					return result;
@@ -2152,7 +2201,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
 					return result;
 	}
 	if (fifo_count < icm_20948_DMP_Footer_Bytes)
-			return ICM_20948_Stat_FIFONoDataAvail; // Bail if not enough data is available
+			return ICM_20948_Stat_FIFOIncompleteData; // Bail if not enough data is available
 	aShort = 0;
 	result = ICM_20948_read_FIFO(pdev, &fifoBytes[0], icm_20948_DMP_Footer_Bytes);
 	if (result != ICM_20948_Stat_Ok)
@@ -2193,7 +2242,6 @@ static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
 	case INV_ICM20948_SENSOR_LINEAR_ACCELERATION:           return ANDROID_SENSOR_LINEAR_ACCELERATION; // 10
 	case INV_ICM20948_SENSOR_ORIENTATION:                   return ANDROID_SENSOR_ORIENTATION; // 3
 	case INV_ICM20948_SENSOR_B2S:                           return ANDROID_SENSOR_B2S; // 45
-	case INV_ICM20948_SENSOR_RAW_MAGNETOMETER:              return ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED; // 34
 	default:                                                return ANDROID_SENSOR_NUM_MAX;
 	}
 }
@@ -2221,7 +2269,6 @@ enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor)
 	case ANDROID_SENSOR_LINEAR_ACCELERATION:              return INV_ICM20948_SENSOR_LINEAR_ACCELERATION;
 	case ANDROID_SENSOR_ORIENTATION:                      return INV_ICM20948_SENSOR_ORIENTATION;
 	case ANDROID_SENSOR_B2S:                              return INV_ICM20948_SENSOR_B2S;
-	case ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED: return INV_ICM20948_SENSOR_RAW_MAGNETOMETER;
 	default:                                              return INV_ICM20948_SENSOR_MAX;
 	}
 }
