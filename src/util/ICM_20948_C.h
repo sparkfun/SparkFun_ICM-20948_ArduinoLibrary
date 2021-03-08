@@ -170,17 +170,6 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 		uint32_t _enabled_Android_intr_1; // Keep track of which Android sensor interrupts are enabled: 32-
 	} ICM_20948_Device_t;				 // Definition of device struct type
 
-	/*
-	 * Icm20948 device require a DMP image to be loaded on init
-	 * Provide such images by mean of a byte array
-	 */
-#if defined(ICM_20948_USE_DMP) // Only include the 93KBytes of DMP if ICM_20948_USE_DMP is defined
-	const uint8_t dmp3_image[] = {
-	  #include "icm20948_img.dmp3a.h"
-	};
-#endif
-
-
 	// ICM_20948_Status_e ICM_20948_Startup( ICM_20948_Device_t* pdev ); // For the time being this performs a standardized startup routine
 
 	ICM_20948_Status_e ICM_20948_link_serif(ICM_20948_Device_t *pdev, const ICM_20948_Serif_t *s); // Links a SERIF structure to the device
