@@ -209,15 +209,15 @@ void setup() {
   // Configure the B2S Mounting Matrix
   const unsigned char b2sMountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
   const unsigned char b2sMountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
-  success &= (myICM.writeDMPmems(B2S_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_02, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_10, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_11, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_12, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_20, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_22, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_00, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_01, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_02, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_10, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_11, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_12, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_20, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_21, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_22, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
 
   // Configure the DMP Gyro Scaling Factor
   // @param[in] gyro_div Value written to GYRO_SMPLRT_DIV register, where
@@ -320,6 +320,8 @@ void setup() {
   {
     SERIAL_PORT.println(F("Enable DMP failed!"));
     SERIAL_PORT.println(F("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
+    while (1)
+      ; // Do nothing more
   }
 }
 

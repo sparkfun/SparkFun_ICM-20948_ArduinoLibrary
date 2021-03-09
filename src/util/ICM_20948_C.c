@@ -6,7 +6,7 @@
  * Icm20948 device require a DMP image to be loaded on init
  * Provide such images by mean of a byte array
 */
-#if defined(ICM_20948_USE_DMP) // Only include the 93KBytes of DMP if ICM_20948_USE_DMP is defined
+#if defined(ICM_20948_USE_DMP) // Only include the 14301 Bytes of DMP if ICM_20948_USE_DMP is defined
         const uint8_t dmp3_image[] = {
           #include "icm20948_img.dmp3a.h"
         };
