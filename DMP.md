@@ -25,8 +25,9 @@ It does however support:
 - Raw and calibrated accelerometer, gyro and compass data and accuracy
 - 6-axis and 9-axis Quaternion data (including Game Rotation Vector data)
 - Geomagnetic Rotation Vector data
+- and [more...](#which-dmp-features-are-currently-supported)
 
-We have added [three new examples](https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary/tree/master/examples/Arduino) to show how to configure the DMP and read:
+We have added [five new examples](https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary/tree/master/examples/Arduino) to show how to configure the DMP and read:
 9-axis Quaternion data; 6-axis Quaternion converted to Euler angles (roll, pitch & yaw); raw accelerometer data.
 
 ## Is DMP support enabled by default?
@@ -127,15 +128,19 @@ You will find the definitions in ```ICM_20948_DMP.h```.
 
 That file also includes the definition for the ```icm_20948_DMP_data_t``` struct which is loaded with DMP data from the FIFO.
 
+```const int``` declarations (including the DMP firmware image) are in ```ICM_20948_C.c```
+
 ## Can the DMP generate interrupts?
 
 Yes it can, but you might find that they are not fully supported as we have not tested them. The main functions you will need to experiment with are ```intEnableDMP``` and ```enableDMPSensorInt```.
 
 ## How is the DMP data rate set?
 
-We don't know the complete answer to this. As we understand it, it is a _combination_ of the raw sensor rate (set by ```setSampleRate```) and the multiple DMP Output Data Rate (ODR) registers
-(set by ```setDMPODRrate```). The documentation says that the "DMP is capable of outputting multiple sensor data at different rates to FIFO". So, in theory, you can have (e.g.) raw accelerometer
-data and Quaternion data arriving at different rates, but we have not tested that.
+It is a _combination_ of the raw sensor rate (set by ```setSampleRate```) and the multiple DMP Output Data Rate (ODR) registers
+(set by ```setDMPODRrate```). There are other settings that need to be changed to match the sample rate too.
+Please see [examples 9 & 10](https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary/tree/master/examples/Arduino) for more details.
+
+The DMP is capable of outputting multiple sensor data at different rates to the FIFO.
 
 ## Can I contribute to this library?
 
