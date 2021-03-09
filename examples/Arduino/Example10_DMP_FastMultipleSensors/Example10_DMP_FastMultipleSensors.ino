@@ -1,5 +1,5 @@
 /****************************************************************
- * Example6_DMP_Quat9_Orientation.ino
+ * Example10_DMP_FastMultipleSensors.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
  * Paul Clark, February 15th 2021
@@ -23,8 +23,6 @@
  *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
-
-//#define QUAT_ANIMATION // Uncomment this line to output data in the correct format for ZaneL's Node.js Quaternion animation tool: https://github.com/ZaneL/quaternion_sensor_3d_nodejs
 
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
@@ -50,13 +48,10 @@
 void setup() {
 
   SERIAL_PORT.begin(115200); // Start the serial console
-#ifndef QUAT_ANIMATION
   SERIAL_PORT.println(F("ICM-20948 Example"));
-#endif
 
   delay(100);
 
-#ifndef QUAT_ANIMATION
   while (SERIAL_PORT.available()) // Make sure the serial RX buffer is empty
     SERIAL_PORT.read();
 
@@ -64,7 +59,6 @@ void setup() {
 
   while (!SERIAL_PORT.available()) // Wait for the user to press a key (send any serial character)
     ;
-#endif
 
 #ifdef USE_SPI
     SPI_PORT.begin();
@@ -73,9 +67,7 @@ void setup() {
     WIRE_PORT.setClock(400000);
 #endif
 
-#ifndef QUAT_ANIMATION
   //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
-#endif
 
   bool initialized = false;
   while( !initialized ){
@@ -88,23 +80,17 @@ void setup() {
     myICM.begin( WIRE_PORT, AD0_VAL );
 #endif
 
-#ifndef QUAT_ANIMATION
     SERIAL_PORT.print( F("Initialization of the sensor returned: ") );
     SERIAL_PORT.println( myICM.statusString() );
-#endif
     if( myICM.status != ICM_20948_Stat_Ok ){
-#ifndef QUAT_ANIMATION
       SERIAL_PORT.println( F("Trying again...") );
-#endif
       delay(500);
     }else{
       initialized = true;
     }
   }
 
-#ifndef QUAT_ANIMATION
   SERIAL_PORT.println(F("Device connected!"));
-#endif
 
   // The ICM-20948 is awake and ready but hasn't been configured. Let's step through the configuration
   // sequence from InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
@@ -166,9 +152,9 @@ void setup() {
   // Set gyro sample rate divider with GYRO_SMPLRT_DIV
   // Set accel sample rate divider with ACCEL_SMPLRT_DIV_2
   ICM_20948_smplrt_t mySmplrt;
-  mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
-  mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
-  myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt ); // ** Note: comment this line to leave the sample rates at the maximum **
+  mySmplrt.g = 4; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 4 = 220Hz
+  mySmplrt.a = 4; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 4 = 225Hz
+  myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt );
   
   // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   success &= (myICM.setDMPstartAddress() == ICM_20948_Stat_Ok); // Defaults to DMP_START_ADDRESS
@@ -238,7 +224,7 @@ void setup() {
   //            0=1125Hz sample rate, 1=562.5Hz sample rate, ... 4=225Hz sample rate, ...
   //            10=102.2727Hz sample rate, ... etc.
   // @param[in] gyro_level 0=250 dps, 1=500 dps, 2=1000 dps, 3=2000 dps
-  success &= (myICM.setGyroSF(19, 3) == ICM_20948_Stat_Ok); // 19 = 55Hz (see above), 3 = 2000dps (see above)
+  success &= (myICM.setGyroSF(4, 3) == ICM_20948_Stat_Ok); // 0 = 225Hz (see above), 3 = 2000dps (see above)
   
   // Configure the Gyro full scale
   // 2000dps : 2^28
@@ -249,18 +235,18 @@ void setup() {
   success &= (myICM.writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]) == ICM_20948_Stat_Ok);
 
   // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
-  const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
-  //const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // InvenSense Nucleo example uses 225Hz
+  //const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
+  const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // InvenSense Nucleo example uses 225Hz
   success &= (myICM.writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]) == ICM_20948_Stat_Ok);
   
   // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
-  const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
-  //const unsigned char accelAlphaVar[4] = {0x06, 0x66, 0x66, 0x66}; // Value taken from InvenSense Nucleo example
+  //const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
+  const unsigned char accelAlphaVar[4] = {0x3D, 0x27, 0xD2, 0x7D}; // 225Hz
   success &= (myICM.writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
   
   // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
-  const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
-  //const unsigned char accelAVar[4] = {0x39, 0x99, 0x99, 0x9A}; // Value taken from InvenSense Nucleo example
+  //const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
+  const unsigned char accelAVar[4] = {0x02, 0xD8, 0x2D, 0x83}; // 225Hz
   success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]) == ICM_20948_Stat_Ok);
   
   // Configure the Accel Cal Rate
@@ -293,25 +279,23 @@ void setup() {
   //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
   //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
-  // Enable the DMP orientation sensor
-  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);
+  // Enable the DMP Game Rotation Vector sensor (Quat6)
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
 
-  // Enable any additional sensors / features
+  // Enable additional sensors / features
   //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
-  //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
   //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs:
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
   // Setting value can be calculated as follows:
   // Value = (DMP running rate / ODR ) - 1
-  // E.g. For a 5Hz ODR rate when DMP is running at 55Hz, value = (55/5) - 1 = 10.
-  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok); // Set to the maximum
-  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok); // Set to the maximum
-  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0) == ICM_20948_Stat_Ok); // Set to the maximum
-  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 0) == ICM_20948_Stat_Ok); // Set to the maximum
-  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0) == ICM_20948_Stat_Ok); // Set to the maximum
-  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+  // E.g. For a 225Hz ODR rate when DMP is running at 225Hz, value = (225/225) - 1 = 0.
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok); // Set to 225Hz
+  success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok); // Set to 225Hz
+  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0) == ICM_20948_Stat_Ok); // Set to 225Hz
+  //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0) == ICM_20948_Stat_Ok); // Set to 225Hz
 
   // Enable the FIFO
   success &= (myICM.enableFIFO() == ICM_20948_Stat_Ok);
@@ -328,9 +312,7 @@ void setup() {
   // Check success
   if( success )
   {
-#ifndef QUAT_ANIMATION
     SERIAL_PORT.println(F("DMP enabled!"));
-#endif
   }
   else
   {
@@ -352,7 +334,7 @@ void loop()
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOMoreDataAvail if a valid frame was read _and_ the FIFO contains more (unread) data.
   icm_20948_DMP_data_t data;
   myICM.readDMPdataFromFIFO(&data);
-  
+
   if(( myICM.status == ICM_20948_Stat_Ok ) || ( myICM.status == ICM_20948_Stat_FIFOMoreDataAvail )) // Was valid data available?
   {
     //SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
@@ -360,47 +342,74 @@ void loop()
     //if ( data.header < 0x100) SERIAL_PORT.print( "0" );
     //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     //SERIAL_PORT.println( data.header, HEX );
-    
-    if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // We have asked for orientation data so we should receive Quat9
+
+    if ( (data.header & DMP_header_bitmap_Quat6) > 0 ) // Check for GRV data (Quat6)
     {
       // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
       // The quaternion data is scaled by 2^30.
 
-      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+      //SERIAL_PORT.printf("Quat6 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat6.Data.Q3);
 
       // Scale to +/- 1
-      double q1 = ((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q2 = ((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q3 = ((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q0 = sqrt( 1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+      double q1 = ((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q2 = ((double)data.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q3 = ((double)data.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
       
-#ifndef QUAT_ANIMATION
       SERIAL_PORT.print(F("Q1:"));
       SERIAL_PORT.print(q1, 3);
       SERIAL_PORT.print(F(" Q2:"));
       SERIAL_PORT.print(q2, 3);
       SERIAL_PORT.print(F(" Q3:"));
-      SERIAL_PORT.print(q3, 3);
-      SERIAL_PORT.print(F(" Accuracy:"));
-      SERIAL_PORT.println(data.Quat9.Data.Accuracy);
-#else
-      // Output the Quaternion data in the format expected by ZaneL's Node.js Quaternion animation tool
-      SERIAL_PORT.print(F("{\"quat_w\":"));
-      SERIAL_PORT.print(q0, 3);
-      SERIAL_PORT.print(F(", \"quat_x\":"));
-      SERIAL_PORT.print(q1, 3);
-      SERIAL_PORT.print(F(", \"quat_y\":"));
-      SERIAL_PORT.print(q2, 3);
-      SERIAL_PORT.print(F(", \"quat_z\":"));
-      SERIAL_PORT.print(q3, 3);
-      SERIAL_PORT.println(F("}"));
-#endif
+      SERIAL_PORT.println(q3, 3);
     }
+
+    if ( (data.header & DMP_header_bitmap_Accel) > 0 ) // Check for Accel
+    {
+      float acc_x = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
+      float acc_y = (float)data.Raw_Accel.Data.Y; 
+      float acc_z = (float)data.Raw_Accel.Data.Z; 
+    
+      SERIAL_PORT.print(F("Accel: X:"));
+      SERIAL_PORT.print(acc_x);
+      SERIAL_PORT.print(F(" Y:"));
+      SERIAL_PORT.print(acc_y);
+      SERIAL_PORT.print(F(" Z:"));
+      SERIAL_PORT.println(acc_z);
+    }
+
+//    if ( (data.header & DMP_header_bitmap_Gyro) > 0 ) // Check for Gyro
+//    {
+//      float x = (float)data.Raw_Gyro.Data.X; // Extract the raw gyro data
+//      float y = (float)data.Raw_Gyro.Data.Y; 
+//      float z = (float)data.Raw_Gyro.Data.Z; 
+//    
+//      SERIAL_PORT.print(F("Gyro: X:"));
+//      SERIAL_PORT.print(x);
+//      SERIAL_PORT.print(F(" Y:"));
+//      SERIAL_PORT.print(y);
+//      SERIAL_PORT.print(F(" Z:"));
+//      SERIAL_PORT.println(z);
+//    }
+//
+//    if ( (data.header & DMP_header_bitmap_Compass) > 0 ) // Check for Compass
+//    {
+//      float x = (float)data.Compass.Data.X; // Extract the compass data
+//      float y = (float)data.Compass.Data.Y; 
+//      float z = (float)data.Compass.Data.Z; 
+//    
+//      SERIAL_PORT.print(F("Compass: X:"));
+//      SERIAL_PORT.print(x);
+//      SERIAL_PORT.print(F(" Y:"));
+//      SERIAL_PORT.print(y);
+//      SERIAL_PORT.print(F(" Z:"));
+//      SERIAL_PORT.println(z);
+//    }
+
   }
 
   if ( myICM.status != ICM_20948_Stat_FIFOMoreDataAvail ) // If more data is available then we should read it right away - and not delay
   {
-    delay(10);
+    delay(1); // Keep this short!
   }
 }

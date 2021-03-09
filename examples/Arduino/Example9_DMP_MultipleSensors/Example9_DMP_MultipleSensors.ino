@@ -209,19 +209,17 @@ void setup() {
   // Configure the B2S Mounting Matrix
   const unsigned char b2sMountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
   const unsigned char b2sMountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
-  success &= (myICM.writeDMPmems(B2S_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_02, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_10, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_11, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_12, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_20, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_21, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
-  success &= (myICM.writeDMPmems(B2S_MTX_22, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_00, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_01, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_02, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_10, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_11, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_12, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_20, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_21, 4, &b2sMountMultiplierZero[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(B2S_MTX_22, 4, &b2sMountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
 
   // Configure the DMP Gyro Scaling Factor
-  //const unsigned char gyroScalingFactor[4] = {0x26, 0xFA, 0xB4, 0xB1}; // Value taken from InvenSense Nucleo example
-  //success &= (myICM.writeDMPmems(GYRO_SF, 4, &gyroScalingFactor[0]) == ICM_20948_Stat_Ok);
   // @param[in] gyro_div Value written to GYRO_SMPLRT_DIV register, where
   //            0=1125Hz sample rate, 1=562.5Hz sample rate, ... 4=225Hz sample rate, ...
   //            10=102.2727Hz sample rate, ... etc.
@@ -249,7 +247,7 @@ void setup() {
   // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
   const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
   //const unsigned char accelAVar[4] = {0x39, 0x99, 0x99, 0x9A}; // Value taken from InvenSense Nucleo example
-  success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
+  success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]) == ICM_20948_Stat_Ok);
   
   // Configure the Accel Cal Rate
   const unsigned char accelCalRate[4] = {0x00, 0x00}; // Value taken from InvenSense Nucleo example
@@ -281,7 +279,7 @@ void setup() {
   //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
   //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
-  // Enable the DMP Game Rotation Vector sensor
+  // Enable the DMP Game Rotation Vector sensor (Quat6)
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
 
   // Enable additional sensors / features
@@ -322,6 +320,8 @@ void setup() {
   {
     SERIAL_PORT.println(F("Enable DMP failed!"));
     SERIAL_PORT.println(F("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
+    while (1)
+      ; // Do nothing more
   }
 }
 
@@ -345,18 +345,18 @@ void loop()
     //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     //SERIAL_PORT.println( data.header, HEX );
 
-    if ( (data.header & DMP_header_bitmap_Quat9) > 0 ) // Check for orientation data (Quat9)
+    if ( (data.header & DMP_header_bitmap_Quat6) > 0 ) // Check for orientation data (Quat9)
     {
       // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
       // The quaternion data is scaled by 2^30.
 
-      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+      //SERIAL_PORT.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat9.Data.Q3, data.Quat6.Data.Accuracy);
 
       // Scale to +/- 1
-      double q1 = ((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q2 = ((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q3 = ((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q1 = ((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q2 = ((double)data.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+      double q3 = ((double)data.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
       
       SERIAL_PORT.print(F("Q1:"));
       SERIAL_PORT.print(q1, 3);

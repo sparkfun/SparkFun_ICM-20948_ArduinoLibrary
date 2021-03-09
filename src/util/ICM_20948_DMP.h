@@ -390,15 +390,15 @@ enum ANDROID_SENSORS {
 };
 
 // Determines which base sensor needs to be on based upon ANDROID_SENSORS 0-31
-#define INV_NEEDS_ACCEL_MASK   ((1L<<1)|        (1L<<3)|        (1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|         (1L<<17)|(1L<<18)|(1L<<19)|(1L<<20)|(1<<23)|       (1<<25)|        (1<<29)|(1<<30)|(1<<31))
-#define INV_NEEDS_GYRO_MASK		 (                (1L<<3)|(1L<<4)|(1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|(1L<<16)|                                                   (1<<25)|(1<<26)|(1<<29)|(1<<30)|(1<<31))
-#define INV_NEEDS_COMPASS_MASK (        (1L<<2)|(1L<<3)|                         (1L<<11)|(1L<<14)|                                             (1L<<20)|       (1<<24)|(1<<25)|                        (1<<31))
-#define INV_NEEDS_PRESSURE		 ((1L<<6)|(1<<28))
+#define INV_NEEDS_ACCEL_MASK   ((1L<<1)|        (1L<<3)|        (1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|         (1L<<17)|(1L<<18)|(1L<<19)|(1L<<20)|(1L<<23)|         (1L<<25)|         (1L<<29)|(1L<<30)|(1L<<31))
+#define INV_NEEDS_GYRO_MASK		 (                (1L<<3)|(1L<<4)|(1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|(1L<<16)|                                                      (1L<<25)|(1L<<26)|(1L<<29)|(1L<<30)|(1L<<31))
+#define INV_NEEDS_COMPASS_MASK (        (1L<<2)|(1L<<3)|                         (1L<<11)|(1L<<14)|                                             (1L<<20)|         (1L<<24)|(1L<<25)|                           (1L<<31))
+#define INV_NEEDS_PRESSURE		 ((1L<<6)|(1L<<28))
 
 // Determines which base sensor needs to be on based upon ANDROID_SENSORS 32-
-#define INV_NEEDS_ACCEL_MASK1	  (       (1<<3)|      (1<<5)|(1<<6)|(1<<7)|(1<<9)|(1<<10)) // I.e. 35, 37, 38, 39, 41, 42
-#define INV_NEEDS_GYRO_MASK1	  (       (1<<3)|(1<<4)                                   |(1<<11)) // I.e. 35, 36, 43
-#define INV_NEEDS_COMPASS_MASK1	((1<<2)|                           (1<<7)) // I.e. 34 and 39
+#define INV_NEEDS_ACCEL_MASK1	  (        (1L<<3)|       (1L<<5)|(1L<<6)|(1L<<7)|(1L<<9)|(1L<<10)) // I.e. 35, 37, 38, 39, 41, 42
+#define INV_NEEDS_GYRO_MASK1	  (        (1L<<3)|(1L<<4)                                        |(1L<<11)) // I.e. 35, 36, 43
+#define INV_NEEDS_COMPASS_MASK1	((1L<<2)|                               (1L<<7)) // I.e. 34 and 39
 
 enum DMP_Data_Ready_Status_Register_Bits
 {
@@ -485,74 +485,6 @@ enum DMP_Header2_Bitmap
 	DMP_header2_bitmap_Accel_Accuracy = 0x4000
 };
 
-const uint16_t inv_androidSensor_to_control_bits[ANDROID_SENSOR_NUM_MAX]=
-{
-	// Data output control 1 register bit definition
-	// 16-bit accel                                0x8000
-	// 16-bit gyro                                 0x4000
-	// 16-bit compass                              0x2000
-	// 16-bit ALS                                  0x1000
-	// 32-bit 6-axis quaternion                    0x0800
-	// 32-bit 9-axis quaternion + heading accuracy 0x0400
-	// 16-bit pedometer quaternion                 0x0200
-	// 32-bit Geomag rv + heading accuracy         0x0100
-	// 16-bit Pressure                             0x0080
-	// 32-bit calibrated gyro                      0x0040
-	// 32-bit calibrated compass                   0x0020
-	// Pedometer Step Detector                     0x0010
-	// Header 2                                    0x0008
-	// Pedometer Step Indicator Bit 2              0x0004
-	// Pedometer Step Indicator Bit 1              0x0002
-	// Pedometer Step Indicator Bit 0              0x0001
-	// Unsupported Sensors are 0xFFFF
-
-	0xFFFF, // 0  Meta Data
-	0x8008, // 1  Accelerometer
-	0x0028, // 2  Magnetic Field
-	0x0408, // 3  Orientation
-	0x4048, // 4  Gyroscope
-	0x1008, // 5  Light
-	0x0088, // 6  Pressure
-	0xFFFF, // 7  Temperature
-	0xFFFF, // 8  Proximity <----------- fixme
-	0x0808, // 9  Gravity
-	0x8808, // 10 Linear Acceleration
-	0x0408, // 11 Rotation Vector
-	0xFFFF, // 12 Humidity
-	0xFFFF, // 13 Ambient Temperature
-	0x2008, // 14 Magnetic Field Uncalibrated
-	0x0808, // 15 Game Rotation Vector
-	0x4008, // 16 Gyroscope Uncalibrated
-	0x0000, // 17 Significant Motion
-	0x0018, // 18 Step Detector
-	0x0010, // 19 Step Counter <----------- fixme
-	0x0108, // 20 Geomagnetic Rotation Vector
-	0xFFFF, // 21 ANDROID_SENSOR_HEART_RATE,
-	0xFFFF, // 22 ANDROID_SENSOR_PROXIMITY,
-
-	0x8008, // 23 ANDROID_SENSOR_WAKEUP_ACCELEROMETER,
-	0x0028, // 24 ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD,
-	0x0408, // 25 ANDROID_SENSOR_WAKEUP_ORIENTATION,
-	0x4048, // 26 ANDROID_SENSOR_WAKEUP_GYROSCOPE,
-	0x1008, // 27 ANDROID_SENSOR_WAKEUP_LIGHT,
-	0x0088, // 28 ANDROID_SENSOR_WAKEUP_PRESSURE,
-	0x0808, // 29 ANDROID_SENSOR_WAKEUP_GRAVITY,
-	0x8808, // 30 ANDROID_SENSOR_WAKEUP_LINEAR_ACCELERATION,
-	0x0408, // 31 ANDROID_SENSOR_WAKEUP_ROTATION_VECTOR,
-	0xFFFF,	// 32 ANDROID_SENSOR_WAKEUP_RELATIVE_HUMIDITY,
-	0xFFFF,	// 33 ANDROID_SENSOR_WAKEUP_AMBIENT_TEMPERATURE,
-	0x2008, // 34 ANDROID_SENSOR_WAKEUP_MAGNETIC_FIELD_UNCALIBRATED,
-	0x0808, // 35 ANDROID_SENSOR_WAKEUP_GAME_ROTATION_VECTOR,
-	0x4008, // 36 ANDROID_SENSOR_WAKEUP_GYROSCOPE_UNCALIBRATED,
-	0x0018, // 37 ANDROID_SENSOR_WAKEUP_STEP_DETECTOR,
-	0x0010, // 38 ANDROID_SENSOR_WAKEUP_STEP_COUNTER,
-	0x0108, // 39 ANDROID_SENSOR_WAKEUP_GEOMAGNETIC_ROTATION_VECTOR
-	0xFFFF,	// 40 ANDROID_SENSOR_WAKEUP_HEART_RATE,
-	0x0000,	// 41 ANDROID_SENSOR_WAKEUP_TILT_DETECTOR,
-	0x8008, // 42 Raw Acc
-	0x4048, // 43 Raw Gyr
-};
-
 typedef struct // DMP Activity Recognition data
 {
 		uint8_t Drive : 1;
@@ -600,32 +532,6 @@ typedef struct // DMP Secondary On/Off data
 #define icm_20948_DMP_Secondary_On_Off_Bytes 2
 #define icm_20948_DMP_Footer_Bytes 2
 #define icm_20948_DMP_Maximum_Bytes 14 // The most bytes we will attempt to read from the FIFO in one go
-
-// ICM-20948 data is big-endian. We need to make it little-endian when writing into icm_20948_DMP_data_t
-const int DMP_Quat9_Byte_Ordering[icm_20948_DMP_Quat9_Bytes] =
-{
-	3,2,1,0,7,6,5,4,11,10,9,8,13,12 // Also used for Geomag
-};
-const int DMP_Quat6_Byte_Ordering[icm_20948_DMP_Quat6_Bytes] =
-{
-	3,2,1,0,7,6,5,4,11,10,9,8 // Also used for Gyro_Calibr, Compass_Calibr
-};
-const int DMP_PQuat6_Byte_Ordering[icm_20948_DMP_PQuat6_Bytes] =
-{
-	1,0,3,2,5,4 // Also used for Raw_Accel, Compass
-};
-const int DMP_Raw_Gyro_Byte_Ordering[icm_20948_DMP_Raw_Gyro_Bytes + icm_20948_DMP_Gyro_Bias_Bytes] =
-{
-	1,0,3,2,5,4,7,6,9,8,11,10
-};
-const int DMP_Activity_Recognition_Byte_Ordering[icm_20948_DMP_Activity_Recognition_Bytes] =
-{
-	0,1,5,4,3,2
-};
-const int DMP_Secondary_On_Off_Byte_Ordering[icm_20948_DMP_Secondary_On_Off_Bytes] =
-{
-	1,0
-};
 
 typedef struct
 {
