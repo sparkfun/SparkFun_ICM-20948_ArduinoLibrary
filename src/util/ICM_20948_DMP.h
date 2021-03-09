@@ -390,15 +390,15 @@ enum ANDROID_SENSORS {
 };
 
 // Determines which base sensor needs to be on based upon ANDROID_SENSORS 0-31
-#define INV_NEEDS_ACCEL_MASK   ((1L<<1)|        (1L<<3)|        (1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|         (1L<<17)|(1L<<18)|(1L<<19)|(1L<<20)|(1<<23)|       (1<<25)|        (1<<29)|(1<<30)|(1<<31))
-#define INV_NEEDS_GYRO_MASK		 (                (1L<<3)|(1L<<4)|(1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|(1L<<16)|                                                   (1<<25)|(1<<26)|(1<<29)|(1<<30)|(1<<31))
-#define INV_NEEDS_COMPASS_MASK (        (1L<<2)|(1L<<3)|                         (1L<<11)|(1L<<14)|                                             (1L<<20)|       (1<<24)|(1<<25)|                        (1<<31))
-#define INV_NEEDS_PRESSURE		 ((1L<<6)|(1<<28))
+#define INV_NEEDS_ACCEL_MASK   ((1L<<1)|        (1L<<3)|        (1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|         (1L<<17)|(1L<<18)|(1L<<19)|(1L<<20)|(1L<<23)|         (1L<<25)|         (1L<<29)|(1L<<30)|(1L<<31))
+#define INV_NEEDS_GYRO_MASK		 (                (1L<<3)|(1L<<4)|(1L<<9)|(1L<<10)|(1L<<11)|         (1L<<15)|(1L<<16)|                                                      (1L<<25)|(1L<<26)|(1L<<29)|(1L<<30)|(1L<<31))
+#define INV_NEEDS_COMPASS_MASK (        (1L<<2)|(1L<<3)|                         (1L<<11)|(1L<<14)|                                             (1L<<20)|         (1L<<24)|(1L<<25)|                           (1L<<31))
+#define INV_NEEDS_PRESSURE		 ((1L<<6)|(1L<<28))
 
 // Determines which base sensor needs to be on based upon ANDROID_SENSORS 32-
-#define INV_NEEDS_ACCEL_MASK1	  (       (1<<3)|      (1<<5)|(1<<6)|(1<<7)|(1<<9)|(1<<10)) // I.e. 35, 37, 38, 39, 41, 42
-#define INV_NEEDS_GYRO_MASK1	  (       (1<<3)|(1<<4)                                   |(1<<11)) // I.e. 35, 36, 43
-#define INV_NEEDS_COMPASS_MASK1	((1<<2)|                           (1<<7)) // I.e. 34 and 39
+#define INV_NEEDS_ACCEL_MASK1	  (        (1L<<3)|       (1L<<5)|(1L<<6)|(1L<<7)|(1L<<9)|(1L<<10)) // I.e. 35, 37, 38, 39, 41, 42
+#define INV_NEEDS_GYRO_MASK1	  (        (1L<<3)|(1L<<4)                                        |(1L<<11)) // I.e. 35, 36, 43
+#define INV_NEEDS_COMPASS_MASK1	((1L<<2)|                               (1L<<7)) // I.e. 34 and 39
 
 enum DMP_Data_Ready_Status_Register_Bits
 {
