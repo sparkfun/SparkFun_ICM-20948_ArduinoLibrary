@@ -216,8 +216,6 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 	// Higher Level
 	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
 
-	ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);
-
 	// FIFO
 
 	ICM_20948_Status_e ICM_20948_enable_FIFO(ICM_20948_Device_t *pdev, bool enable);
