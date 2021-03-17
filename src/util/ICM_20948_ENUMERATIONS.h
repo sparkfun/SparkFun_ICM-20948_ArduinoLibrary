@@ -158,7 +158,7 @@ typedef enum{                       // Full scale range options in degrees per s
 	dps2000,
 }ICM_20948_GYRO_CONFIG_1_FS_SEL_e;
 
-typedef enum{                       // Format is dAbwB_nXbwZ - A is integer part of 3db BW, B is fraction. X is integer part of nyquist bandwidth, Y is fraction
+typedef enum{                       // Format is dAbwB_nXbwY - A is integer part of 3db BW, B is fraction. X is integer part of nyquist bandwidth, Y is fraction
 	gyr_d196bw6_n229bw8 = 0x00,
 	gyr_d151bw8_n187bw6,
 	gyr_d119bw5_n154bw3,
