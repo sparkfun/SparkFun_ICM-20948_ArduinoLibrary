@@ -24,28 +24,28 @@
  * Distributed as-is; no warranty is given.
  ***************************************************************/
 
-#include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
+#include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
 //#define USE_SPI       // Uncomment this to use SPI
 
 #define SERIAL_PORT Serial
 
-#define SPI_PORT SPI    // Your desired SPI port.       Used only when "USE_SPI" is defined
-#define CS_PIN 2        // Which pin you connect CS to. Used only when "USE_SPI" is defined
+#define SPI_PORT SPI // Your desired SPI port.       Used only when "USE_SPI" is defined
+#define CS_PIN 2     // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
-#define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL   1     // The value of the last bit of the I2C address.
-                        // On the SparkFun 9DoF IMU breakout the default is 1, and when
-                        // the ADR jumper is closed the value becomes 0
+#define WIRE_PORT Wire // Your desired Wire port.      Used when "USE_SPI" is not defined
+#define AD0_VAL 1      // The value of the last bit of the I2C address.                \
+                       // On the SparkFun 9DoF IMU breakout the default is 1, and when \
+                       // the ADR jumper is closed the value becomes 0
 
 #ifdef USE_SPI
-  ICM_20948_SPI myICM;  // If using SPI create an ICM_20948_SPI object
+ICM_20948_SPI myICM; // If using SPI create an ICM_20948_SPI object
 #else
-  ICM_20948_I2C myICM;  // Otherwise create an ICM_20948_I2C object
+ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 #endif
 
-
-void setup() {
+void setup()
+{
 
   SERIAL_PORT.begin(115200); // Start the serial console
   SERIAL_PORT.println(F("ICM-20948 Example"));
@@ -61,31 +61,35 @@ void setup() {
     ;
 
 #ifdef USE_SPI
-    SPI_PORT.begin();
+  SPI_PORT.begin();
 #else
-    WIRE_PORT.begin();
-    WIRE_PORT.setClock(400000);
+  WIRE_PORT.begin();
+  WIRE_PORT.setClock(400000);
 #endif
 
   //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
   bool initialized = false;
-  while( !initialized ){
+  while (!initialized)
+  {
 
     // Initialize the ICM-20948
     // If the DMP is enabled, .begin performs a minimal startup. We need to configure the sample mode etc. manually.
 #ifdef USE_SPI
-    myICM.begin( CS_PIN, SPI_PORT );
+    myICM.begin(CS_PIN, SPI_PORT);
 #else
-    myICM.begin( WIRE_PORT, AD0_VAL );
+    myICM.begin(WIRE_PORT, AD0_VAL);
 #endif
 
-    SERIAL_PORT.print( F("Initialization of the sensor returned: ") );
-    SERIAL_PORT.println( myICM.statusString() );
-    if( myICM.status != ICM_20948_Stat_Ok ){
-      SERIAL_PORT.println( F("Trying again...") );
+    SERIAL_PORT.print(F("Initialization of the sensor returned: "));
+    SERIAL_PORT.println(myICM.statusString());
+    if (myICM.status != ICM_20948_Stat_Ok)
+    {
+      SERIAL_PORT.println(F("Trying again..."));
       delay(500);
-    }else{
+    }
+    else
+    {
       initialized = true;
     }
   }
@@ -103,12 +107,12 @@ void setup() {
 
   // Enable accel and gyro sensors through PWR_MGMT_2
   // Enable Accelerometer (all axes) and Gyroscope (all axes) by writing zero to PWR_MGMT_2
-  success &= (myICM.setBank(0) == ICM_20948_Stat_Ok); // Select Bank 0
-  uint8_t pwrMgmt2 = 0x40; // Set the reserved bit 6
+  success &= (myICM.setBank(0) == ICM_20948_Stat_Ok);                               // Select Bank 0
+  uint8_t pwrMgmt2 = 0x40;                                                          // Set the reserved bit 6
   success &= (myICM.write(AGB0_REG_PWR_MGMT_2, &pwrMgmt2, 1) == ICM_20948_Stat_Ok); // Write one byte to the PWR_MGMT_2 register
 
   // Configure I2C_Master/Gyro/Accel in Low Power Mode (cycled) with LP_CONFIG
-  success &= (myICM.setSampleMode( (ICM_20948_Internal_Mst | ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled ) == ICM_20948_Stat_Ok);
+  success &= (myICM.setSampleMode((ICM_20948_Internal_Mst | ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled) == ICM_20948_Stat_Ok);
 
   // Disable the FIFO
   success &= (myICM.enableFIFO(false) == ICM_20948_Stat_Ok);
@@ -118,18 +122,18 @@ void setup() {
 
   // Set Gyro FSR (Full scale range) to 2000dps through GYRO_CONFIG_1
   // Set Accel FSR (Full scale range) to 4g through ACCEL_CONFIG
-  ICM_20948_fss_t myFSS;  // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
-  myFSS.a = gpm4;         // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
-                          // gpm2
-                          // gpm4
-                          // gpm8
-                          // gpm16
-  myFSS.g = dps2000;       // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
-                          // dps250
-                          // dps500
-                          // dps1000
-                          // dps2000
-  success &= (myICM.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS ) == ICM_20948_Stat_Ok);
+  ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
+  myFSS.a = gpm4;        // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+                         // gpm2
+                         // gpm4
+                         // gpm8
+                         // gpm16
+  myFSS.g = dps2000;     // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+                         // dps250
+                         // dps500
+                         // dps1000
+                         // dps2000
+  success &= (myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS) == ICM_20948_Stat_Ok);
 
   // Enable interrupt for FIFO overflow from FIFOs through INT_ENABLE_2
   // If we see this interrupt, we'll need to reset the FIFO
@@ -154,8 +158,8 @@ void setup() {
   ICM_20948_smplrt_t mySmplrt;
   mySmplrt.g = 4; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 4 = 220Hz
   mySmplrt.a = 4; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 4 = 225Hz
-  myICM.setSampleRate( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt );
-  
+  myICM.setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt);
+
   // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   success &= (myICM.setDMPstartAddress() == ICM_20948_Stat_Ok); // Defaults to DMP_START_ADDRESS
 
@@ -169,12 +173,12 @@ void setup() {
   success &= (myICM.setBank(0) == ICM_20948_Stat_Ok); // Select Bank 0
   uint8_t fix = 0x48;
   success &= (myICM.write(AGB0_REG_HW_FIX_DISABLE, &fix, 1) == ICM_20948_Stat_Ok);
-  
+
   // Set the Single FIFO Priority Select register to 0xE4
   success &= (myICM.setBank(0) == ICM_20948_Stat_Ok); // Select Bank 0
   uint8_t fifoPrio = 0xE4;
   success &= (myICM.write(AGB0_REG_SINGLE_FIFO_PRIORITY_SEL, &fifoPrio, 1) == ICM_20948_Stat_Ok);
-  
+
   // Configure Accel scaling to DMP
   // The DMP scales accel raw data internally to align 1g as 2^25
   // In order to align internal accel raw data 2^25 = 1g write 0x04000000 when FSR is 4g
@@ -194,7 +198,7 @@ void setup() {
   // The AK09916 produces a 16-bit signed output in the range +/-32752 corresponding to +/-4912uT. 1uT = 6.66 ADU.
   // 2^30 / 6.66666 = 161061273 = 0x9999999
   const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
-  const unsigned char mountMultiplierPlus[4] = {0x09, 0x99, 0x99, 0x99}; // Value taken from InvenSense Nucleo example
+  const unsigned char mountMultiplierPlus[4] = {0x09, 0x99, 0x99, 0x99};  // Value taken from InvenSense Nucleo example
   const unsigned char mountMultiplierMinus[4] = {0xF6, 0x66, 0x66, 0x67}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(CPASS_MTX_00, 4, &mountMultiplierPlus[0]) == ICM_20948_Stat_Ok);
   success &= (myICM.writeDMPmems(CPASS_MTX_01, 4, &mountMultiplierZero[0]) == ICM_20948_Stat_Ok);
@@ -225,7 +229,7 @@ void setup() {
   //            10=102.2727Hz sample rate, ... etc.
   // @param[in] gyro_level 0=250 dps, 1=500 dps, 2=1000 dps, 3=2000 dps
   success &= (myICM.setGyroSF(4, 3) == ICM_20948_Stat_Ok); // 0 = 225Hz (see above), 3 = 2000dps (see above)
-  
+
   // Configure the Gyro full scale
   // 2000dps : 2^28
   // 1000dps : 2^27
@@ -238,17 +242,17 @@ void setup() {
   //const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
   const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // InvenSense Nucleo example uses 225Hz
   success &= (myICM.writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]) == ICM_20948_Stat_Ok);
-  
+
   // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
   //const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
   const unsigned char accelAlphaVar[4] = {0x3D, 0x27, 0xD2, 0x7D}; // 225Hz
   success &= (myICM.writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]) == ICM_20948_Stat_Ok);
-  
+
   // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
   //const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
   const unsigned char accelAVar[4] = {0x02, 0xD8, 0x2D, 0x83}; // 225Hz
   success &= (myICM.writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]) == ICM_20948_Stat_Ok);
-  
+
   // Configure the Accel Cal Rate
   const unsigned char accelCalRate[4] = {0x00, 0x00}; // Value taken from InvenSense Nucleo example
   success &= (myICM.writeDMPmems(ACCEL_CAL_RATE, 2, &accelCalRate[0]) == ICM_20948_Stat_Ok);
@@ -257,7 +261,7 @@ void setup() {
   // in startupMagnetometer. We need to set CPASS_TIME_BUFFER to 100 too.
   const unsigned char compassRate[2] = {0x00, 0x64}; // 100Hz
   success &= (myICM.writeDMPmems(CPASS_TIME_BUFFER, 2, &compassRate[0]) == ICM_20948_Stat_Ok);
-  
+
   // Enable DMP interrupt
   // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
   //success &= (myICM.intEnableDMP(true) == ICM_20948_Stat_Ok);
@@ -310,7 +314,7 @@ void setup() {
   success &= (myICM.resetFIFO() == ICM_20948_Stat_Ok);
 
   // Check success
-  if( success )
+  if (success)
   {
     SERIAL_PORT.println(F("DMP enabled!"));
   }
@@ -335,7 +339,7 @@ void loop()
   icm_20948_DMP_data_t data;
   myICM.readDMPdataFromFIFO(&data);
 
-  if(( myICM.status == ICM_20948_Stat_Ok ) || ( myICM.status == ICM_20948_Stat_FIFOMoreDataAvail )) // Was valid data available?
+  if ((myICM.status == ICM_20948_Stat_Ok) || (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail)) // Was valid data available?
   {
     //SERIAL_PORT.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
     //if ( data.header < 0x1000) SERIAL_PORT.print( "0" ); // Pad the zeros
@@ -343,7 +347,7 @@ void loop()
     //if ( data.header < 0x10) SERIAL_PORT.print( "0" );
     //SERIAL_PORT.println( data.header, HEX );
 
-    if ( (data.header & DMP_header_bitmap_Quat6) > 0 ) // Check for GRV data (Quat6)
+    if ((data.header & DMP_header_bitmap_Quat6) > 0) // Check for GRV data (Quat6)
     {
       // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
@@ -355,7 +359,7 @@ void loop()
       double q1 = ((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
       double q2 = ((double)data.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
       double q3 = ((double)data.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-      
+
       SERIAL_PORT.print(F("Q1:"));
       SERIAL_PORT.print(q1, 3);
       SERIAL_PORT.print(F(" Q2:"));
@@ -364,12 +368,12 @@ void loop()
       SERIAL_PORT.println(q3, 3);
     }
 
-    if ( (data.header & DMP_header_bitmap_Accel) > 0 ) // Check for Accel
+    if ((data.header & DMP_header_bitmap_Accel) > 0) // Check for Accel
     {
       float acc_x = (float)data.Raw_Accel.Data.X; // Extract the raw accelerometer data
-      float acc_y = (float)data.Raw_Accel.Data.Y; 
-      float acc_z = (float)data.Raw_Accel.Data.Z; 
-    
+      float acc_y = (float)data.Raw_Accel.Data.Y;
+      float acc_z = (float)data.Raw_Accel.Data.Z;
+
       SERIAL_PORT.print(F("Accel: X:"));
       SERIAL_PORT.print(acc_x);
       SERIAL_PORT.print(F(" Y:"));
@@ -378,37 +382,36 @@ void loop()
       SERIAL_PORT.println(acc_z);
     }
 
-//    if ( (data.header & DMP_header_bitmap_Gyro) > 0 ) // Check for Gyro
-//    {
-//      float x = (float)data.Raw_Gyro.Data.X; // Extract the raw gyro data
-//      float y = (float)data.Raw_Gyro.Data.Y; 
-//      float z = (float)data.Raw_Gyro.Data.Z; 
-//    
-//      SERIAL_PORT.print(F("Gyro: X:"));
-//      SERIAL_PORT.print(x);
-//      SERIAL_PORT.print(F(" Y:"));
-//      SERIAL_PORT.print(y);
-//      SERIAL_PORT.print(F(" Z:"));
-//      SERIAL_PORT.println(z);
-//    }
-//
-//    if ( (data.header & DMP_header_bitmap_Compass) > 0 ) // Check for Compass
-//    {
-//      float x = (float)data.Compass.Data.X; // Extract the compass data
-//      float y = (float)data.Compass.Data.Y; 
-//      float z = (float)data.Compass.Data.Z; 
-//    
-//      SERIAL_PORT.print(F("Compass: X:"));
-//      SERIAL_PORT.print(x);
-//      SERIAL_PORT.print(F(" Y:"));
-//      SERIAL_PORT.print(y);
-//      SERIAL_PORT.print(F(" Z:"));
-//      SERIAL_PORT.println(z);
-//    }
-
+    //    if ( (data.header & DMP_header_bitmap_Gyro) > 0 ) // Check for Gyro
+    //    {
+    //      float x = (float)data.Raw_Gyro.Data.X; // Extract the raw gyro data
+    //      float y = (float)data.Raw_Gyro.Data.Y;
+    //      float z = (float)data.Raw_Gyro.Data.Z;
+    //
+    //      SERIAL_PORT.print(F("Gyro: X:"));
+    //      SERIAL_PORT.print(x);
+    //      SERIAL_PORT.print(F(" Y:"));
+    //      SERIAL_PORT.print(y);
+    //      SERIAL_PORT.print(F(" Z:"));
+    //      SERIAL_PORT.println(z);
+    //    }
+    //
+    //    if ( (data.header & DMP_header_bitmap_Compass) > 0 ) // Check for Compass
+    //    {
+    //      float x = (float)data.Compass.Data.X; // Extract the compass data
+    //      float y = (float)data.Compass.Data.Y;
+    //      float z = (float)data.Compass.Data.Z;
+    //
+    //      SERIAL_PORT.print(F("Compass: X:"));
+    //      SERIAL_PORT.print(x);
+    //      SERIAL_PORT.print(F(" Y:"));
+    //      SERIAL_PORT.print(y);
+    //      SERIAL_PORT.print(F(" Z:"));
+    //      SERIAL_PORT.println(z);
+    //    }
   }
 
-  if ( myICM.status != ICM_20948_Stat_FIFOMoreDataAvail ) // If more data is available then we should read it right away - and not delay
+  if (myICM.status != ICM_20948_Stat_FIFOMoreDataAvail) // If more data is available then we should read it right away - and not delay
   {
     delay(1); // Keep this short!
   }
