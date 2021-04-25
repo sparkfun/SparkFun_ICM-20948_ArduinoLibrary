@@ -1248,6 +1248,13 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(bool minimal)
       debugPrintln(F(" tries"));
   }
 
+  //Return now if minimal is true. The mag will be configured manually for the DMP
+  if (minimal) // Return now if minimal is true
+  {
+    debugPrintln(F("ICM_20948::startupMagnetometer: minimal startup complete!"));
+    return status;
+  }
+
   //Set up magnetometer
   AK09916_CNTL2_Reg_t reg;
   reg.MODE = AK09916_mode_cont_100hz;
@@ -1259,13 +1266,6 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(bool minimal)
     debugPrintStatus(retval);
     debugPrintln(F(""));
     status = retval;
-    return status;
-  }
-
-  //Return now if minimal is true. The mag will be configured manually for the DMP
-  if (minimal) // Return now if minimal is true
-  {
-    debugPrintln(F("ICM_20948::startupMagnetometer: minimal startup complete!"));
     return status;
   }
 
