@@ -172,6 +172,11 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
     uint32_t _enabled_Android_1;      // Keep track of which Android sensors are enabled: 32-
     uint32_t _enabled_Android_intr_0; // Keep track of which Android sensor interrupts are enabled: 0-31
     uint32_t _enabled_Android_intr_1; // Keep track of which Android sensor interrupts are enabled: 32-
+    uint16_t _dataOutCtl1;            // Diagnostics: record the setting of DATA_OUT_CTL1
+    uint16_t _dataOutCtl2;            // Diagnostics: record the setting of DATA_OUT_CTL2
+    uint16_t _dataRdyStatus;          // Diagnostics: record the setting of DATA_RDY_STATUS
+    uint16_t _motionEventCtl;         // Diagnostics: record the setting of MOTION_EVENT_CTL
+    uint16_t _dataIntrCtl;            // Diagnostics: record the setting of DATA_INTR_CTL
   } ICM_20948_Device_t;               // Definition of device struct type
 
   // ICM_20948_Status_e ICM_20948_Startup( ICM_20948_Device_t* pdev ); // For the time being this performs a standardized startup routine

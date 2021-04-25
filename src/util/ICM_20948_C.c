@@ -1723,6 +1723,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
   unsigned char data_output_control_reg[2];
   data_output_control_reg[0] = (unsigned char)(delta >> 8);
   data_output_control_reg[1] = (unsigned char)(delta & 0xff);
+  pdev->_dataOutCtl1 = delta; // Diagnostics
   result = inv_icm20948_write_mems(pdev, DATA_OUT_CTL1, 2, (const unsigned char *)&data_output_control_reg);
   if (result != ICM_20948_Stat_Ok)
   {
@@ -1732,6 +1733,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
   // Write the 'header2' sensor control bits into memory address DATA_OUT_CTL2
   data_output_control_reg[0] = (unsigned char)(delta2 >> 8);
   data_output_control_reg[1] = (unsigned char)(delta2 & 0xff);
+  pdev->_dataOutCtl2 = delta2; // Diagnostics
   result = inv_icm20948_write_mems(pdev, DATA_OUT_CTL2, 2, (const unsigned char *)&data_output_control_reg);
   if (result != ICM_20948_Stat_Ok)
   {
@@ -1741,6 +1743,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
   // Set the DATA_RDY_STATUS register
   data_output_control_reg[0] = (unsigned char)(data_rdy_status >> 8);
   data_output_control_reg[1] = (unsigned char)(data_rdy_status & 0xff);
+  pdev->_dataRdyStatus = data_rdy_status; // Diagnostics
   result = inv_icm20948_write_mems(pdev, DATA_RDY_STATUS, 2, (const unsigned char *)&data_output_control_reg);
   if (result != ICM_20948_Stat_Ok)
   {
@@ -1764,6 +1767,7 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
   // Set the MOTION_EVENT_CTL register
   data_output_control_reg[0] = (unsigned char)(inv_event_control >> 8);
   data_output_control_reg[1] = (unsigned char)(inv_event_control & 0xff);
+  pdev->_motionEventCtl = inv_event_control; // Diagnostics
   result = inv_icm20948_write_mems(pdev, MOTION_EVENT_CTL, 2, (const unsigned char *)&data_output_control_reg);
   if (result != ICM_20948_Stat_Ok)
   {
@@ -1836,11 +1840,6 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
     }
   }
 
-  unsigned char data_intr_ctl[2];
-
-  data_intr_ctl[0] = (unsigned char)(delta >> 8);
-  data_intr_ctl[1] = (unsigned char)(delta & 0xff);
-
   result = ICM_20948_sleep(pdev, false); // Make sure chip is awake
   if (result != ICM_20948_Stat_Ok)
   {
@@ -1853,6 +1852,12 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
     return result;
   }
 
+  unsigned char data_intr_ctl[2];
+
+  data_intr_ctl[0] = (unsigned char)(delta >> 8);
+  data_intr_ctl[1] = (unsigned char)(delta & 0xff);
+  pdev->_dataIntrCtl = delta; // Diagnostics
+  
   // Write the interrupt control bits into memory address DATA_INTR_CTL
   result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_intr_ctl);
 

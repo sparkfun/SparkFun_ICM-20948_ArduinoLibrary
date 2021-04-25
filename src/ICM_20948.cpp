@@ -1047,6 +1047,12 @@ ICM_20948_Status_e ICM_20948::enableDMPSensor(enum inv_icm20948_sensor sensor, b
     debugPrintf((int)_device._enabled_Android_0);
     debugPrint(F("  _enabled_Android_1: "));
     debugPrintf((int)_device._enabled_Android_1);
+    debugPrint(F("  _dataOutCtl1: "));
+    debugPrintf((int)_device._dataOutCtl1);
+    debugPrint(F("  _dataOutCtl2: "));
+    debugPrintf((int)_device._dataOutCtl2);
+    debugPrint(F("  _dataRdyStatus: "));
+    debugPrintf((int)_device._dataRdyStatus);
     debugPrintln(F(""));
     return status;
   }
@@ -1062,6 +1068,8 @@ ICM_20948_Status_e ICM_20948::enableDMPSensorInt(enum inv_icm20948_sensor sensor
     debugPrintf((int)_device._enabled_Android_intr_0);
     debugPrint(F("  _enabled_Android_intr_1: "));
     debugPrintf((int)_device._enabled_Android_intr_1);
+    debugPrint(F("  _dataIntrCtl: "));
+    debugPrintf((int)_device._dataIntrCtl);
     debugPrintln(F(""));
     return status;
   }
