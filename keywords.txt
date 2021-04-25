@@ -79,6 +79,7 @@ startupMagnetometer	KEYWORD2
 magWhoIAm	KEYWORD2
 readMag	KEYWORD2
 writeMag	KEYWORD2
+resetMag	KEYWORD2
 enableFIFO	KEYWORD2
 resetFIFO	KEYWORD2
 setFIFOmode	KEYWORD2

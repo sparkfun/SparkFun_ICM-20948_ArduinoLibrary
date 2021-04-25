@@ -767,9 +767,9 @@ ICM_20948_Status_e ICM_20948::i2cMasterReset()
   return status;
 }
 
-ICM_20948_Status_e ICM_20948::i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+ICM_20948_Status_e ICM_20948::i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap, uint8_t dataOut)
 {
-  status = ICM_20948_i2c_controller_configure_peripheral(&_device, peripheral, addr, reg, len, Rw, enable, data_only, grp, swap);
+  status = ICM_20948_i2c_controller_configure_peripheral(&_device, peripheral, addr, reg, len, Rw, enable, data_only, grp, swap, dataOut);
   return status;
 }
 
@@ -777,7 +777,7 @@ ICM_20948_Status_e ICM_20948::i2cControllerConfigurePeripheral(uint8_t periphera
 //https://www.oshwa.org/2020/06/29/a-resolution-to-redefine-spi-pin-names/
 ICM_20948_Status_e ICM_20948::i2cMasterConfigureSlave(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
 {
-  return (i2cControllerConfigurePeripheral(peripheral, addr, reg, len, Rw, enable, data_only, grp, swap));
+  return (i2cControllerConfigurePeripheral(peripheral, addr, reg, len, Rw, enable, data_only, grp, swap, 0));
 }
 
 ICM_20948_Status_e ICM_20948::i2cControllerPeriph4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr)
@@ -856,7 +856,7 @@ ICM_20948_Status_e ICM_20948::startupDefault(bool minimal)
     return status;
   }
 
-  retval = startupMagnetometer();
+  retval = startupMagnetometer(minimal); // Pass the minimal startup flag to startupMagnetometer
   if (retval != ICM_20948_Stat_Ok)
   {
     debugPrint(F("ICM_20948::startupDefault: startupMagnetometer returned: "));
@@ -953,6 +953,17 @@ uint8_t ICM_20948::readMag(AK09916_Reg_Addr_e reg)
 ICM_20948_Status_e ICM_20948::writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata)
 {
   status = i2cMasterSingleW(MAG_AK09916_I2C_ADDR, reg, *pdata);
+  return status;
+}
+
+ICM_20948_Status_e ICM_20948::resetMag()
+{
+  uint8_t SRST = 1;
+  // SRST: Soft reset
+  // “0”: Normal
+  // “1”: Reset
+  // When “1” is set, all registers are initialized. After reset, SRST bit turns to “0” automatically.
+  status = i2cMasterSingleW(MAG_AK09916_I2C_ADDR, AK09916_REG_CNTL3, SRST);
   return status;
 }
 
@@ -1185,12 +1196,14 @@ ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t 
   return status;
 }
 
-ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
+ICM_20948_Status_e ICM_20948::startupMagnetometer(bool minimal)
 {
   ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
   i2cMasterPassthrough(false); //Do not connect the SDA/SCL pins to AUX_DA/AUX_CL
   i2cMasterEnable(true);
+
+  resetMag();
 
   //After a ICM reset the Mag sensor may stop responding over the I2C master
   //Reset the Master I2C until it responds
@@ -1230,6 +1243,7 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
   //Set up magnetometer
   AK09916_CNTL2_Reg_t reg;
   reg.MODE = AK09916_mode_cont_100hz;
+  reg.reserved_0 = 0; // Make sure the unused bits are clear. Probably redundant, but prevents confusion when looking at the I2C traffic
   retval = writeMag(AK09916_REG_CNTL2, (uint8_t *)&reg);
   if (retval != ICM_20948_Stat_Ok)
   {
@@ -1237,6 +1251,13 @@ ICM_20948_Status_e ICM_20948::startupMagnetometer(void)
     debugPrintStatus(retval);
     debugPrintln(F(""));
     status = retval;
+    return status;
+  }
+
+  //Return now if minimal is true. The mag will be configured manually for the DMP
+  if (minimal) // Return now if minimal is true
+  {
+    debugPrintln(F("ICM_20948::startupMagnetometer: minimal startup complete!"));
     return status;
   }
 

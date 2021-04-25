@@ -138,7 +138,7 @@ public:
   ICM_20948_Status_e i2cMasterReset();
 
   //Used for configuring peripherals 0-3
-  ICM_20948_Status_e i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false);
+  ICM_20948_Status_e i2cControllerConfigurePeripheral(uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw = true, bool enable = true, bool data_only = false, bool grp = false, bool swap = false, uint8_t dataOut = 0);
   ICM_20948_Status_e i2cControllerPeriph4Transaction(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t len, bool Rw, bool send_reg_addr = true);
 
   //Provided for backward-compatibility only. Please update to i2cControllerConfigurePeripheral and i2cControllerPeriph4Transaction.
@@ -158,10 +158,11 @@ public:
   ICM_20948_Status_e write(uint8_t reg, uint8_t *pdata, uint32_t len);
 
   //Mag specific
-  ICM_20948_Status_e startupMagnetometer(void);
+  ICM_20948_Status_e startupMagnetometer(bool minimal = false); // If minimal is true, several startup steps are skipped. The mag then needs to be set up manually for the DMP.
   ICM_20948_Status_e magWhoIAm(void);
   uint8_t readMag(AK09916_Reg_Addr_e reg);
   ICM_20948_Status_e writeMag(AK09916_Reg_Addr_e reg, uint8_t *pdata);
+  ICM_20948_Status_e resetMag();
 
   //FIFO
   ICM_20948_Status_e enableFIFO(bool enable = true);

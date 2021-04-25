@@ -7,7 +7,9 @@ typedef enum
 {
   AK09916_REG_WIA1 = 0x00,
   AK09916_REG_WIA2,
-  // discontinuity
+  AK09916_REG_RSV1,
+  AK09916_REG_RSV2, // Reserved register. We start reading here when using the DMP. Secret sauce...
+  // discontinuity - containing another nine reserved registers? Secret sauce...
   AK09916_REG_ST1 = 0x10,
   AK09916_REG_HXL,
   AK09916_REG_HXH,

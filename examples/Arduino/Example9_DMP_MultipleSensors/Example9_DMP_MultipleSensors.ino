@@ -67,7 +67,7 @@ void setup()
   WIRE_PORT.setClock(400000);
 #endif
 
-  //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+  myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
   bool initialized = false;
   while (!initialized)
@@ -100,6 +100,41 @@ void setup()
   // sequence from InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
 
   bool success = true; // Use success to show if the configuration was successful
+
+  // Normally, when the DMP is not enabled, startupMagnetometer (called by startupDefault, called by begin) configures the AK09916 magnetometer
+  // to run at 100Hz by setting the CNTL2 register (0x31) to 0x08. Then the ICM20948's I2C_SLV0 is configured to read
+  // nine bytes from the mag every sample, starting from the STATUS1 register (0x10). ST1 includes the DRDY (Data Ready) bit.
+  // Next are the six magnetometer readings (little endian). After a dummy byte, the STATUS2 register (0x18) contains the HOFL (Overflow) bit.
+  //
+  // But looking very closely at the InvenSense example code, we can see in inv_icm20948_resume_akm (in Icm20948AuxCompassAkm.c) that
+  // when the DMP is running, the magnetometer is set to Single Measurement (SM) mode and that ten bytes are read, starting from the reserved
+  // RSV2 register (0x03). The datasheet does not define what registers 0x04 to 0x0C contain. There is definately some secret sauce in here...
+  // The magnetometer data appears to be big endian (not little endian like the HX/Y/Z registers) and starts at register 0x04.
+  // We had to examine the I2C traffic between the master and the AK09916 on the AUX_DA and AUX_CL pins to discover this...
+  //
+  // So, we need to set up I2C_SLV0 to do the ten byte reading. The parameters passed to i2cControllerConfigurePeripheral are:
+  // 0: use I2C_SLV0
+  // MAG_AK09916_I2C_ADDR: the I2C address of the AK09916 magnetometer (0x0C unshifted)
+  // AK09916_REG_RSV2: we start reading here (0x03). Secret sauce...
+  // 10: we read 10 bytes each cycle
+  // true: set the I2C_SLV0_RNW ReadNotWrite bit so we read the 10 bytes (not write them)
+  // true: set the I2C_SLV0_CTRL I2C_SLV0_EN bit to enable reading from the peripheral at the sample rate
+  // false: clear the I2C_SLV0_CTRL I2C_SLV0_REG_DIS (we want to write the register value)
+  // true: set the I2C_SLV0_CTRL I2C_SLV0_GRP bit to show the register pairing starts at byte 1+2 (copied from inv_icm20948_resume_akm)
+  // true: set the I2C_SLV0_CTRL I2C_SLV0_BYTE_SW to byte-swap the data from the mag (copied from inv_icm20948_resume_akm)
+  success &= (myICM.i2cControllerConfigurePeripheral(0, MAG_AK09916_I2C_ADDR, AK09916_REG_RSV2, 10, true, true, false, true, true) == ICM_20948_Stat_Ok);
+  //
+  // We should also set up I2C_SLV1 to do the Single Measurement triggering:
+  // AK09916_REG_CNTL2: we start writing here (0x31)
+  // 1: not sure why, but the write does not happen if this is set to zero
+  // false: clear the I2C_SLV0_RNW ReadNotWrite bit so we write the dataOut byte
+  // true: set the I2C_SLV0_CTRL I2C_SLV0_EN bit. Not sure why, but the write does not happen if this is clear
+  // false: clear the I2C_SLV0_CTRL I2C_SLV0_REG_DIS (we want to write the register value)
+  // false: clear the I2C_SLV0_CTRL I2C_SLV0_GRP bit
+  // false: clear the I2C_SLV0_CTRL I2C_SLV0_BYTE_SW bit
+  // AK09916_mode_single: tell I2C_SLV1 to write the Single Measurement command each sample
+  // except doing that causes the magnetometer to stall and give out stale data. So, for now, the next line needs to stay commented!
+  //success &= (myICM.i2cControllerConfigurePeripheral(1, MAG_AK09916_I2C_ADDR, AK09916_REG_CNTL2, 1, false, true, false, false, false, AK09916_mode_single) == ICM_20948_Stat_Ok);
 
   // Configure clock source through PWR_MGMT_1
   // ICM_20948_Clock_Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
@@ -258,8 +293,9 @@ void setup()
   success &= (myICM.writeDMPmems(ACCEL_CAL_RATE, 2, &accelCalRate[0]) == ICM_20948_Stat_Ok);
 
   // Configure the Compass Time Buffer. The compass (magnetometer) is set to 100Hz (AK09916_mode_cont_100hz)
-  // in startupMagnetometer. We need to set CPASS_TIME_BUFFER to 100 too.
+  // in startupMagnetometer. I think we need to set CPASS_TIME_BUFFER to 100 too.
   const unsigned char compassRate[2] = {0x00, 0x64}; // 100Hz
+  //const unsigned char compassRate[2] = {0x04, 0x65}; // 1125Hz - same as the accelerometer sample rate
   success &= (myICM.writeDMPmems(CPASS_TIME_BUFFER, 2, &compassRate[0]) == ICM_20948_Stat_Ok);
 
   // Enable DMP interrupt

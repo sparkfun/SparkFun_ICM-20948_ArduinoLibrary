@@ -26,7 +26,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 
 // Define if the DMP will be supported
 // Note: you must have 14301 Bytes of program memory available to store the DMP firmware!
-//#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
+#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
@@ -215,7 +215,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
   ICM_20948_Status_e ICM_20948_i2c_master_passthrough(ICM_20948_Device_t *pdev, bool passthrough);
   ICM_20948_Status_e ICM_20948_i2c_master_enable(ICM_20948_Device_t *pdev, bool enable);
   ICM_20948_Status_e ICM_20948_i2c_master_reset(ICM_20948_Device_t *pdev);
-  ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap);
+  ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap, uint8_t dataOut);
 
   // Higher Level
   ICM_20948_Status_e ICM_20948_get_agmt(ICM_20948_Device_t *pdev, ICM_20948_AGMT_t *p);

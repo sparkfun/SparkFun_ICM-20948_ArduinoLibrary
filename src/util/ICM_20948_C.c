@@ -452,18 +452,22 @@ ICM_20948_Status_e ICM_20948_int_enable(ICM_20948_Device_t *pdev, ICM_20948_INT_
     en_0.DMP_INT1_EN = write->DMP_INT1_EN;
     en_0.PLL_READY_EN = write->PLL_RDY_EN;
     en_0.WOM_INT_EN = write->WOM_INT_EN;
+    en_0.reserved_0 = 0; // Clear RAM garbage
     en_0.REG_WOF_EN = write->REG_WOF_EN;
     en_1.RAW_DATA_0_RDY_EN = write->RAW_DATA_0_RDY_EN;
+    en_1.reserved_0 = 0; // Clear RAM garbage
     en_2.individual.FIFO_OVERFLOW_EN_4 = write->FIFO_OVERFLOW_EN_4;
     en_2.individual.FIFO_OVERFLOW_EN_3 = write->FIFO_OVERFLOW_EN_3;
     en_2.individual.FIFO_OVERFLOW_EN_2 = write->FIFO_OVERFLOW_EN_2;
     en_2.individual.FIFO_OVERFLOW_EN_1 = write->FIFO_OVERFLOW_EN_1;
     en_2.individual.FIFO_OVERFLOW_EN_0 = write->FIFO_OVERFLOW_EN_0;
+    en_2.individual.reserved_0 = 0; // Clear RAM garbage
     en_3.individual.FIFO_WM_EN_4 = write->FIFO_WM_EN_4;
     en_3.individual.FIFO_WM_EN_3 = write->FIFO_WM_EN_3;
     en_3.individual.FIFO_WM_EN_2 = write->FIFO_WM_EN_2;
     en_3.individual.FIFO_WM_EN_1 = write->FIFO_WM_EN_1;
     en_3.individual.FIFO_WM_EN_0 = write->FIFO_WM_EN_0;
+    en_3.individual.reserved_0 = 0; // Clear RAM garbage
 
     retval = ICM_20948_execute_w(pdev, AGB0_REG_INT_ENABLE, (uint8_t *)&en_0, sizeof(ICM_20948_INT_ENABLE_t));
     if (retval != ICM_20948_Stat_Ok)
@@ -841,13 +845,14 @@ ICM_20948_Status_e ICM_20948_i2c_master_reset(ICM_20948_Device_t *pdev)
   return retval;
 }
 
-ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap)
+ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Device_t *pdev, uint8_t peripheral, uint8_t addr, uint8_t reg, uint8_t len, bool Rw, bool enable, bool data_only, bool grp, bool swap, uint8_t dataOut)
 {
   ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
   uint8_t periph_addr_reg;
   uint8_t periph_reg_reg;
   uint8_t periph_ctrl_reg;
+  uint8_t periph_do_reg;
 
   switch (peripheral)
   {
@@ -855,21 +860,25 @@ ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Devic
     periph_addr_reg = AGB3_REG_I2C_PERIPH0_ADDR;
     periph_reg_reg = AGB3_REG_I2C_PERIPH0_REG;
     periph_ctrl_reg = AGB3_REG_I2C_PERIPH0_CTRL;
+    periph_do_reg = AGB3_REG_I2C_PERIPH0_DO;
     break;
   case 1:
     periph_addr_reg = AGB3_REG_I2C_PERIPH1_ADDR;
     periph_reg_reg = AGB3_REG_I2C_PERIPH1_REG;
     periph_ctrl_reg = AGB3_REG_I2C_PERIPH1_CTRL;
+    periph_do_reg = AGB3_REG_I2C_PERIPH1_DO;
     break;
   case 2:
     periph_addr_reg = AGB3_REG_I2C_PERIPH2_ADDR;
     periph_reg_reg = AGB3_REG_I2C_PERIPH2_REG;
     periph_ctrl_reg = AGB3_REG_I2C_PERIPH2_CTRL;
+    periph_do_reg = AGB3_REG_I2C_PERIPH2_DO;
     break;
   case 3:
     periph_addr_reg = AGB3_REG_I2C_PERIPH3_ADDR;
     periph_reg_reg = AGB3_REG_I2C_PERIPH3_REG;
     periph_ctrl_reg = AGB3_REG_I2C_PERIPH3_CTRL;
+    periph_do_reg = AGB3_REG_I2C_PERIPH3_DO;
     break;
   default:
     return ICM_20948_Stat_ParamErr;
@@ -888,13 +897,29 @@ ICM_20948_Status_e ICM_20948_i2c_controller_configure_peripheral(ICM_20948_Devic
   {
     address.RNW = 1;
   }
+  else
+  {
+    address.RNW = 0; // Make sure bit is clear (just in case there is any garbage in that RAM location)
+  }
   retval = ICM_20948_execute_w(pdev, periph_addr_reg, (uint8_t *)&address, sizeof(ICM_20948_I2C_PERIPHX_ADDR_t));
   if (retval != ICM_20948_Stat_Ok)
   {
     return retval;
   }
 
-  // Set the peripheral sub-address (reg)
+  // If we are setting up a write, configure the Data Out register too
+  if (!Rw)
+  {
+    ICM_20948_I2C_PERIPHX_DO_t dataOutByte;
+    dataOutByte.DO = dataOut;
+    retval = ICM_20948_execute_w(pdev, periph_do_reg, (uint8_t *)&dataOutByte, sizeof(ICM_20948_I2C_PERIPHX_DO_t));
+    if (retval != ICM_20948_Stat_Ok)
+    {
+      return retval;
+    }
+  }
+
+  // Set the peripheral sub-address (register address)
   ICM_20948_I2C_PERIPHX_REG_t subaddress;
   subaddress.REG = reg;
   retval = ICM_20948_execute_w(pdev, periph_reg_reg, (uint8_t *)&subaddress, sizeof(ICM_20948_I2C_PERIPHX_REG_t));
