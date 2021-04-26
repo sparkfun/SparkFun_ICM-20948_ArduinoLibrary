@@ -18,9 +18,6 @@ extern "C"
 #define DMP_MEM_BANK_SIZE 256
 #define DMP_LOAD_START 0x90
 
-//#define DMP_CODE_SIZE 14301 /* eMD-SmartMotion-ICM20948-1.1.0-MP */
-#define DMP_CODE_SIZE 14290 /* ICM20948_eMD_nucleo_1.0 */
-
 #define CFG_FIFO_SIZE (4222)
 
 // AGB0_REG_DMP_INT_STATUS bit definitions

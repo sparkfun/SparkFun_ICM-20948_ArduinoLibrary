@@ -188,6 +188,8 @@ public:
   //  Configuring Compass calibration
   //  Configuring Gyro gain
   //  Configuring Accel gain
+  //  Configure I2C_SLV0 and I2C_SLV1 to: request mag data from the hidden reserved AK09916 registers; trigger Single Measurements
+  //  Configure I2C Master ODR (default to 68.75Hz)
 
   // To Do:
   //  Additional FIFO output control: FIFO_WATERMARK, BM_BATCH_MASK, BM_BATCH_CNTR, BM_BATCH_THLD
@@ -197,7 +199,7 @@ public:
   //  Enabling Tilt Detector feature
   //  Enabling Pick Up Gesture feature
   //  Enabling Fsync detection feature
-  //  Biases?
+  //  Biases: add save and load methods
 
   ICM_20948_Status_e enableDMP(bool enable = true);
   ICM_20948_Status_e resetDMP(void);
@@ -210,6 +212,7 @@ public:
   ICM_20948_Status_e setDMPODRrate(enum DMP_ODR_Registers odr_reg, int interval);
   ICM_20948_Status_e readDMPdataFromFIFO(icm_20948_DMP_data_t *data);
   ICM_20948_Status_e setGyroSF(unsigned char div, int gyro_level);
+  ICM_20948_Status_e initializeDMP(void) __attribute__((weak)); // Combine all of the DMP start-up code in one place. Can be overwritten if required
 };
 
 // I2C

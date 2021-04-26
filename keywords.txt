@@ -96,6 +96,7 @@ readDMPmems	KEYWORD2
 setDMPODRrate	KEYWORD2
 readDMPdataFromFIFO	KEYWORD2
 setGyroSF	KEYWORD2
+initializeDMP	KEYWORD2
 begin	KEYWORD2
 
 #######################################

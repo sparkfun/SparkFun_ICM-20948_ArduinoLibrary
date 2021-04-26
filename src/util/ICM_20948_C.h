@@ -26,7 +26,12 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
 
 // Define if the DMP will be supported
 // Note: you must have 14290/14301 Bytes of program memory available to store the DMP firmware!
-#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support.
+//#define ICM_20948_USE_DMP // Uncomment this line to enable DMP support. You can of course use ICM_20948_USE_DMP as a compiler flag too
+
+// There are two versions of the InvenSense DMP firmware for the ICM20948 - with slightly different sizes
+#define DMP_CODE_SIZE 14301 /* eMD-SmartMotion-ICM20948-1.1.0-MP */
+//#define DMP_CODE_SIZE 14290 /* ICM20948_eMD_nucleo_1.0 */
+
 
 #define ICM_20948_I2C_ADDR_AD0 0x68 // Or 0x69 when AD0 is high
 #define ICM_20948_I2C_ADDR_AD1 0x69 //
