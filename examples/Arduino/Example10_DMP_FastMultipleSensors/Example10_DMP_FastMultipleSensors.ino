@@ -188,7 +188,7 @@ void loop()
       // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
       // The quaternion data is scaled by 2^30.
 
-      //SERIAL_PORT.printf("Quat6 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat6.Data.Q3);
+      //SERIAL_PORT.printf("Quat6 data is: Q1:%ld Q2:%ld Q3:%ld\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat6.Data.Q3);
 
       // Scale to +/- 1
       double q1 = ((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
