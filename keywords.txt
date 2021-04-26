@@ -79,6 +79,7 @@ startupMagnetometer	KEYWORD2
 magWhoIAm	KEYWORD2
 readMag	KEYWORD2
 writeMag	KEYWORD2
+resetMag	KEYWORD2
 enableFIFO	KEYWORD2
 resetFIFO	KEYWORD2
 setFIFOmode	KEYWORD2
@@ -95,6 +96,7 @@ readDMPmems	KEYWORD2
 setDMPODRrate	KEYWORD2
 readDMPdataFromFIFO	KEYWORD2
 setGyroSF	KEYWORD2
+initializeDMP	KEYWORD2
 begin	KEYWORD2
 
 #######################################
