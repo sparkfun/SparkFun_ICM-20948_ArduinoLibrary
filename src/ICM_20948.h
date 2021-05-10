@@ -21,7 +21,7 @@ class ICM_20948
 {
 private:
     Stream *_debugSerial;			//The stream to send debug messages to if enabled
-    boolean _printDebug = false;		//Flag to print the serial commands we are sending to the Serial port for debug
+    bool _printDebug = false;			//Flag to print the serial commands we are sending to the Serial port for debug
 
     const uint8_t MAX_MAGNETOMETER_STARTS = 10; // This replaces maxTries
 
