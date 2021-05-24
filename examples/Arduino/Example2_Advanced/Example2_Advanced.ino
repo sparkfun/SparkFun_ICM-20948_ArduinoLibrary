@@ -169,22 +169,6 @@ void setup()
   SERIAL_PORT.println(F("Configuration complete!"));
 }
 
-void loop()
-{
-
-  if (myICM.dataReady())
-  {
-    myICM.getAGMT();              // The values are only updated when you call 'getAGMT'
-    //printRawAGMT( myICM.agmt ); // Uncomment this to see the raw values, taken directly from the agmt structure
-    printScaledAGMT(&myICM);      // This function takes into account the scale settings from when the measurement was made to calculate the values with units
-    delay(30);
-  }
-  else
-  {
-    SERIAL_PORT.println("Waiting for data");
-    delay(500);
-  }
-}
 
 // Below here are some helper functions to print the data nicely!
 
@@ -329,4 +313,22 @@ void printScaledAGMT(ICM_20948_I2C *sensor)
   printFormattedFloat(sensor->temp(), 5, 2);
   SERIAL_PORT.print(" ]");
   SERIAL_PORT.println();
+}
+
+  
+void loop()
+{
+
+  if (myICM.dataReady())
+  {
+    myICM.getAGMT();              // The values are only updated when you call 'getAGMT'
+    //printRawAGMT( myICM.agmt ); // Uncomment this to see the raw values, taken directly from the agmt structure
+    printScaledAGMT(&myICM);      // This function takes into account the scale settings from when the measurement was made to calculate the values with units
+    delay(30);
+  }
+  else
+  {
+    SERIAL_PORT.println("Waiting for data");
+    delay(500);
+  }
 }
