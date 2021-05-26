@@ -1297,10 +1297,9 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
   }
 
   //Enable LP_EN since we disabled it at begining of this function.
-
-  // result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-  // if (result != ICM_20948_Stat_Ok)
-  // 		return result;
+  result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+  if (result != ICM_20948_Stat_Ok)
+    return result;
 
   if (!flag)
   {
@@ -1602,9 +1601,9 @@ ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, 
     break;
   }
 
-  // result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-  // if (result != ICM_20948_Stat_Ok)
-  // 		return result;
+  result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+  if (result != ICM_20948_Stat_Ok)
+    return result;
 
   if (result2 > result)
     result = result2; // Return the highest error
@@ -1774,9 +1773,9 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
     return result;
   }
 
-  // result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-  // if (result != ICM_20948_Stat_Ok)
-  // 		return result;
+  result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+  if (result != ICM_20948_Stat_Ok)
+    return result;
 
   return result;
 }
@@ -1861,9 +1860,9 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, 
   // Write the interrupt control bits into memory address DATA_INTR_CTL
   result = inv_icm20948_write_mems(pdev, DATA_INTR_CTL, 2, (const unsigned char *)&data_intr_ctl);
 
-  // result = ICM_20948_low_power(pdev, true); // Put chip into low power state
-  // if (result != ICM_20948_Stat_Ok)
-  // 		return result;
+  result = ICM_20948_low_power(pdev, true); // Put chip into low power state
+  if (result != ICM_20948_Stat_Ok)
+    return result;
 
   return result;
 }
