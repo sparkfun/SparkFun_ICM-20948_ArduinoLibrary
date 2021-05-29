@@ -7,7 +7,15 @@
  * Provide such images by mean of a byte array
 */
 #if defined(ICM_20948_USE_DMP) // Only include the 14301 Bytes of DMP if ICM_20948_USE_DMP is defined
+
+#if defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
+#define ICM_20948_USE_PROGMEM_FOR_DMP
+#include <avr/pgmspace.h>
+const uint8_t dmp3_image[] PROGMEM = {
+#else
 const uint8_t dmp3_image[] = {
+#endif
+
 #include "icm20948_img.dmp3a.h"
 };
 #endif
@@ -1249,6 +1257,9 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
   data = data_start;
   size = size_start;
   memaddr = load_addr;
+  #ifdef ICM_20948_USE_PROGMEM_FOR_DMP
+  unsigned char data_not_pg[INV_MAX_SERIAL_READ]; // Suggested by @HyperKokichi in Issue #63
+  #endif
   while (size > 0)
   {
     //write_size = min(size, INV_MAX_SERIAL_WRITE); // Write in chunks of INV_MAX_SERIAL_WRITE
@@ -1261,7 +1272,12 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
       // Moved across a bank
       write_size = (memaddr & 0xff) + write_size - 0x100;
     }
+#ifdef ICM_20948_USE_PROGMEM_FOR_DMP
+    memcpy_P(data_not_pg, data, write_size);  // Suggested by @HyperKokichi in Issue #63
+    result = inv_icm20948_write_mems(pdev, memaddr, write_size, (unsigned char *)data_not_pg);
+#else
     result = inv_icm20948_write_mems(pdev, memaddr, write_size, (unsigned char *)data);
+#endif
     if (result != ICM_20948_Stat_Ok)
       return result;
     data += write_size;
@@ -1289,7 +1305,12 @@ ICM_20948_Status_e inv_icm20948_firmware_load(ICM_20948_Device_t *pdev, const un
     result = inv_icm20948_read_mems(pdev, memaddr, write_size, data_cmp);
     if (result != ICM_20948_Stat_Ok)
       flag++;                               // Error, DMP not written correctly
+#ifdef ICM_20948_USE_PROGMEM_FOR_DMP
+    memcpy_P(data_not_pg, data, write_size);  // Suggested by @HyperKokichi in Issue #63
+    if (memcmp(data_cmp, data_not_pg, write_size))
+#else
     if (memcmp(data_cmp, data, write_size)) // Compare the data
+#endif
       return ICM_20948_Stat_DMPVerifyFail;
     data += write_size;
     size -= write_size;
