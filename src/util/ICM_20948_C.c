@@ -120,6 +120,16 @@ const ICM_20948_Serif_t NullSerif = {
 // Private function prototypes
 
 // Function definitions
+ICM_20948_Status_e ICM_20948_init_struct(ICM_20948_Device_t *pdev)
+{
+  // Initialize all elements by 0 except for _last_bank
+  // Initialize _last_bank to 4 (invalid bank number)
+  // so ICM_20948_set_bank function does not skip issuing bank change operation
+  static const ICM_20948_Device_t init_device = { ._last_bank = 4 };
+  *pdev = init_device;
+  return ICM_20948_Stat_Ok;
+}
+
 ICM_20948_Status_e ICM_20948_link_serif(ICM_20948_Device_t *pdev, const ICM_20948_Serif_t *s)
 {
   if (s == NULL)

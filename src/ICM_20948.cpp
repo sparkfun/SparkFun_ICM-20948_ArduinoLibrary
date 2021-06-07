@@ -12,6 +12,7 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, 
 // Base
 ICM_20948::ICM_20948()
 {
+  status = ICM_20948_init_struct(&_device);
 }
 
 void ICM_20948::enableDebugging(Stream &debugPort)
