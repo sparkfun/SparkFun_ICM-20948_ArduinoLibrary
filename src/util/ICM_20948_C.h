@@ -184,6 +184,8 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
     uint16_t _dataIntrCtl;            // Diagnostics: record the setting of DATA_INTR_CTL
   } ICM_20948_Device_t;               // Definition of device struct type
 
+  ICM_20948_Status_e ICM_20948_init_struct(ICM_20948_Device_t *pdev); // Initialize ICM_20948_Device_t
+
   // ICM_20948_Status_e ICM_20948_Startup( ICM_20948_Device_t* pdev ); // For the time being this performs a standardized startup routine
 
   ICM_20948_Status_e ICM_20948_link_serif(ICM_20948_Device_t *pdev, const ICM_20948_Serif_t *s); // Links a SERIF structure to the device

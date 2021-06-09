@@ -72,6 +72,9 @@ void setup()
   WIRE_PORT.setClock(400000);
 #endif
 
+  // Initialize myICM
+  ICM_20948_init_struct(&myICM);
+
   // Link the serif
   ICM_20948_link_serif(&myICM, &mySerif);
 
