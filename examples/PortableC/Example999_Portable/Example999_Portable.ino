@@ -72,6 +72,9 @@ void setup()
   WIRE_PORT.setClock(400000);
 #endif
 
+  // Initialize myICM
+  ICM_20948_init_struct(&myICM);
+
   // Link the serif
   ICM_20948_link_serif(&myICM, &mySerif);
 
@@ -202,7 +205,6 @@ ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t *buff, uint32_t len, void *u
       buff[i] = WIRE_PORT.read();
     }
   }
-  WIRE_PORT.endTransmission();
 
   return ICM_20948_Stat_Ok;
 }

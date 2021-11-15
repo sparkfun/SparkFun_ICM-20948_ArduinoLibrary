@@ -8,7 +8,9 @@
 */
 #if defined(ICM_20948_USE_DMP) // Only include the 14301 Bytes of DMP if ICM_20948_USE_DMP is defined
 
-#if defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
+#if defined(ARDUINO_ARCH_MBED) // ARDUINO_ARCH_MBED (APOLLO3 v2) does not support or require pgmspace.h / PROGMEM
+const uint8_t dmp3_image[] = {
+#elif (defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__)) && !defined(__linux__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
 #define ICM_20948_USE_PROGMEM_FOR_DMP
 #include <avr/pgmspace.h>
 const uint8_t dmp3_image[] PROGMEM = {
@@ -120,6 +122,16 @@ const ICM_20948_Serif_t NullSerif = {
 // Private function prototypes
 
 // Function definitions
+ICM_20948_Status_e ICM_20948_init_struct(ICM_20948_Device_t *pdev)
+{
+  // Initialize all elements by 0 except for _last_bank
+  // Initialize _last_bank to 4 (invalid bank number)
+  // so ICM_20948_set_bank function does not skip issuing bank change operation
+  static const ICM_20948_Device_t init_device = { ._last_bank = 4 };
+  *pdev = init_device;
+  return ICM_20948_Stat_Ok;
+}
+
 ICM_20948_Status_e ICM_20948_link_serif(ICM_20948_Device_t *pdev, const ICM_20948_Serif_t *s)
 {
   if (s == NULL)
