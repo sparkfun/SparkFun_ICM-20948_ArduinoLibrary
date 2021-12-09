@@ -274,7 +274,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
   ICM_20948_Status_e inv_icm20948_set_dmp_sensor_period(ICM_20948_Device_t *pdev, enum DMP_ODR_Registers odr_reg, uint16_t interval);
   ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state);     // State is actually boolean
   ICM_20948_Status_e inv_icm20948_enable_dmp_sensor_int(ICM_20948_Device_t *pdev, enum inv_icm20948_sensor sensor, int state); // State is actually boolean
-  static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);
+  uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor);
   enum inv_icm20948_sensor inv_icm20948_sensor_android_2_sensor_type(int sensor);
 
   ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);

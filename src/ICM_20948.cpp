@@ -1705,16 +1705,7 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len, 
   _i2c->write(reg);
   _i2c->endTransmission(false); // Send repeated start
 
-  uint32_t offset = 0;
   uint32_t num_received = _i2c->requestFrom(addr, len);
-  // while(_i2c->available()){
-  //     if(len > 0){
-  //         *(buff + offset) = _i2c->read();
-  //         len--;
-  //     }else{
-  //         break;
-  //     }
-  // }
 
   if (num_received == len)
   {

@@ -2436,7 +2436,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
   return result;
 }
 
-static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
+uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
 {
   switch (sensor)
   {
