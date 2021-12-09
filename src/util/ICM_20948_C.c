@@ -627,6 +627,26 @@ ICM_20948_Status_e ICM_20948_set_sample_mode(ICM_20948_Device_t *pdev, ICM_20948
   {
     return retval;
   }
+
+  // Check the data was written correctly
+  retval = ICM_20948_execute_r(pdev, AGB0_REG_LP_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_LP_CONFIG_t));
+  if (retval != ICM_20948_Stat_Ok)
+  {
+    return retval;
+  }
+  if (sensors & ICM_20948_Internal_Acc)
+  {
+    if (reg.ACCEL_CYCLE != mode) retval = ICM_20948_Stat_Err;
+  }
+  if (sensors & ICM_20948_Internal_Gyr)
+  {
+    if (reg.GYRO_CYCLE != mode) retval = ICM_20948_Stat_Err;
+  }
+  if (sensors & ICM_20948_Internal_Mst)
+  {
+    if (reg.I2C_MST_CYCLE != mode) retval = ICM_20948_Stat_Err;
+  }
+
   return retval;
 }
 
@@ -646,6 +666,9 @@ ICM_20948_Status_e ICM_20948_set_full_scale(ICM_20948_Device_t *pdev, ICM_20948_
     retval |= ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
     reg.ACCEL_FS_SEL = fss.a;
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    if (reg.ACCEL_FS_SEL != fss.a) retval |= ICM_20948_Stat_Err;
   }
   if (sensors & ICM_20948_Internal_Gyr)
   {
@@ -654,6 +677,9 @@ ICM_20948_Status_e ICM_20948_set_full_scale(ICM_20948_Device_t *pdev, ICM_20948_
     retval |= ICM_20948_execute_r(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
     reg.GYRO_FS_SEL = fss.g;
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    if (reg.GYRO_FS_SEL != fss.g) retval |= ICM_20948_Stat_Err;
   }
   return retval;
 }
@@ -674,6 +700,9 @@ ICM_20948_Status_e ICM_20948_set_dlpf_cfg(ICM_20948_Device_t *pdev, ICM_20948_In
     retval |= ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
     reg.ACCEL_DLPFCFG = cfg.a;
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    if (reg.ACCEL_DLPFCFG != cfg.a) retval |= ICM_20948_Stat_Err;
   }
   if (sensors & ICM_20948_Internal_Gyr)
   {
@@ -682,6 +711,9 @@ ICM_20948_Status_e ICM_20948_set_dlpf_cfg(ICM_20948_Device_t *pdev, ICM_20948_In
     retval |= ICM_20948_execute_r(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
     reg.GYRO_DLPFCFG = cfg.g;
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    if (reg.GYRO_DLPFCFG != cfg.g) retval |= ICM_20948_Stat_Err;
   }
   return retval;
 }
@@ -709,6 +741,16 @@ ICM_20948_Status_e ICM_20948_enable_dlpf(ICM_20948_Device_t *pdev, ICM_20948_Int
       reg.ACCEL_FCHOICE = 0;
     }
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_CONFIG, (uint8_t *)&reg, sizeof(ICM_20948_ACCEL_CONFIG_t));
+    if (enable)
+    {
+      if (reg.ACCEL_FCHOICE != 1) retval |= ICM_20948_Stat_Err;
+    }
+    else
+    {
+      if (reg.ACCEL_FCHOICE != 0) retval |= ICM_20948_Stat_Err;
+    }
   }
   if (sensors & ICM_20948_Internal_Gyr)
   {
@@ -724,6 +766,16 @@ ICM_20948_Status_e ICM_20948_enable_dlpf(ICM_20948_Device_t *pdev, ICM_20948_Int
       reg.GYRO_FCHOICE = 0;
     }
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    // Check the data was written correctly
+    retval |= ICM_20948_execute_r(pdev, AGB2_REG_GYRO_CONFIG_1, (uint8_t *)&reg, sizeof(ICM_20948_GYRO_CONFIG_1_t));
+    if (enable)
+    {
+      if (reg.GYRO_FCHOICE != 1) retval |= ICM_20948_Stat_Err;
+    }
+    else
+    {
+      if (reg.GYRO_FCHOICE != 0) retval |= ICM_20948_Stat_Err;
+    }
   }
   return retval;
 }
@@ -2384,7 +2436,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
   return result;
 }
 
-static uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
+uint8_t sensor_type_2_android_sensor(enum inv_icm20948_sensor sensor)
 {
   switch (sensor)
   {

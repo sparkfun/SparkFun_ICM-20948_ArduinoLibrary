@@ -395,6 +395,7 @@ bool ICM_20948::isConnected(void)
 ICM_20948_Status_e ICM_20948::setSampleMode(uint8_t sensor_id_bm, uint8_t lp_config_cycle_mode)
 {
   status = ICM_20948_set_sample_mode(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, (ICM_20948_LP_CONFIG_CYCLE_e)lp_config_cycle_mode);
+  delay(1); // Give the ICM20948 time to change the sample mode (see issue #8)
   return status;
 }
 
@@ -1704,16 +1705,7 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len, 
   _i2c->write(reg);
   _i2c->endTransmission(false); // Send repeated start
 
-  uint32_t offset = 0;
   uint32_t num_received = _i2c->requestFrom(addr, len);
-  // while(_i2c->available()){
-  //     if(len > 0){
-  //         *(buff + offset) = _i2c->read();
-  //         len--;
-  //     }else{
-  //         break;
-  //     }
-  // }
 
   if (num_received == len)
   {
