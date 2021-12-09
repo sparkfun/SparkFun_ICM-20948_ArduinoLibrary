@@ -98,8 +98,6 @@ void setup()
     SERIAL_PORT.println(myICM.statusString());
   }
   
-  delay(1); // Give the ICM20948 time to change the sample mode (see issue #8)
-
   // Set full scale ranges for both acc and gyr
   ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
 

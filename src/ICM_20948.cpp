@@ -395,6 +395,7 @@ bool ICM_20948::isConnected(void)
 ICM_20948_Status_e ICM_20948::setSampleMode(uint8_t sensor_id_bm, uint8_t lp_config_cycle_mode)
 {
   status = ICM_20948_set_sample_mode(&_device, (ICM_20948_InternalSensorID_bm)sensor_id_bm, (ICM_20948_LP_CONFIG_CYCLE_e)lp_config_cycle_mode);
+  delay(1); // Give the ICM20948 time to change the sample mode (see issue #8)
   return status;
 }
 
