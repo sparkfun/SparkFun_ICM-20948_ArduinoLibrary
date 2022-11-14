@@ -107,6 +107,15 @@ setBiasAccelZ	KEYWORD2
 setBiasCPassX	KEYWORD2
 setBiasCPassY	KEYWORD2
 setBiasCPassZ	KEYWORD2
+getBiasGyroX	KEYWORD2
+getBiasGyroY	KEYWORD2
+getBiasGyroZ	KEYWORD2
+getBiasAccelX	KEYWORD2
+getBiasAccelY	KEYWORD2
+getBiasAccelZ	KEYWORD2
+getBiasCPassX	KEYWORD2
+getBiasCPassY	KEYWORD2
+getBiasCPassZ	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
