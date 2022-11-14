@@ -239,6 +239,295 @@ float ICM_20948::getGyrDPS(int16_t axis_val)
   }
 }
 
+//Gyro Bias
+ICM_20948_Status_e ICM_20948::setBiasGyroX( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char gyro_bias_reg[4];
+    gyro_bias_reg[0] = (unsigned char)(newValue >> 24);
+    gyro_bias_reg[1] = (unsigned char)(newValue >> 16);
+    gyro_bias_reg[2] = (unsigned char)(newValue >> 8);
+    gyro_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, GYRO_BIAS_X, 4, (const unsigned char*)&gyro_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasGyroY( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char gyro_bias_reg[4];
+    gyro_bias_reg[0] = (unsigned char)(newValue >> 24);
+    gyro_bias_reg[1] = (unsigned char)(newValue >> 16);
+    gyro_bias_reg[2] = (unsigned char)(newValue >> 8);
+    gyro_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, GYRO_BIAS_Y, 4, (const unsigned char*)&gyro_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasGyroZ( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char gyro_bias_reg[4];
+    gyro_bias_reg[0] = (unsigned char)(newValue >> 24);
+    gyro_bias_reg[1] = (unsigned char)(newValue >> 16);
+    gyro_bias_reg[2] = (unsigned char)(newValue >> 8);
+    gyro_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, GYRO_BIAS_Z, 4, (const unsigned char*)&gyro_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasGyroX( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, GYRO_BIAS_X, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasGyroY( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, GYRO_BIAS_Y, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasGyroZ( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, GYRO_BIAS_Z, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+//Accel Bias
+ICM_20948_Status_e ICM_20948::setBiasAccelX( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char accel_bias_reg[4];
+    accel_bias_reg[0] = (unsigned char)(newValue >> 24);
+    accel_bias_reg[1] = (unsigned char)(newValue >> 16);
+    accel_bias_reg[2] = (unsigned char)(newValue >> 8);
+    accel_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, ACCEL_BIAS_X, 4, (const unsigned char*)&accel_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasAccelY( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char accel_bias_reg[4];
+    accel_bias_reg[0] = (unsigned char)(newValue >> 24);
+    accel_bias_reg[1] = (unsigned char)(newValue >> 16);
+    accel_bias_reg[2] = (unsigned char)(newValue >> 8);
+    accel_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, ACCEL_BIAS_Y, 4, (const unsigned char*)&accel_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasAccelZ( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char accel_bias_reg[4];
+    accel_bias_reg[0] = (unsigned char)(newValue >> 24);
+    accel_bias_reg[1] = (unsigned char)(newValue >> 16);
+    accel_bias_reg[2] = (unsigned char)(newValue >> 8);
+    accel_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, ACCEL_BIAS_Z, 4, (const unsigned char*)&accel_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasAccelX( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, ACCEL_BIAS_X, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasAccelY( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, ACCEL_BIAS_Y, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasAccelZ( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, ACCEL_BIAS_Z, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+//CPass Bias
+ICM_20948_Status_e ICM_20948::setBiasCPassX( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char cpass_bias_reg[4];
+    cpass_bias_reg[0] = (unsigned char)(newValue >> 24);
+    cpass_bias_reg[1] = (unsigned char)(newValue >> 16);
+    cpass_bias_reg[2] = (unsigned char)(newValue >> 8);
+    cpass_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, CPASS_BIAS_X, 4, (const unsigned char*)&cpass_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasCPassY( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char cpass_bias_reg[4];
+    cpass_bias_reg[0] = (unsigned char)(newValue >> 24);
+    cpass_bias_reg[1] = (unsigned char)(newValue >> 16);
+    cpass_bias_reg[2] = (unsigned char)(newValue >> 8);
+    cpass_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, CPASS_BIAS_Y, 4, (const unsigned char*)&cpass_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::setBiasCPassZ( int32_t newValue)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char cpass_bias_reg[4];
+    cpass_bias_reg[0] = (unsigned char)(newValue >> 24);
+    cpass_bias_reg[1] = (unsigned char)(newValue >> 16);
+    cpass_bias_reg[2] = (unsigned char)(newValue >> 8);
+    cpass_bias_reg[3] = (unsigned char)(newValue & 0xff);
+    status = inv_icm20948_write_mems(&_device, CPASS_BIAS_Z, 4, (const unsigned char*)&cpass_bias_reg);
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasCPassX( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, CPASS_BIAS_X, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasCPassY( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, CPASS_BIAS_Y, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
+ICM_20948_Status_e ICM_20948::getBiasCPassZ( int32_t* bias)
+{
+  if (_device._dmp_firmware_available == true) // Is DMP supported?
+  {
+    unsigned char bias_data[4] = { 0 };
+    status = inv_icm20948_read_mems(&_device, CPASS_BIAS_Z, 4, bias_data);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
+    return status;
+  }
+  return ICM_20948_Stat_DMPNotSupported;
+}
+
 float ICM_20948::temp(void)
 {
   return getTempC(agmt.tmp.val);
@@ -1796,3 +2085,5 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, 
 
   return ICM_20948_Stat_Ok;
 }
+
+

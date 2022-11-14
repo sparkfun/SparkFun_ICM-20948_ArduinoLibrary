@@ -1,11 +1,13 @@
 /****************************************************************
- * Example6_DMP_Quat9_Orientation.ino
+ * Example11_DMP_Bias_Save_Restore_ESP32.ino
  * ICM 20948 Arduino Library Demo
  * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
- * Paul Clark, April 25th, 2021
- * Based on original code by:
- * Owen Lyke @ SparkFun Electronics
- * Original Creation Date: April 17 2019
+ * Periodically save the biases in ESP32 EEPROM
+ * Restore the biases at startup - if valid
+ * Paul Clark, November 14th, 2022
+ * Based on original code by the SlimeVR-Tracker contributors:
+ * https://github.com/SlimeVR/SlimeVR-Tracker-ESP/blob/83550d21ef748678704b3a11c0f7afb6f44258e4/src/sensors/icm20948sensor.cpp#L30
+ * https://github.com/PaulZC/SlimeVR-Tracker-ESP/blob/83550d21ef748678704b3a11c0f7afb6f44258e4/src/sensors/icm20948sensor.cpp#L40-L41
  * 
  * ** This example is based on InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
  * ** We are grateful to InvenSense for sharing this with us.
@@ -23,8 +25,6 @@
  *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
-
-//#define QUAT_ANIMATION // Uncomment this line to output data in the correct format for ZaneL's Node.js Quaternion animation tool: https://github.com/ZaneL/quaternion_sensor_3d_nodejs
 
 #include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
@@ -46,25 +46,94 @@ ICM_20948_SPI myICM; // If using SPI create an ICM_20948_SPI object
 ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 #endif
 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#include <EEPROM.h>
+
+// Define a storage struct for the biases. Include a non-zero header and a simple checksum
+struct biasStore
+{
+  int32_t header = 0x42;
+  int32_t biasGyroX = 0;
+  int32_t biasGyroY = 0;
+  int32_t biasGyroZ = 0;
+  int32_t biasAccelX = 0;
+  int32_t biasAccelY = 0;
+  int32_t biasAccelZ = 0;
+  int32_t biasCPassX = 0;
+  int32_t biasCPassY = 0;
+  int32_t biasCPassZ = 0;
+  int32_t sum = 0;
+};
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+void updateBiasStoreSum(biasStore *store) // Update the bias store checksum
+{
+  int32_t sum = store->header;
+  sum += store->biasGyroX;
+  sum += store->biasGyroY;
+  sum += store->biasGyroZ;
+  sum += store->biasAccelX;
+  sum += store->biasAccelY;
+  sum += store->biasAccelZ;
+  sum += store->biasCPassX;
+  sum += store->biasCPassY;
+  sum += store->biasCPassZ;
+  store->sum = sum;
+}
+
+bool isBiasStoreValid(biasStore *store) // Returns true if the header and checksum are valid
+{
+  int32_t sum = store->header;
+
+  if (sum != 0x42)
+    return false;
+
+  sum += store->biasGyroX;
+  sum += store->biasGyroY;
+  sum += store->biasGyroZ;
+  sum += store->biasAccelX;
+  sum += store->biasAccelY;
+  sum += store->biasAccelZ;
+  sum += store->biasCPassX;
+  sum += store->biasCPassY;
+  sum += store->biasCPassZ;
+
+  return (store->sum == sum);
+}
+
+void printBiases(biasStore *store)
+{
+  SERIAL_PORT.print(F("Gyro X: "));
+  SERIAL_PORT.print(store->biasGyroX);
+  SERIAL_PORT.print(F(" Gyro Y: "));
+  SERIAL_PORT.print(store->biasGyroY);
+  SERIAL_PORT.print(F(" Gyro Z: "));
+  SERIAL_PORT.println(store->biasGyroZ);
+  SERIAL_PORT.print(F("Accel X: "));
+  SERIAL_PORT.print(store->biasAccelX);
+  SERIAL_PORT.print(F(" Accel Y: "));
+  SERIAL_PORT.print(store->biasAccelY);
+  SERIAL_PORT.print(F(" Accel Z: "));
+  SERIAL_PORT.println(store->biasAccelZ);
+  SERIAL_PORT.print(F("CPass X: "));
+  SERIAL_PORT.print(store->biasCPassX);
+  SERIAL_PORT.print(F(" CPass Y: "));
+  SERIAL_PORT.print(store->biasCPassY);
+  SERIAL_PORT.print(F(" CPass Z: "));
+  SERIAL_PORT.println(store->biasCPassZ);
+
+}
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 void setup()
 {
 
+  delay(1000);
+
   SERIAL_PORT.begin(115200); // Start the serial console
-#ifndef QUAT_ANIMATION
   SERIAL_PORT.println(F("ICM-20948 Example"));
-#endif
-
-  delay(100);
-
-#ifndef QUAT_ANIMATION
-  while (SERIAL_PORT.available()) // Make sure the serial RX buffer is empty
-    SERIAL_PORT.read();
-
-  SERIAL_PORT.println(F("Press any key to continue..."));
-
-  while (!SERIAL_PORT.available()) // Wait for the user to press a key (send any serial character)
-    ;
-#endif
 
 #ifdef USE_SPI
   SPI_PORT.begin();
@@ -73,9 +142,7 @@ void setup()
   WIRE_PORT.setClock(400000);
 #endif
 
-#ifndef QUAT_ANIMATION
   //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
-#endif
 
   bool initialized = false;
   while (!initialized)
@@ -89,15 +156,11 @@ void setup()
     myICM.begin(WIRE_PORT, AD0_VAL);
 #endif
 
-#ifndef QUAT_ANIMATION
     SERIAL_PORT.print(F("Initialization of the sensor returned: "));
     SERIAL_PORT.println(myICM.statusString());
-#endif
     if (myICM.status != ICM_20948_Stat_Ok)
     {
-#ifndef QUAT_ANIMATION
       SERIAL_PORT.println(F("Trying again..."));
-#endif
       delay(500);
     }
     else
@@ -106,13 +169,11 @@ void setup()
     }
   }
 
-#ifndef QUAT_ANIMATION
-  SERIAL_PORT.println(F("Device connected!"));
-#endif
+  SERIAL_PORT.println(F("Device connected."));
 
   bool success = true; // Use success to show if the DMP configuration was successful
 
-  // Initialize the DMP. initializeDMP is a weak function. You can overwrite it if you want to e.g. to change the sample rate
+  // Initialize the DMP. initializeDMP is a weak function. In this example we overwrite it to change the sample rate (see below)
   success &= (myICM.initializeDMP() == ICM_20948_Stat_Ok);
 
   // DMP sensor options are defined in ICM_20948_DMP.h
@@ -167,9 +228,7 @@ void setup()
   // Check success
   if (success)
   {
-#ifndef QUAT_ANIMATION
-    SERIAL_PORT.println(F("DMP enabled!"));
-#endif
+    SERIAL_PORT.println(F("DMP enabled."));
   }
   else
   {
@@ -178,10 +237,49 @@ void setup()
     while (1)
       ; // Do nothing more
   }
+
+  // Read existing biases from EEPROM
+  if (!EEPROM.begin(128)) // Allocate 128 Bytes for EEPROM storage. ESP32 needs this.
+  {
+    SERIAL_PORT.println(F("EEPROM.begin failed! You will not be able to save the biases..."));
+  }
+
+  biasStore store;
+
+  EEPROM.get(0, store); // Read existing EEPROM, starting at address 0
+  if (isBiasStoreValid(&store))
+  {
+    SERIAL_PORT.println(F("Bias data in EEPROM is valid. Restoring it..."));
+    success &= (myICM.setBiasGyroX(store.biasGyroX) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasGyroY(store.biasGyroY) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasGyroZ(store.biasGyroZ) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasAccelX(store.biasAccelX) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasAccelY(store.biasAccelY) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasAccelZ(store.biasAccelZ) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasCPassX(store.biasCPassX) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasCPassY(store.biasCPassY) == ICM_20948_Stat_Ok);
+    success &= (myICM.setBiasCPassZ(store.biasCPassZ) == ICM_20948_Stat_Ok);
+
+    if (success)
+    {
+      SERIAL_PORT.println(F("Biases restored."));
+      printBiases(&store);
+    }
+    else
+      SERIAL_PORT.println(F("Bias restore failed!"));
+  }
+
+  SERIAL_PORT.println(F("The biases will be saved in two minutes."));
+  SERIAL_PORT.println(F("Before then:"));
+  SERIAL_PORT.println(F("* Rotate the sensor around all three axes"));
+  SERIAL_PORT.println(F("* Hold the sensor stationary in all six orientations for a few seconds"));
 }
 
 void loop()
 {
+  static unsigned long startTime = millis(); // Save the biases when the code has been running for two minutes
+  static bool biasesStored = false;
+  
   // Read any DMP data waiting in the FIFO
   // Note:
   //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFONoDataAvail if no data is available.
@@ -212,9 +310,8 @@ void loop()
       double q1 = ((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
       double q2 = ((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
       double q3 = ((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-      double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
 
-#ifndef QUAT_ANIMATION
+/*
       SERIAL_PORT.print(F("Q1:"));
       SERIAL_PORT.print(q1, 3);
       SERIAL_PORT.print(F(" Q2:"));
@@ -223,23 +320,82 @@ void loop()
       SERIAL_PORT.print(q3, 3);
       SERIAL_PORT.print(F(" Accuracy:"));
       SERIAL_PORT.println(data.Quat9.Data.Accuracy);
-#else
-      // Output the Quaternion data in the format expected by ZaneL's Node.js Quaternion animation tool
-      SERIAL_PORT.print(F("{\"quat_w\":"));
-      SERIAL_PORT.print(q0, 3);
-      SERIAL_PORT.print(F(", \"quat_x\":"));
-      SERIAL_PORT.print(q1, 3);
-      SERIAL_PORT.print(F(", \"quat_y\":"));
-      SERIAL_PORT.print(q2, 3);
-      SERIAL_PORT.print(F(", \"quat_z\":"));
-      SERIAL_PORT.print(q3, 3);
-      SERIAL_PORT.println(F("}"));
-#endif
+*/
+      
+      double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+      double q2sqr = q2 * q2;
+
+      // roll (x-axis rotation)
+      double t0 = +2.0 * (q0 * q1 + q2 * q3);
+      double t1 = +1.0 - 2.0 * (q1 * q1 + q2sqr);
+      double roll = atan2(t0, t1) * 180.0 / PI;
+
+      // pitch (y-axis rotation)
+      double t2 = +2.0 * (q0 * q2 - q3 * q1);
+      t2 = t2 > 1.0 ? 1.0 : t2;
+      t2 = t2 < -1.0 ? -1.0 : t2;
+      double pitch = asin(t2) * 180.0 / PI;
+
+      // yaw (z-axis rotation)
+      double t3 = +2.0 * (q0 * q3 + q1 * q2);
+      double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
+      double yaw = atan2(t3, t4) * 180.0 / PI;
+
+      SERIAL_PORT.print(F("Roll: "));
+      SERIAL_PORT.print(roll, 1);
+      SERIAL_PORT.print(F("\tPitch: "));
+      SERIAL_PORT.print(pitch, 1);
+      SERIAL_PORT.print(F("\tYaw: "));
+      SERIAL_PORT.println(yaw, 1);
     }
   }
 
   if (myICM.status != ICM_20948_Stat_FIFOMoreDataAvail) // If more data is available then we should read it right away - and not delay
   {
+    if (!biasesStored) // Should we store the biases?
+    {
+      if (millis() > (startTime + 120000)) // Is it time to store the biases?
+      {
+        SERIAL_PORT.println(F("\r\n\r\n\r\nSaving bias data..."));
+
+        biasStore store;
+          
+        bool success = (myICM.getBiasGyroX(&store.biasGyroX) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasGyroY(&store.biasGyroY) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasGyroZ(&store.biasGyroZ) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasAccelX(&store.biasAccelX) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasAccelY(&store.biasAccelY) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasAccelZ(&store.biasAccelZ) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasCPassX(&store.biasCPassX) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasCPassY(&store.biasCPassY) == ICM_20948_Stat_Ok);
+        success &= (myICM.getBiasCPassZ(&store.biasCPassZ) == ICM_20948_Stat_Ok);
+
+        updateBiasStoreSum(&store);
+      
+        if (success)
+        {
+          biasesStored = true; // Only attempt this once
+        
+          EEPROM.put(0, store); // Write biases to EEPROM, starting at address 0
+          EEPROM.commit(); // ESP32/SAMD/STM32 needs this
+  
+          EEPROM.get(0, store); // Read existing EEPROM, starting at address 0
+          if (isBiasStoreValid(&store))
+          {
+            SERIAL_PORT.println(F("Biases stored."));
+            printBiases(&store);
+            SERIAL_PORT.println(F("\r\n\r\n\r\n"));
+          }
+          else
+            SERIAL_PORT.println(F("Bias store failed!\r\n\r\n\r\n"));
+        }
+        else
+        {
+          SERIAL_PORT.println(F("Bias read failed!\r\n\r\n\r\n"));
+        }
+      }
+    }
+      
     delay(10);
   }
 }

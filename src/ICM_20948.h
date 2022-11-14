@@ -173,6 +173,28 @@ public:
 
   //DMP
 
+  //Gyro Bias
+  ICM_20948_Status_e setBiasGyroX(int32_t newValue);
+  ICM_20948_Status_e setBiasGyroY(int32_t newValue);
+  ICM_20948_Status_e setBiasGyroZ(int32_t newValue);
+  ICM_20948_Status_e getBiasGyroX(int32_t* bias);
+  ICM_20948_Status_e getBiasGyroY(int32_t* bias);
+  ICM_20948_Status_e getBiasGyroZ(int32_t* bias);
+  //Accel Bias
+  ICM_20948_Status_e setBiasAccelX(int32_t newValue);
+  ICM_20948_Status_e setBiasAccelY(int32_t newValue);
+  ICM_20948_Status_e setBiasAccelZ(int32_t newValue);
+  ICM_20948_Status_e getBiasAccelX(int32_t* bias);
+  ICM_20948_Status_e getBiasAccelY(int32_t* bias);
+  ICM_20948_Status_e getBiasAccelZ(int32_t* bias);
+  //CPass Bias
+  ICM_20948_Status_e setBiasCPassX(int32_t newValue);
+  ICM_20948_Status_e setBiasCPassY(int32_t newValue);
+  ICM_20948_Status_e setBiasCPassZ(int32_t newValue);
+  ICM_20948_Status_e getBiasCPassX(int32_t* bias);
+  ICM_20948_Status_e getBiasCPassY(int32_t* bias);
+  ICM_20948_Status_e getBiasCPassZ(int32_t* bias);
+
   // Done:
   //  Configure DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   //  Load Firmware
