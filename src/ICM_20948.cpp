@@ -281,7 +281,12 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroX( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, GYRO_BIAS_X, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -290,7 +295,12 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroY( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, GYRO_BIAS_Y, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -299,7 +309,12 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroZ( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, GYRO_BIAS_Z, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 //Accel Bias
@@ -344,7 +359,12 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelX( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, ACCEL_BIAS_X, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -353,7 +373,12 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelY( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, ACCEL_BIAS_Y, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -362,7 +387,12 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelZ( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, ACCEL_BIAS_Z, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 //CPass Bias
@@ -407,7 +437,12 @@ ICM_20948_Status_e ICM_20948::GetBiasCPassX( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, CPASS_BIAS_X, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -416,7 +451,12 @@ ICM_20948_Status_e ICM_20948::GetBiasCPassY( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, CPASS_BIAS_Y, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
@@ -425,7 +465,12 @@ ICM_20948_Status_e ICM_20948::GetBiasCPassZ( int32_t* bias)
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
     result = inv_icm20948_read_mems(&_device, CPASS_BIAS_Z, 4, bias_data);
-    bias[0] = (int32_t)(bias_data[0] << 24) | (bias_data[1] << 16) | (bias_data[2] << 8) | (bias_data[3]);
+    union {
+      int32_t signed32;
+      uint32_t unsigned32;
+    } signedUnsigned32;
+    signedUnsigned32.unsigned32 = (((uint32_t)bias_data[0]) << 24) | (((uint32_t)bias_data[1]) << 16) | (((uint32_t)bias_data[2]) << 8) | (bias_data[3]);
+    *bias = signedUnsigned32.signed32; // Convert from unsigned to signed with no cast ambiguity
     return result;
 }
 
