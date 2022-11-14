@@ -174,26 +174,26 @@ public:
   //DMP
 
   //Gyro Bias
-  ICM_20948_Status_e SetBiasGyroX( int32_t newValue);
-  ICM_20948_Status_e SetBiasGyroY( int32_t newValue);
-  ICM_20948_Status_e SetBiasGyroZ( int32_t newValue);
-  ICM_20948_Status_e GetBiasGyroX( int32_t* bias);
-  ICM_20948_Status_e GetBiasGyroY( int32_t* bias);
-  ICM_20948_Status_e GetBiasGyroZ( int32_t* bias);
+  ICM_20948_Status_e setBiasGyroX(int32_t newValue);
+  ICM_20948_Status_e setBiasGyroY(int32_t newValue);
+  ICM_20948_Status_e setBiasGyroZ(int32_t newValue);
+  ICM_20948_Status_e getBiasGyroX(int32_t* bias);
+  ICM_20948_Status_e getBiasGyroY(int32_t* bias);
+  ICM_20948_Status_e getBiasGyroZ(int32_t* bias);
   //Accel Bias
-  ICM_20948_Status_e SetBiasAccelX( int32_t newValue);
-  ICM_20948_Status_e SetBiasAccelY( int32_t newValue);
-  ICM_20948_Status_e SetBiasAccelZ( int32_t newValue);
-  ICM_20948_Status_e GetBiasAccelX( int32_t* bias);
-  ICM_20948_Status_e GetBiasAccelY( int32_t* bias);
-  ICM_20948_Status_e GetBiasAccelZ( int32_t* bias);
+  ICM_20948_Status_e setBiasAccelX(int32_t newValue);
+  ICM_20948_Status_e setBiasAccelY(int32_t newValue);
+  ICM_20948_Status_e setBiasAccelZ(int32_t newValue);
+  ICM_20948_Status_e getBiasAccelX(int32_t* bias);
+  ICM_20948_Status_e getBiasAccelY(int32_t* bias);
+  ICM_20948_Status_e getBiasAccelZ(int32_t* bias);
   //CPass Bias
-  ICM_20948_Status_e SetBiasCPassX( int32_t newValue);
-  ICM_20948_Status_e SetBiasCPassY( int32_t newValue);
-  ICM_20948_Status_e SetBiasCPassZ( int32_t newValue);
-  ICM_20948_Status_e GetBiasCPassX( int32_t* bias);
-  ICM_20948_Status_e GetBiasCPassY( int32_t* bias);
-  ICM_20948_Status_e GetBiasCPassZ( int32_t* bias);
+  ICM_20948_Status_e setBiasCPassX(int32_t newValue);
+  ICM_20948_Status_e setBiasCPassY(int32_t newValue);
+  ICM_20948_Status_e setBiasCPassZ(int32_t newValue);
+  ICM_20948_Status_e getBiasCPassX(int32_t* bias);
+  ICM_20948_Status_e getBiasCPassY(int32_t* bias);
+  ICM_20948_Status_e getBiasCPassZ(int32_t* bias);
 
   // Done:
   //  Configure DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL

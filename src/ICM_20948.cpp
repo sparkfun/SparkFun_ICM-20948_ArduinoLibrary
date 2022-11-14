@@ -240,7 +240,7 @@ float ICM_20948::getGyrDPS(int16_t axis_val)
 }
 
 //Gyro Bias
-ICM_20948_Status_e ICM_20948::SetBiasGyroX( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasGyroX( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char gyro_bias_reg[4];
@@ -252,7 +252,7 @@ ICM_20948_Status_e ICM_20948::SetBiasGyroX( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasGyroY( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasGyroY( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char gyro_bias_reg[4];
@@ -264,7 +264,7 @@ ICM_20948_Status_e ICM_20948::SetBiasGyroY( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasGyroZ( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasGyroZ( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char gyro_bias_reg[4];
@@ -276,7 +276,7 @@ ICM_20948_Status_e ICM_20948::SetBiasGyroZ( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasGyroX( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasGyroX( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -290,7 +290,7 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroX( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasGyroY( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasGyroY( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -304,7 +304,7 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroY( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasGyroZ( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasGyroZ( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -318,7 +318,7 @@ ICM_20948_Status_e ICM_20948::GetBiasGyroZ( int32_t* bias)
     return result;
 }
 //Accel Bias
-ICM_20948_Status_e ICM_20948::SetBiasAccelX( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasAccelX( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char accel_bias_reg[4];
@@ -330,7 +330,7 @@ ICM_20948_Status_e ICM_20948::SetBiasAccelX( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasAccelY( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasAccelY( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char accel_bias_reg[4];
@@ -342,7 +342,7 @@ ICM_20948_Status_e ICM_20948::SetBiasAccelY( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasAccelZ( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasAccelZ( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char accel_bias_reg[4];
@@ -354,7 +354,7 @@ ICM_20948_Status_e ICM_20948::SetBiasAccelZ( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasAccelX( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasAccelX( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -368,7 +368,7 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelX( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasAccelY( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasAccelY( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -382,7 +382,7 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelY( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasAccelZ( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasAccelZ( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -396,7 +396,7 @@ ICM_20948_Status_e ICM_20948::GetBiasAccelZ( int32_t* bias)
     return result;
 }
 //CPass Bias
-ICM_20948_Status_e ICM_20948::SetBiasCPassX( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasCPassX( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char cpass_bias_reg[4];
@@ -408,7 +408,7 @@ ICM_20948_Status_e ICM_20948::SetBiasCPassX( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasCPassY( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasCPassY( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char cpass_bias_reg[4];
@@ -420,7 +420,7 @@ ICM_20948_Status_e ICM_20948::SetBiasCPassY( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::SetBiasCPassZ( int32_t newValue)
+ICM_20948_Status_e ICM_20948::setBiasCPassZ( int32_t newValue)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char cpass_bias_reg[4];
@@ -432,7 +432,7 @@ ICM_20948_Status_e ICM_20948::SetBiasCPassZ( int32_t newValue)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasCPassX( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasCPassX( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -446,7 +446,7 @@ ICM_20948_Status_e ICM_20948::GetBiasCPassX( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasCPassY( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasCPassY( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
@@ -460,7 +460,7 @@ ICM_20948_Status_e ICM_20948::GetBiasCPassY( int32_t* bias)
     return result;
 }
 
-ICM_20948_Status_e ICM_20948::GetBiasCPassZ( int32_t* bias)
+ICM_20948_Status_e ICM_20948::getBiasCPassZ( int32_t* bias)
 {
     ICM_20948_Status_e result = ICM_20948_Stat_Ok;
     unsigned char bias_data[4] = { 0 };
