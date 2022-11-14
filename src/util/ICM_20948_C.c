@@ -10,7 +10,7 @@
 
 #if defined(ARDUINO_ARCH_MBED) // ARDUINO_ARCH_MBED (APOLLO3 v2) does not support or require pgmspace.h / PROGMEM
 const uint8_t dmp3_image[] = {
-#elif (defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__)) && !defined(__linux__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
+#elif (defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__) || defined(ESP8266)) && !defined(__linux__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
 #define ICM_20948_USE_PROGMEM_FOR_DMP
 #include <avr/pgmspace.h>
 const uint8_t dmp3_image[] PROGMEM = {
@@ -2589,7 +2589,9 @@ ICM_20948_Status_e inv_icm20948_set_gyro_sf(ICM_20948_Device_t *pdev, unsigned c
   gyro_sf_reg[1] = (unsigned char)(gyro_sf >> 16);
   gyro_sf_reg[2] = (unsigned char)(gyro_sf >> 8);
   gyro_sf_reg[3] = (unsigned char)(gyro_sf & 0xff);
-  result = inv_icm20948_write_mems(pdev, GYRO_SF, 4, (const unsigned char *)&gyro_sf_reg);
+  result = inv_icm20948_write_mems(pdev, GYRO_SF, 4, (const unsigned char*)&gyro_sf_reg);
 
   return result;
 }
+
+
