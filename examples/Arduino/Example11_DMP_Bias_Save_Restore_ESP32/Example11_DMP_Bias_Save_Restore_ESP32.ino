@@ -36,7 +36,6 @@
 #define CS_PIN 2     // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
 #define WIRE_PORT Wire // Your desired Wire port.      Used when "USE_SPI" is not defined
-
 // The value of the last bit of the I2C address.
 // On the SparkFun 9DoF IMU breakout the default is 1, and when the ADR jumper is closed the value becomes 0
 #define AD0_VAL 1
