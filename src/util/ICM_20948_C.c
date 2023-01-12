@@ -792,7 +792,7 @@ ICM_20948_Status_e ICM_20948_set_sample_rate(ICM_20948_Device_t *pdev, ICM_20948
   if (sensors & ICM_20948_Internal_Acc)
   {
     retval |= ICM_20948_set_bank(pdev, 2); // Must be in the right bank
-    uint8_t div1 = (smplrt.a << 8);
+    uint8_t div1 = (smplrt.a >> 8); // Thank you @yanivamichy #109
     uint8_t div2 = (smplrt.a & 0xFF);
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_SMPLRT_DIV_1, &div1, 1);
     retval |= ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_SMPLRT_DIV_2, &div2, 1);
@@ -1977,7 +1977,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
     return result;
   for (int i = 0; i < icm_20948_DMP_Header_Bytes; i++)
   {
-    aShort |= ((uint16_t)fifoBytes[i]) << (8 - (i * 8));
+    aShort |= ((uint16_t)fifoBytes[i]) << (8 - (i * 8)); // MSB first
   }
   data->header = aShort;                    // Store the header in data->header
   fifo_count -= icm_20948_DMP_Header_Bytes; // Decrement the count
@@ -2248,7 +2248,7 @@ ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_2094
     uint32_t aWord = 0;
     for (int i = 0; i < icm_20948_DMP_Step_Detector_Bytes; i++)
     {
-      aWord |= ((uint32_t)fifoBytes[i]) << (24 - (i * 8));
+      aWord |= ((uint32_t)fifoBytes[i]) << (24 - (i * 8)); // MSB first
     }
     data->Pedometer_Timestamp = aWord;
     fifo_count -= icm_20948_DMP_Step_Detector_Bytes; // Decrement the count
