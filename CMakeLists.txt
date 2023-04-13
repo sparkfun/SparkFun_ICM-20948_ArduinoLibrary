@@ -15,11 +15,11 @@ file (GLOB SRC
 )
 
 file (GLOB EG_SRC
-    "tests/main.cpp"
+    "examples/main.cpp"
 )
 
 file (GLOB DMP_SRC
-    "tests/DMPtest.cpp"
+    "examples/DMPtest.cpp"
 )
 
 add_library(${PROJECT_NAME} ${SRC} )
