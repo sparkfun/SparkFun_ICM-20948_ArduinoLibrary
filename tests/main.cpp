@@ -1,5 +1,5 @@
 #include "ICM_20948.h"
-#define I2C_BUS 1
+#define I2C_BUS 5
 
 ICM_20948_I2C myICM;  // Create an ICM_20948_I2C object
 
@@ -10,7 +10,7 @@ void printFormattedFloat(float val, uint8_t leading);
 void printScaledAGMT(ICM_20948_I2C* sensor);
 
 int main() {
-    uint8_t i2caddr = ICM_20948_I2C_ADDR_AD1;
+    uint8_t i2caddr = ICM_20948_I2C_ADDR_AD0;
     uint8_t i2cbus = I2C_BUS;
     bool initialized = false;
     while (!initialized) {
