@@ -1790,17 +1790,28 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
 // I2C
 ICM_20948_I2C::ICM_20948_I2C() {}
 
-ICM_20948_Status_e ICM_20948_I2C::begin(i2c *i2c, uint8_t addr, uint8_t bus) {
-        _i2c = i2c;
+ICM_20948_Status_e ICM_20948_I2C::begin(uint8_t addr, uint8_t bus) {
         _addr = addr;
-        _i2c = libsoc_i2c_init(bus, addr);
+        int i2c_fd;
+        char filename[20];
+        snprintf(filename, 19, "/dev/i2c-%d", bus);
+        i2c_fd = open(filename, O_RDWR);
+        if (i2c_fd < 0) {
+                printf("Could not open i2c instance!!!");
+                return ICM_20948_Stat_Err;
+        }
+        uint8_t device_address = addr;
+        if (ioctl(i2c_fd, I2C_SLAVE, device_address) < 0) {
+                perror("Failed to acquire bus access or talk to slave.");
+                return ICM_20948_Stat_Err;
+        }
 
-        // _i2c->begin(); // Moved into user's sketch
+        _i2c_fd = i2c_fd;
 
         // Set up the serif
         _serif.write = ICM_20948_write_I2C;
         _serif.read = ICM_20948_read_I2C;
-        _serif.user = (void *)this;  // refer to yourself in the user field
+        _serif.user = (void *)(&i2c_fd);
 
         // Link the serif
         _device._serif = &_serif;
@@ -1990,16 +2001,12 @@ ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len,
         if (user == NULL) {
                 return ICM_20948_Stat_ParamErr;
         }
-        uint8_t *dataFrame = new uint8_t[len + 1];
-        dataFrame[0] = reg;
-        std::copy(data, data + len, dataFrame + 1);
-        if (libsoc_i2c_write(((ICM_20948_I2C *)user)->_i2c, dataFrame,
-                             len + 1) != EXIT_SUCCESS) {
-                delete (dataFrame);
+
+        int i2c_fd = *static_cast<int*>(user);
+
+        if (i2c_smbus_write_block_data(i2c_fd, reg, len, data) < 0) {
                 return ICM_20948_Stat_Err;
         }
-
-        delete (dataFrame);
         return ICM_20948_Stat_Ok;
 }
 
@@ -2008,13 +2015,10 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len,
         if (user == NULL) {
                 return ICM_20948_Stat_ParamErr;
         }
-        if (libsoc_i2c_write(((ICM_20948_I2C *)user)->_i2c, &reg, 1) !=
-            EXIT_SUCCESS) {
-                return ICM_20948_Stat_Err;
-        }
-        if (libsoc_i2c_read(((ICM_20948_I2C *)user)->_i2c, buff, len) !=
-            EXIT_SUCCESS) {
-                return ICM_20948_Stat_Err;
+
+        int i2c_fd = *static_cast<int*>(user);
+        if (i2c_smbus_read_i2c_block_data(i2c_fd, reg, len, buff)) {
+                        return ICM_20948_Stat_Err;
         }
         return ICM_20948_Stat_Ok;
 }

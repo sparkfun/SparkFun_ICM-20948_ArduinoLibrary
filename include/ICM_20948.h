@@ -20,6 +20,16 @@ A C++ interface to the ICM-20948
 #include "../util/AK09916_REGISTERS.h"
 #include "../util/ICM_20948_C.h"  // The C backbone. ICM_20948_USE_DMP is defined in here.
 
+extern "C" {
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
+#include <i2c/smbus.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+}
+
 //#include "Arduino.h" // Arduino support
 //#include "Wire.h"
 //#include "SPI.h"
@@ -327,13 +337,13 @@ class ICM_20948_I2C : public ICM_20948 {
        private:
        protected:
        public:
-        i2c *_i2c;
+        int _i2c_fd;
         uint8_t _addr;
         ICM_20948_Serif_t _serif;
 
         ICM_20948_I2C();  // Constructor
 
-        virtual ICM_20948_Status_e begin(i2c *i2c, uint8_t addr, uint8_t bus);
+        virtual ICM_20948_Status_e begin(uint8_t addr, uint8_t bus);
 };
 
 #endif /* _ICM_20948_H_ */

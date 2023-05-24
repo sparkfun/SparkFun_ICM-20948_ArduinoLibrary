@@ -33,8 +33,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # target_include_directories(${PROJECT_NAME} PUBLIC include/ )
-target_link_libraries(${PROJECT_NAME} -lsoc)
+target_link_libraries(${PROJECT_NAME} -li2c)
 add_executable(${PROJECT_NAME}_example ${EG_SRC} )
-target_link_libraries(${PROJECT_NAME}_example ${PROJECT_NAME} )
+target_link_libraries(${PROJECT_NAME}_example ${PROJECT_NAME} -li2c)
 add_executable(${PROJECT_NAME}_DMP_example ${DMP_SRC} )
-target_link_libraries(${PROJECT_NAME}_DMP_example ${PROJECT_NAME} )
+target_link_libraries(${PROJECT_NAME}_DMP_example ${PROJECT_NAME} -li2c)

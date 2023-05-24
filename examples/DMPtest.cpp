@@ -1,5 +1,6 @@
 #include "ICM_20948.h"
-#define I2C_BUS 1
+#define I2C_BUS 5
+#define IMU_ADDRESS 0x68
 
 ICM_20948_I2C myICM;  // Create an ICM_20948_I2C object
 
@@ -10,14 +11,14 @@ void printFormattedFloat(float val, uint8_t leading);
 void printScaledAGMT(ICM_20948_I2C* sensor);
 
 int main() {
-    uint8_t i2caddr = ICM_20948_I2C_ADDR_AD1;
+    uint8_t i2caddr = IMU_ADDRESS;
     uint8_t i2cbus = I2C_BUS;
     bool initialized = false;
     while (!initialized) {
         // Initialize the ICM-20948
         // If the DMP is enabled, .begin performs a minimal startup. We
         // need to configure the sample mode etc. manually.
-        myICM.begin(myICM._i2c, i2caddr, i2cbus);
+        myICM.begin(i2caddr, i2cbus);
         printf("Initialization of the sensor returned: ");
         std::cout << myICM.statusString() << std::endl;
         if (myICM.status != ICM_20948_Stat_Ok) {
