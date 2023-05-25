@@ -2004,7 +2004,7 @@ ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len,
 
         int i2c_fd = *static_cast<int*>(user);
 
-        if (i2c_smbus_write_block_data(i2c_fd, reg, len, data) < 0) {
+        if (i2c_smbus_write_i2c_block_data(i2c_fd, reg, len, data) < 0) {
                 return ICM_20948_Stat_Err;
         }
         return ICM_20948_Stat_Ok;
@@ -2017,7 +2017,7 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len,
         }
 
         int i2c_fd = *static_cast<int*>(user);
-        if (i2c_smbus_read_i2c_block_data(i2c_fd, reg, len, buff)) {
+        if (i2c_smbus_read_i2c_block_data(i2c_fd, reg, len, buff) < 0) {
                         return ICM_20948_Stat_Err;
         }
         return ICM_20948_Stat_Ok;
