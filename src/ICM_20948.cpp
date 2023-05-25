@@ -1790,28 +1790,14 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
 // I2C
 ICM_20948_I2C::ICM_20948_I2C() {}
 
-ICM_20948_Status_e ICM_20948_I2C::begin(uint8_t addr, uint8_t bus) {
+ICM_20948_Status_e ICM_20948_I2C::begin(int i2c_fd, uint8_t addr) {
         _addr = addr;
-        int i2c_fd;
-        char filename[20];
-        snprintf(filename, 19, "/dev/i2c-%d", bus);
-        i2c_fd = open(filename, O_RDWR);
-        if (i2c_fd < 0) {
-                printf("Could not open i2c instance!!!");
-                return ICM_20948_Stat_Err;
-        }
-        uint8_t device_address = addr;
-        if (ioctl(i2c_fd, I2C_SLAVE, device_address) < 0) {
-                perror("Failed to acquire bus access or talk to slave.");
-                return ICM_20948_Stat_Err;
-        }
-
-        _i2c_fd = i2c_fd;
-
+	_i2c_fd = i2c_fd;
+        
         // Set up the serif
         _serif.write = ICM_20948_write_I2C;
         _serif.read = ICM_20948_read_I2C;
-        _serif.user = (void *)(&i2c_fd);
+        _serif.user = (void *)this;
 
         // Link the serif
         _device._serif = &_serif;
@@ -2002,7 +1988,7 @@ ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len,
                 return ICM_20948_Stat_ParamErr;
         }
 
-        int i2c_fd = *static_cast<int*>(user);
+        int i2c_fd = static_cast<ICM_20948_I2C*>(user)->_i2c_fd;
 
         if (i2c_smbus_write_i2c_block_data(i2c_fd, reg, len, data) < 0) {
                 return ICM_20948_Stat_Err;
@@ -2016,7 +2002,7 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len,
                 return ICM_20948_Stat_ParamErr;
         }
 
-        int i2c_fd = *static_cast<int*>(user);
+        int i2c_fd = static_cast<ICM_20948_I2C*>(user)->_i2c_fd;
         if (i2c_smbus_read_i2c_block_data(i2c_fd, reg, len, buff) < 0) {
                         return ICM_20948_Stat_Err;
         }
