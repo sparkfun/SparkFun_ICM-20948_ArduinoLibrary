@@ -1790,10 +1790,18 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
 // I2C
 ICM_20948_I2C::ICM_20948_I2C() {}
 
-ICM_20948_Status_e ICM_20948_I2C::begin(int i2c_fd, uint8_t addr) {
-        _addr = addr;
-	_i2c_fd = i2c_fd;
-        
+ICM_20948_Status_e ICM_20948_I2C::begin(uint8_t i2cbus, uint8_t addr) {
+    	char filename[20];
+    	snprintf(filename, 19, "/dev/i2c-%d", i2cbus);
+    	_i2c_fd = open(filename, O_RDWR);
+    	if (_i2c_fd < 0) {
+        	printf("Could not open i2c instance!!!");
+        	return ICM_20948_Stat_Err;
+    	}
+    	if (ioctl(_i2c_fd, I2C_SLAVE, addr) < 0) {
+            	perror("Failed to acquire bus access or talk to slave.");
+            	return ICM_20948_Stat_Err;
+	}
         // Set up the serif
         _serif.write = ICM_20948_write_I2C;
         _serif.read = ICM_20948_read_I2C;

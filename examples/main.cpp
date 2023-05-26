@@ -11,28 +11,12 @@ void printFormattedFloat(float val, uint8_t leading);
 void printScaledAGMT(ICM_20948_I2C* sensor);
 
 int main() {
-    uint8_t i2caddr = IMU_ADDRESS;
-    uint8_t i2cbus = I2C_BUS;
-    bool initialized = false;
-    int i2c_fd;
-    char filename[20];
-    snprintf(filename, 19, "/dev/i2c-%d", i2cbus);
-    i2c_fd = open(filename, O_RDWR);
-    if (i2c_fd < 0) {
-        printf("Could not open i2c instance!!!");
-        return ICM_20948_Stat_Err;
-    }
-    uint8_t device_address = i2caddr;
-    if (ioctl(i2c_fd, I2C_SLAVE, device_address) < 0) {
-            perror("Failed to acquire bus access or talk to slave.");
-            return ICM_20948_Stat_Err;
-    }
-
+    bool initialized = false; 
     while (!initialized) {
         // Initialize the ICM-20948
         // If the DMP is enabled, .begin performs a minimal startup. We
         // need to configure the sample mode etc. manually.
-        myICM.begin(i2c_fd, i2caddr);
+        myICM.begin(I2C_BUS, IMU_ADDRESS);
         printf("Initialization of the sensor returned: ");
         std::cout << myICM.statusString() << std::endl;
         if (myICM.status != ICM_20948_Stat_Ok) {

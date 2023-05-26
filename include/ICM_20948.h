@@ -343,7 +343,7 @@ class ICM_20948_I2C : public ICM_20948 {
 
         ICM_20948_I2C();  // Constructor
 
-        virtual ICM_20948_Status_e begin(int i2c_fd, uint8_t addr);
+        virtual ICM_20948_Status_e begin(uint8_t i2cbus, uint8_t addr);
 };
 
 #endif /* _ICM_20948_H_ */
