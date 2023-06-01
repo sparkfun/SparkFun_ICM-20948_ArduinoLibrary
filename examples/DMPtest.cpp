@@ -18,7 +18,7 @@ int main() {
         // Initialize the ICM-20948
         // If the DMP is enabled, .begin performs a minimal startup. We
         // need to configure the sample mode etc. manually.
-        myICM.begin(i2caddr, i2cbus);
+        myICM.begin(i2cbus, i2caddr);
         printf("Initialization of the sensor returned: ");
         std::cout << myICM.statusString() << std::endl;
         if (myICM.status != ICM_20948_Stat_Ok) {
