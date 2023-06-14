@@ -130,6 +130,7 @@ public:
   ICM_20948_Status_e intEnableOverflowFIFO(uint8_t bm_enable);
   ICM_20948_Status_e intEnableWatermarkFIFO(uint8_t bm_enable);
 
+  ICM_20948_Status_e WOMLogic(uint8_t enable, uint8_t mode);
   ICM_20948_Status_e WOMThreshold(uint8_t threshold);
 
   // Interface Options

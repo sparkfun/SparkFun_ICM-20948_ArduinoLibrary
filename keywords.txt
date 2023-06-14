@@ -65,6 +65,7 @@ intEnableWOF	KEYWORD2
 intEnableRawDataReady	KEYWORD2
 intEnableOverflowFIFO	KEYWORD2
 intEnableWatermarkFIFO	KEYWORD2
+WOMLogic	KEYWORD2
 WOMThreshold	KEYWORD2
 i2cMasterPassthrough	KEYWORD2
 i2cMasterEnable	KEYWORD2
