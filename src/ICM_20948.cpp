@@ -1017,6 +1017,30 @@ ICM_20948_Status_e ICM_20948::intEnableWatermarkFIFO(uint8_t bm_enable)
   return status;
 }
 
+ICM_20948_Status_e ICM_20948::WOMLogic(uint8_t enable, uint8_t mode)
+{
+  ICM_20948_ACCEL_INTEL_CTRL_t ctrl;                   // storage
+  status = ICM_20948_wom_logic(&_device, NULL, &ctrl); // read phase
+  if (status != ICM_20948_Stat_Ok)
+  {
+    return status;
+  }
+  ctrl.ACCEL_INTEL_EN = enable;     // enable the WOM logic
+  ctrl.ACCEL_INTEL_MODE_INT = mode; // config mode
+
+  status = ICM_20948_wom_logic(&_device, &ctrl, &ctrl); // write new config
+  if (status != ICM_20948_Stat_Ok)
+  {
+    return status;
+  }
+  if (ctrl.ACCEL_INTEL_MODE_INT != mode)
+  {
+    status = ICM_20948_Stat_Err;
+    return status;
+  }
+  return status;
+}
+
 ICM_20948_Status_e ICM_20948::WOMThreshold(uint8_t threshold)
 {
   ICM_20948_ACCEL_WOM_THR_t thr;                          // storage

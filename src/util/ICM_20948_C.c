@@ -555,6 +555,41 @@ ICM_20948_Status_e ICM_20948_int_enable(ICM_20948_Device_t *pdev, ICM_20948_INT_
   return retval;
 }
 
+ICM_20948_Status_e ICM_20948_wom_logic(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_INTEL_CTRL_t *write, ICM_20948_ACCEL_INTEL_CTRL_t *read)
+{
+  ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
+
+  ICM_20948_ACCEL_INTEL_CTRL_t ctrl;
+
+  retval = ICM_20948_set_bank(pdev, 2); // Must be in the right bank
+
+  if (write != NULL)
+  { // If the write pointer is not NULL then write to the registers BEFORE reading
+    ctrl.ACCEL_INTEL_EN = write->ACCEL_INTEL_EN;
+    ctrl.ACCEL_INTEL_MODE_INT = write->ACCEL_INTEL_MODE_INT;
+
+    retval = ICM_20948_execute_w(pdev, AGB2_REG_ACCEL_INTEL_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_ACCEL_INTEL_CTRL_t));
+    if (retval != ICM_20948_Stat_Ok)
+    {
+      return retval;
+    }
+  }
+
+  if (read != NULL)
+  { // If read pointer is not NULL then read the registers (if write is not NULL then this should read back the results of write into read)
+    retval = ICM_20948_execute_r(pdev, AGB2_REG_ACCEL_INTEL_CTRL, (uint8_t *)&ctrl, sizeof(ICM_20948_ACCEL_INTEL_CTRL_t));
+    if (retval != ICM_20948_Stat_Ok)
+    {
+      return retval;
+    }
+
+    read->ACCEL_INTEL_EN = ctrl.ACCEL_INTEL_EN;
+    read->ACCEL_INTEL_MODE_INT = ctrl.ACCEL_INTEL_MODE_INT;
+  }
+
+  return retval;
+}
+
 ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read)
 {
   ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
