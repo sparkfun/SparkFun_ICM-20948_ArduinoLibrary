@@ -213,6 +213,9 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
   ICM_20948_Status_e ICM_20948_int_pin_cfg(ICM_20948_Device_t *pdev, ICM_20948_INT_PIN_CFG_t *write, ICM_20948_INT_PIN_CFG_t *read); // Set the INT pin configuration
   ICM_20948_Status_e ICM_20948_int_enable(ICM_20948_Device_t *pdev, ICM_20948_INT_enable_t *write, ICM_20948_INT_enable_t *read);    // Write and or read the interrupt enable information. If non-null the write operation occurs before the read, so as to verify that the write was successful
 
+  // WoM Enable Logic configuration
+  ICM_20948_Status_e ICM_20948_wom_logic(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_INTEL_CTRL_t *write, ICM_20948_ACCEL_INTEL_CTRL_t *read); //Enable or disable WoM Logic
+
   // WoM Threshold Level Configuration
   ICM_20948_Status_e ICM_20948_wom_threshold(ICM_20948_Device_t *pdev, ICM_20948_ACCEL_WOM_THR_t *write, ICM_20948_ACCEL_WOM_THR_t *read); // Write and or read the Wake on Motion threshold. If non-null the write operation occurs before the read, so as to verify that the write was successful
 

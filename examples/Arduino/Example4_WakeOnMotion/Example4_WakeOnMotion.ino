@@ -221,6 +221,8 @@ void setup()
   SERIAL_PORT.print(F("Set threshold returned: "));
   SERIAL_PORT.println(myICM.statusString());
 
+  myICM.WOMLogic(true, 1); // enable WoM Logic mode 1
+
   myICM.intEnableWOM(true); // enable interrupts on WakeOnMotion
   SERIAL_PORT.print(F("intEnableWOM returned: "));
   SERIAL_PORT.println(myICM.statusString());
