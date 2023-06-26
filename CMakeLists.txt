@@ -4,7 +4,7 @@ endif()
 
 project(icm20948 VERSION 0.1.0 LANGUAGES CXX)
 
-add_compile_options(-Wall -Wextra -fpermissive)
+add_compile_options(-Wall -Wextra)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/util/ ${CMAKE_CURRENT_SOURCE_DIR}/include)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/ ${CMAKE_CURRENT_SOURCE_DIR}/util/)
