@@ -10,9 +10,7 @@ A C++ interface to the ICM-20948
 #include "util/ICM_20948_C.h" // The C backbone. ICM_20948_USE_DMP is defined in here.
 #include "util/AK09916_REGISTERS.h"
 
-#include "Arduino.h" // Arduino support
-#include "Wire.h"
-#include "SPI.h"
+#include "Particle.h"
 
 #define ICM_20948_ARD_UNUSED_PIN 0xFF
 

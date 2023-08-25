@@ -1,8 +1,10 @@
-# SparkFun ICM-20948 Arduino Library
+# SparkFun ICM-20948 Particle Library
 
 This is the SparkFun library for the TDK InvenSense ICM-20948 Inertial Measurement Unit 9-Degree Of Freedom sensor as used on the [SparkFun 9DoF IMU Breakout - ICM-20948 (Qwiic)](https://www.sparkfun.com/products/15335).
 
 Version 1.2 of the library includes support for the InvenSense Digital Motion Processor (DMP™). You can find further details in [DMP.md](./DMP.md).
+
+This library was modified by Emily Thorpe on Auguest 25, 2023 to use with the Particle Tracker SOM
 
 ## Contributing
 
