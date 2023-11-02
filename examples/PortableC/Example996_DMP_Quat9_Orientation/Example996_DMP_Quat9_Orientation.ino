@@ -1,3 +1,14 @@
+/****************************************************************
+ * ** Important note: by default the DMP functionality is disabled in the library
+ * ** as the DMP firmware takes up 14301 Bytes of program memory.
+ * ** To use the DMP, you will need to:
+ * ** Edit ICM_20948_C.h
+ * ** Uncomment line 29: #define ICM_20948_USE_DMP
+ * ** Save changes
+ * ** If you are using Windows, you can find ICM_20948_C.h in:
+ * ** Documents\Arduino\libraries\SparkFun_ICM-20948_ArduinoLibrary\src\util
+ ***************************************************************/
+
 //#define QUAT_ANIMATION // Uncomment this line to output data in the correct format for ZaneL's Node.js Quaternion animation tool: https://github.com/ZaneL/quaternion_sensor_3d_nodejs
 
 #include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
