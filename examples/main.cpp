@@ -2,13 +2,15 @@
 #define I2C_BUS 5
 #define IMU_ADDRESS 0x68
 
-ICM_20948_I2C myICM;  // Create an ICM_20948_I2C object
+//ICM_20948_I2C icm_spi;  // Create an ICM_20948_I2C object
+ICM_20948_SPI icm_spi(ICM_20948_SPI_DEFAULT_FREQ, 8);
 
 // Functions used to print the IMU data on stdout
 void printPaddedInt16b(int16_t val);
 void printRawAGMT(ICM_20948_AGMT_t agmt);
 void printFormattedFloat(float val, uint8_t leading);
-void printScaledAGMT(ICM_20948_I2C* sensor);
+//void printScaledAGMT(ICM_20948_I2C* sensor);
+void printScaledAGMT(ICM_20948_SPI* sensor);
 
 int main() {
     bool initialized = false; 
@@ -16,10 +18,11 @@ int main() {
         // Initialize the ICM-20948
         // If the DMP is enabled, .begin performs a minimal startup. We
         // need to configure the sample mode etc. manually.
-        myICM.begin(I2C_BUS, IMU_ADDRESS);
+        //icm_spi.begin(I2C_BUS, IMU_ADDRESS);
+        icm_spi.begin("/dev/spidev1.0");
         printf("Initialization of the sensor returned: ");
-        std::cout << myICM.statusString() << std::endl;
-        if (myICM.status != ICM_20948_Stat_Ok) {
+        std::cout << icm_spi.statusString() << std::endl;
+        if (icm_spi.status != ICM_20948_Stat_Ok) {
             printf("Trying again...\r\n");
             delay(500);
         } else {
@@ -28,26 +31,26 @@ int main() {
     }
 
     printf("Device connected!\r\n");
-    myICM.swReset();
-    if (myICM.status != ICM_20948_Stat_Ok) {
+    icm_spi.swReset();
+    if (icm_spi.status != ICM_20948_Stat_Ok) {
         printf("Software Reset returned: ");
-        printf("%s\r\n", myICM.statusString());
+        printf("%s\r\n", icm_spi.statusString());
     }
     delay(250);
 
     // Now wake the sensor up
-    myICM.sleep(false);
-    myICM.lowPower(false);
+    icm_spi.sleep(false);
+    icm_spi.lowPower(false);
 
     // The next few configuration functions accept a bit-mask of sensors for which the settings should be applied.
 
     // Set Gyro and Accelerometer to a particular sample mode
     // options: ICM_20948_Sample_Mode_Continuous
     //          ICM_20948_Sample_Mode_Cycled
-    myICM.setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous);
-    if (myICM.status != ICM_20948_Stat_Ok) {
+    icm_spi.setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous);
+    if (icm_spi.status != ICM_20948_Stat_Ok) {
         printf("setSampleMode returned: ");
-        printf("%s\r\n", myICM.statusString());
+        printf("%s\r\n", icm_spi.statusString());
     }
     // Set full scale ranges for both acc and gyr
     ICM_20948_fss_t
@@ -65,10 +68,10 @@ int main() {
                         // dps1000
                         // dps2000
 
-    myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
-    if (myICM.status != ICM_20948_Stat_Ok) {
+    icm_spi.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+    if (icm_spi.status != ICM_20948_Stat_Ok) {
         printf("setFullScale returned: ");
-        printf("%s\r\n", myICM.statusString());
+        printf("%s\r\n", icm_spi.statusString());
     }
 
     // Set up Digital Low-Pass Filter configuration
@@ -89,35 +92,35 @@ int main() {
                                        // gyr_d5bw7_n8bw9
                                        // gyr_d361bw4_n376bw5
 
-    myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
-    if (myICM.status != ICM_20948_Stat_Ok) {
+    icm_spi.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+    if (icm_spi.status != ICM_20948_Stat_Ok) {
         printf("setDLPcfg returned: ");
-        printf("%s\r\n", myICM.statusString());
+        printf("%s\r\n", icm_spi.statusString());
     }
 
     // Choose whether or not to use DLPF
     // Here we're also showing another way to access the status values, and that it is OK to supply individual sensor
     // masks to these functions
-    ICM_20948_Status_e accDLPEnableStat = myICM.enableDLPF(ICM_20948_Internal_Acc, false);
-    ICM_20948_Status_e gyrDLPEnableStat = myICM.enableDLPF(ICM_20948_Internal_Gyr, false);
+    ICM_20948_Status_e accDLPEnableStat = icm_spi.enableDLPF(ICM_20948_Internal_Acc, false);
+    ICM_20948_Status_e gyrDLPEnableStat = icm_spi.enableDLPF(ICM_20948_Internal_Gyr, false);
     printf("Enable DLPF for Accelerometer returned: ");
-    printf("%s\r\n", myICM.statusString(accDLPEnableStat));
+    printf("%s\r\n", icm_spi.statusString(accDLPEnableStat));
     printf("Enable DLPF for Gyroscope returned: ");
-    printf("%s\r\n", myICM.statusString(gyrDLPEnableStat));
+    printf("%s\r\n", icm_spi.statusString(gyrDLPEnableStat));
 
     printf("Configuration complete!\r\n");
     while (1) {
-        if (myICM.dataReady()) {
+        if (icm_spi.dataReady()) {
             auto start = std::chrono::system_clock::now();
-            myICM.getAGMT();  // The values are only updated when you call 'getAGMT'
+            icm_spi.getAGMT();  // The values are only updated when you call 'getAGMT'
             auto end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = end - start;
             printf(" Hz: %f", 1 / elapsed.count());
             printf("\r\n");
 
-            // printRawAGMT( myICM.agmt ); // Uncomment this to see the raw values, taken directly from the agmt
+            // printRawAGMT( icm_spi.agmt ); // Uncomment this to see the raw values, taken directly from the agmt
             // structure
-            printScaledAGMT(&myICM);  // This function takes into account the scale settings from when the measurement
+            printScaledAGMT(&icm_spi);  // This function takes into account the scale settings from when the measurement
                                       // was made to calculate the values with units
             delay(10);
         } else {
@@ -215,7 +218,7 @@ void printFormattedFloat(float val, uint8_t leading) {
     }
 }
 
-void printScaledAGMT(ICM_20948_I2C* sensor) {
+void printScaledAGMT(ICM_20948_SPI* sensor) {
     printf("Scaled. Acc (mg) [ ");
     printFormattedFloat(sensor->accX(), 5);
     printf(", ");

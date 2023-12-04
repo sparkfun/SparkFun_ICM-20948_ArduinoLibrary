@@ -1717,62 +1717,6 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
     return worstResult;
 }
 
-// I2C
-ICM_20948_I2C::ICM_20948_I2C() {}
-
-ICM_20948_Status_e ICM_20948_I2C::begin(uint8_t i2cbus, uint8_t addr) {
-    char filename[20];
-    snprintf(filename, 19, "/dev/i2c-%d", i2cbus);
-    _i2c_fd = open(filename, O_RDWR);
-    if (_i2c_fd < 0) {
-        printf("Could not open i2c instance!!!");
-        return ICM_20948_Stat_Err;
-    }
-    if (ioctl(_i2c_fd, I2C_SLAVE, addr) < 0) {
-        perror("Failed to acquire bus access or talk to slave.");
-        return ICM_20948_Stat_Err;
-    }
-    // Set up the serif
-    _serif.write = ICM_20948_write_I2C;
-    _serif.read = ICM_20948_read_I2C;
-    _serif.user = (void*) this;
-
-    // Link the serif
-    _device._serif = &_serif;
-
-#if defined(ICM_20948_USE_DMP)
-    _device._dmp_firmware_available = true;  // Initialize _dmp_firmware_available
-#else
-    _device._dmp_firmware_available = false;  // Initialize _dmp_firmware_available
-#endif
-
-    _device._firmware_loaded = false;  // Initialize _firmware_loaded
-    _device._last_bank = 255;          // Initialize _last_bank. Make it invalid. It will
-                                       // be set by the first call of ICM_20948_set_bank.
-    _device._last_mems_bank = 255;     // Initialize _last_mems_bank. Make it invalid. It will be set
-                                       // by the first call of inv_icm20948_write_mems.
-    _device._gyroSF = 0;               // Use this to record the GyroSF, calculated by
-                                       // inv_icm20948_set_gyro_sf
-    _device._gyroSFpll = 0;
-    _device._enabled_Android_0 = 0;       // Keep track of which Android sensors are enabled: 0-31
-    _device._enabled_Android_1 = 0;       // Keep track of which Android sensors are enabled: 32-
-    _device._enabled_Android_intr_0 = 0;  // Keep track of which Android sensor interrupts are enabled:
-                                          // 0-31
-    _device._enabled_Android_intr_1 = 0;  // Keep track of which Android sensor interrupts are enabled:
-                                          // 32-
-
-    // Perform default startup
-    // Do a minimal startupDefault if using the DMP. User can always call
-    // startupDefault(false) manually if required.
-    status = startupDefault(_device._dmp_firmware_available);
-    if (status != ICM_20948_Stat_Ok) {
-        debugPrint(("ICM_20948_I2C::begin: startupDefault returned: "));
-        debugPrintStatus(status);
-        debugPrintln((""));
-    }
-    return status;
-}
-
 ICM_20948_Status_e ICM_20948::startupMagnetometer(bool minimal) {
     ICM_20948_Status_e retval = ICM_20948_Stat_Ok;
 
@@ -1907,6 +1851,62 @@ ICM_20948_Status_e ICM_20948::magWhoIAm(void) {
     return status;
 }
 
+// I2C
+ICM_20948_I2C::ICM_20948_I2C() {}
+
+ICM_20948_Status_e ICM_20948_I2C::begin(uint8_t i2cbus, uint8_t addr) {
+    char filename[20];
+    snprintf(filename, 19, "/dev/i2c-%d", i2cbus);
+    _i2c_fd = open(filename, O_RDWR);
+    if (_i2c_fd < 0) {
+        printf("Could not open i2c instance!!!");
+        return ICM_20948_Stat_Err;
+    }
+    if (ioctl(_i2c_fd, I2C_SLAVE, addr) < 0) {
+        perror("Failed to acquire bus access or talk to slave.");
+        return ICM_20948_Stat_Err;
+    }
+    // Set up the serif
+    _serif.write = ICM_20948_write_I2C;
+    _serif.read = ICM_20948_read_I2C;
+    _serif.user = (void*) this;
+
+    // Link the serif
+    _device._serif = &_serif;
+
+#if defined(ICM_20948_USE_DMP)
+    _device._dmp_firmware_available = true;  // Initialize _dmp_firmware_available
+#else
+    _device._dmp_firmware_available = false;  // Initialize _dmp_firmware_available
+#endif
+
+    _device._firmware_loaded = false;  // Initialize _firmware_loaded
+    _device._last_bank = 255;          // Initialize _last_bank. Make it invalid. It will
+                                       // be set by the first call of ICM_20948_set_bank.
+    _device._last_mems_bank = 255;     // Initialize _last_mems_bank. Make it invalid. It will be set
+                                       // by the first call of inv_icm20948_write_mems.
+    _device._gyroSF = 0;               // Use this to record the GyroSF, calculated by
+                                       // inv_icm20948_set_gyro_sf
+    _device._gyroSFpll = 0;
+    _device._enabled_Android_0 = 0;       // Keep track of which Android sensors are enabled: 0-31
+    _device._enabled_Android_1 = 0;       // Keep track of which Android sensors are enabled: 32-
+    _device._enabled_Android_intr_0 = 0;  // Keep track of which Android sensor interrupts are enabled:
+                                          // 0-31
+    _device._enabled_Android_intr_1 = 0;  // Keep track of which Android sensor interrupts are enabled:
+                                          // 32-
+
+    // Perform default startup
+    // Do a minimal startupDefault if using the DMP. User can always call
+    // startupDefault(false) manually if required.
+    status = startupDefault(_device._dmp_firmware_available);
+    if (status != ICM_20948_Stat_Ok) {
+        debugPrint(("ICM_20948_I2C::begin: startupDefault returned: "));
+        debugPrintStatus(status);
+        debugPrintln((""));
+    }
+    return status;
+}
+
 // serif functions for the I2C
 ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t* data, uint32_t len, void* user) {
     if (user == NULL) {
@@ -1932,3 +1932,113 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, 
     }
     return ICM_20948_Stat_Ok;
 }
+
+
+ICM_20948_Status_e ICM_20948_SPI::begin(const char* device, uint32_t speed) {
+    int _spi_fd = open(device, O_RDWR);
+    if (_spi_fd < 0) {
+        perror("Failed to open SPI device");
+        return ICM_20948_Stat_Err;
+    }
+
+    uint8_t mode = SPI_MODE_0;
+    uint8_t bits = 8;
+    //uint32_t speed = 1000000; // 1 MHz
+
+    // Set SPI mode
+    if (ioctl(_spi_fd, SPI_IOC_WR_MODE, &mode) < 0) {
+        perror("Failed to set SPI mode");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;
+    }
+
+    // Set bits per word
+    if (ioctl(_spi_fd, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0) {
+        perror("Failed to set bits per word");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;
+    }
+
+    // Set SPI bus speed
+    if (ioctl(_spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0) {
+        perror("Failed to set max speed");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;
+    }
+
+    // Set up the serif
+    _serif.write = ICM_20948_write_SPI;
+    _serif.read = ICM_20948_read_SPI;
+    _serif.user = (void*) this;
+
+    // Link the serif
+    _device._serif = &_serif;
+
+#if defined(ICM_20948_USE_DMP)
+    _device._dmp_firmware_available = true;  // Initialize _dmp_firmware_available
+#else
+    _device._dmp_firmware_available = false;  // Initialize _dmp_firmware_available
+#endif
+
+    _device._firmware_loaded = false;  // Initialize _firmware_loaded
+    _device._last_bank = 255;          // Initialize _last_bank. Make it invalid. It will
+                                       // be set by the first call of ICM_20948_set_bank.
+    _device._last_mems_bank = 255;     // Initialize _last_mems_bank. Make it invalid. It will be set
+                                       // by the first call of inv_icm20948_write_mems.
+    _device._gyroSF = 0;               // Use this to record the GyroSF, calculated by
+                                       // inv_icm20948_set_gyro_sf
+    _device._gyroSFpll = 0;
+    _device._enabled_Android_0 = 0;       // Keep track of which Android sensors are enabled: 0-31
+    _device._enabled_Android_1 = 0;       // Keep track of which Android sensors are enabled: 32-
+    _device._enabled_Android_intr_0 = 0;  // Keep track of which Android sensor interrupts are enabled:
+                                          // 0-31
+    _device._enabled_Android_intr_1 = 0;  // Keep track of which Android sensor interrupts are enabled:
+                                          // 32-
+
+    // Perform default startup
+    // Do a minimal startupDefault if using the DMP. User can always call
+    // startupDefault(false) manually if required.
+    status = startupDefault(_device._dmp_firmware_available);
+    if (status != ICM_20948_Stat_Ok) {
+        debugPrint(("ICM_20948_I2C::begin: startupDefault returned: "));
+        debugPrintStatus(status);
+        debugPrintln((""));
+    }
+    return status;
+
+    return ICM_20948_Stat_Ok;
+}
+
+ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, void* user) {
+    uint8_t tx_buffer[len + 1];
+    memset(tx_buffer, 0, len + 1); // Clear the transmission buffer
+    tx_buffer[0] = (reg & 0x7F) | 0x80; // Set the first byte for read operation
+
+    ICM_20948_SPI* spi_device = static_cast<ICM_20948_SPI*>(user);
+
+    // Perform SPI transaction
+    if (spi_device->spi_transaction(tx_buffer, buff, len + 1) < 0) {
+        return ICM_20948_Stat_Err;
+    }
+
+    // Shift the received data to align with the beginning of the buffer
+    memmove(buff, buff + 1, len);
+
+    return ICM_20948_Stat_Ok;
+}
+
+ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *data, uint32_t len, void* user) {
+    uint8_t tx_buffer[len + 1];
+    tx_buffer[0] = reg & 0x7F; // Write operation
+
+    ICM_20948_SPI* spi_device = static_cast<ICM_20948_SPI*>(user);
+
+    memcpy(&tx_buffer[1], data, len);
+
+    if (spi_device->spi_transaction(tx_buffer, NULL, len + 1) < 0) {
+        return ICM_20948_Stat_Err;
+    }
+
+    return ICM_20948_Stat_Ok;
+}
+

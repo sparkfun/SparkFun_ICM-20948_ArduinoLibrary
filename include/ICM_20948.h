@@ -15,12 +15,15 @@ A C++ interface to the ICM-20948
 #include <iostream>
 #include <thread>
 
+#include <string.h>  
+
 #include "../util/AK09916_REGISTERS.h"
 #include "../util/ICM_20948_C.h"  // The C backbone. ICM_20948_USE_DMP is defined in here.
 
 extern "C" {
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#include <linux/spi/spidev.h>
 #include <i2c/smbus.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
@@ -28,11 +31,11 @@ extern "C" {
 #include <unistd.h>
 }
 
-// #include "Arduino.h" // Arduino support
-// #include "Wire.h"
-// #include "SPI.h"
-
 #define ICM_20948_ARD_UNUSED_PIN 0xFF
+
+#define ICM_20948_SPI_DEFAULT_FREQ 4000000
+#define ICM_20948_SPI_DEFAULT_ORDER MSBFIRST
+#define ICM_20948_SPI_DEFAULT_MODE SPI_MODE0
 
 void delay(int sleepTime);
 
@@ -302,6 +305,36 @@ public:
     ICM_20948_I2C();  // Constructor
 
     virtual ICM_20948_Status_e begin(uint8_t i2cbus, uint8_t addr);
+};
+
+// TODO: move to another header
+class ICM_20948_SPI : public ICM_20948 {
+private:
+    int _spi_fd;
+    struct spi_ioc_transfer _tr; // SPI transfer struct as a member
+    ICM_20948_Serif_t _serif;
+
+public:
+    ICM_20948_SPI(uint32_t speed, uint8_t bits) {
+        // Initialize the spi_ioc_transfer struct
+        _tr.speed_hz = speed;
+        _tr.bits_per_word = bits;
+        _tr.delay_usecs = 0;
+        _tr.tx_buf = 0;
+        _tr.rx_buf = 0;
+        _tr.len = 0;
+    }
+    int spi_transaction(uint8_t *tx, uint8_t *rx, size_t len) {
+        _tr.tx_buf = (unsigned long)tx;
+        _tr.rx_buf = (unsigned long)rx;
+        _tr.len = len;
+
+        return ioctl(_spi_fd, SPI_IOC_MESSAGE(1), &_tr);
+    }
+
+    ICM_20948_Status_e begin(const char* device = "/dev/spidev1.0", uint32_t speed = ICM_20948_SPI_DEFAULT_FREQ);
+
+    // Other member functions...
 };
 
 #endif /* _ICM_20948_H_ */
