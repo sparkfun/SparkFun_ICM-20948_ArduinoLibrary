@@ -23,6 +23,7 @@ A C++ interface to the ICM-20948
 extern "C" {
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <i2c/smbus.h>
 #include <sys/ioctl.h>
@@ -311,10 +312,13 @@ public:
 class ICM_20948_SPI : public ICM_20948 {
 private:
     int _spi_fd;
+    uint32_t _speed;
+    uint8_t _bits;
     struct spi_ioc_transfer _tr; // SPI transfer struct as a member
-    ICM_20948_Serif_t _serif;
 
 public:
+    ICM_20948_Serif_t _serif;
+
     ICM_20948_SPI(uint32_t speed, uint8_t bits) {
         // Initialize the spi_ioc_transfer struct
         _tr.speed_hz = speed;
@@ -324,15 +328,29 @@ public:
         _tr.rx_buf = 0;
         _tr.len = 0;
     }
-    int spi_transaction(uint8_t *tx, uint8_t *rx, size_t len) {
-        _tr.tx_buf = (unsigned long)tx;
-        _tr.rx_buf = (unsigned long)rx;
-        _tr.len = len;
 
-        return ioctl(_spi_fd, SPI_IOC_MESSAGE(1), &_tr);
+    int spi_transaction(uint8_t *tx, uint8_t *rx, size_t len) {
+        struct spi_ioc_transfer xfer;
+        memset(&xfer, 0, sizeof(xfer));
+
+        xfer.tx_buf = (unsigned long)tx;
+        xfer.rx_buf = (unsigned long)rx;
+        xfer.len = len;
+        xfer.speed_hz = 4000000; // TODO : adjust this value as needed
+        xfer.bits_per_word = 8;
+        xfer.delay_usecs = 0; // TODO : adjust delay if needed
+
+        int ret = ioctl(_spi_fd, SPI_IOC_MESSAGE(1), &xfer);
+        if (ret < 0) {
+            perror("spi_transaction error");
+            return -1;
+        }
+
+        return 0;
     }
 
-    ICM_20948_Status_e begin(const char* device = "/dev/spidev1.0", uint32_t speed = ICM_20948_SPI_DEFAULT_FREQ);
+
+    virtual ICM_20948_Status_e begin(const char* device = "/dev/spidev2.0", uint32_t speed = ICM_20948_SPI_DEFAULT_FREQ);
 
     // Other member functions...
 };

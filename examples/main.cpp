@@ -19,7 +19,7 @@ int main() {
         // If the DMP is enabled, .begin performs a minimal startup. We
         // need to configure the sample mode etc. manually.
         //icm_spi.begin(I2C_BUS, IMU_ADDRESS);
-        icm_spi.begin("/dev/spidev1.0");
+        icm_spi.begin("/dev/spidev2.0");
         printf("Initialization of the sensor returned: ");
         std::cout << icm_spi.statusString() << std::endl;
         if (icm_spi.status != ICM_20948_Stat_Ok) {

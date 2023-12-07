@@ -1,4 +1,5 @@
 #include "ICM_20948.h"
+#include <errno.h>
 
 #include "util/AK09916_REGISTERS.h"
 #include "util/ICM_20948_REGISTERS.h"
@@ -1935,7 +1936,7 @@ ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t* buff, uint32_t len, 
 
 
 ICM_20948_Status_e ICM_20948_SPI::begin(const char* device, uint32_t speed) {
-    int _spi_fd = open(device, O_RDWR);
+    _spi_fd = open(device, O_RDWR);
     if (_spi_fd < 0) {
         perror("Failed to open SPI device");
         return ICM_20948_Stat_Err;
@@ -1944,6 +1945,13 @@ ICM_20948_Status_e ICM_20948_SPI::begin(const char* device, uint32_t speed) {
     uint8_t mode = SPI_MODE_0;
     uint8_t bits = 8;
     //uint32_t speed = 1000000; // 1 MHz
+    char lsbfirst = 0;
+
+	if(ioctl(_spi_fd, SPI_IOC_RD_MODE, &mode) < 0){
+		printf("Failed to set spi mode 'SPI_IOC_RD_MODE'\n");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;
+	}
 
     // Set SPI mode
     if (ioctl(_spi_fd, SPI_IOC_WR_MODE, &mode) < 0) {
@@ -1965,6 +1973,17 @@ ICM_20948_Status_e ICM_20948_SPI::begin(const char* device, uint32_t speed) {
         close(_spi_fd);
         return ICM_20948_Stat_Err;
     }
+
+	if(ioctl(_spi_fd, SPI_IOC_WR_LSB_FIRST, &lsbfirst) < 0){
+		printf("can't set max speed hz 'SPI_IOC_WR_MAX_SPEED_HZ'\n");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;	}
+
+	if(ioctl(_spi_fd, SPI_IOC_RD_LSB_FIRST, &lsbfirst) < 0){
+		printf("can't get max speed hz 'SPI_IOC_RD_MAX_SPEED_HZ'\n");
+        close(_spi_fd);
+        return ICM_20948_Stat_Err;	}
+
 
     // Set up the serif
     _serif.write = ICM_20948_write_SPI;
@@ -2005,19 +2024,18 @@ ICM_20948_Status_e ICM_20948_SPI::begin(const char* device, uint32_t speed) {
         debugPrintln((""));
     }
     return status;
-
-    return ICM_20948_Stat_Ok;
 }
 
 ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, void* user) {
+    ICM_20948_SPI* spi_device = static_cast<ICM_20948_SPI*>(user);
+
     uint8_t tx_buffer[len + 1];
     memset(tx_buffer, 0, len + 1); // Clear the transmission buffer
     tx_buffer[0] = (reg & 0x7F) | 0x80; // Set the first byte for read operation
 
-    ICM_20948_SPI* spi_device = static_cast<ICM_20948_SPI*>(user);
-
     // Perform SPI transaction
     if (spi_device->spi_transaction(tx_buffer, buff, len + 1) < 0) {
+        perror("ICM_20948_read_SPI: SPI transaction error");
         return ICM_20948_Stat_Err;
     }
 
@@ -2027,18 +2045,21 @@ ICM_20948_Status_e ICM_20948_read_SPI(uint8_t reg, uint8_t *buff, uint32_t len, 
     return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *data, uint32_t len, void* user) {
-    uint8_t tx_buffer[len + 1];
-    tx_buffer[0] = reg & 0x7F; // Write operation
 
+ICM_20948_Status_e ICM_20948_write_SPI(uint8_t reg, uint8_t *data, uint32_t len, void* user) {
     ICM_20948_SPI* spi_device = static_cast<ICM_20948_SPI*>(user);
 
-    memcpy(&tx_buffer[1], data, len);
+    uint8_t tx_buffer[len + 1];
+    tx_buffer[0] = reg & 0x7F; // Write operation
+    memcpy(&tx_buffer[1], data, len); // Copy data to be written
 
+    // Perform SPI transaction
     if (spi_device->spi_transaction(tx_buffer, NULL, len + 1) < 0) {
+        perror("ICM_20948_write_SPI: SPI transaction error");
         return ICM_20948_Stat_Err;
     }
 
     return ICM_20948_Stat_Ok;
 }
+
 
