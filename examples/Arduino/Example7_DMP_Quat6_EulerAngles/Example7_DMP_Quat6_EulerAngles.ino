@@ -222,27 +222,48 @@ void loop()
       SERIAL_PORT.println(q3, 3);
 */
 
-      // Convert the quaternions to Euler angles (roll, pitch, yaw)
-      // https://en.wikipedia.org/w/index.php?title=Conversion_between_quaternions_and_Euler_angles&section=8#Source_code_2
+      // The ICM 20948 chip has axes y-forward, x-right and Z-up - see Figure 12:
+      // Orientation of Axes of Sensitivity and Polarity of Rotation
+      // in DS-000189-ICM-20948-v1.6.pdf  These are the axes for gyro and accel and quat
+      //
+      // For conversion to roll, pitch and yaw for the equations below, the coordinate frame
+      // must be in aircraft reference frame.
+      //  
+      // We use the Tait Bryan angles (in terms of flight dynamics):
+      // ref: https://en.wikipedia.org/w/index.php?title=Conversion_between_quaternions_and_Euler_angles
+      //
+      // Heading – ψ : rotation about the Z-axis (+/- 180 deg.)
+      // Pitch – θ : rotation about the new Y-axis (+/- 90 deg.)
+      // Bank – ϕ : rotation about the new X-axis  (+/- 180 deg.)
+      //
+      // where the X-axis points forward (pin 1 on chip), Y-axis to the right and Z-axis downward.
+      // In the conversion example above the rotation occurs in the order heading, pitch, bank. 
+      // To get the roll, pitch and yaw equations to work properly we need to exchange the axes
+
+      // Note when pitch approaches +/- 90 deg. the heading and bank become less meaningfull because the
+      // device is pointing up/down. (Gimbal lock)
 
       double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
 
-      double q2sqr = q2 * q2;
+      double qw = q0; // See issue #145 - thank you @Gord1
+      double qx = q2;
+      double qy = q1;
+      double qz = -q3;
 
       // roll (x-axis rotation)
-      double t0 = +2.0 * (q0 * q1 + q2 * q3);
-      double t1 = +1.0 - 2.0 * (q1 * q1 + q2sqr);
+      double t0 = +2.0 * (qw * qx + qy * qz);
+      double t1 = +1.0 - 2.0 * (qx * qx + qy * qy);
       double roll = atan2(t0, t1) * 180.0 / PI;
 
       // pitch (y-axis rotation)
-      double t2 = +2.0 * (q0 * q2 - q3 * q1);
+      double t2 = +2.0 * (qw * qy - qx * qz);
       t2 = t2 > 1.0 ? 1.0 : t2;
       t2 = t2 < -1.0 ? -1.0 : t2;
       double pitch = asin(t2) * 180.0 / PI;
 
       // yaw (z-axis rotation)
-      double t3 = +2.0 * (q0 * q3 + q1 * q2);
-      double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
+      double t3 = +2.0 * (qw * qz + qx * qy);
+      double t4 = +1.0 - 2.0 * (qy * qy + qz * qz);
       double yaw = atan2(t3, t4) * 180.0 / PI;
 
 #ifndef QUAT_ANIMATION
