@@ -1793,17 +1793,21 @@ ICM_20948_Status_e inv_icm20948_enable_dmp_sensor(ICM_20948_Device_t *pdev, enum
     }
     // Also check which bits need to be set in the Data Ready Status and Motion Event Control registers
     // Compare to INV_NEEDS_ACCEL_MASK, INV_NEEDS_GYRO_MASK and INV_NEEDS_COMPASS_MASK
-    if (((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK1) > 0))
+    // See issue #150 - thank you @dobodu
+    if (((pdev->_enabled_Android_0 & androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK) > 0)
+    || ((pdev->_enabled_Android_1 & androidSensorAsBitMask & INV_NEEDS_ACCEL_MASK1) > 0))
     {
       data_rdy_status |= DMP_Data_ready_Accel;
       inv_event_control |= DMP_Motion_Event_Control_Accel_Calibr;
     }
-    if (((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_GYRO_MASK1) > 0))
+    if (((pdev->_enabled_Android_0 & androidSensorAsBitMask & INV_NEEDS_GYRO_MASK) > 0)
+    || ((pdev->_enabled_Android_1 & androidSensorAsBitMask & INV_NEEDS_GYRO_MASK1) > 0))
     {
       data_rdy_status |= DMP_Data_ready_Gyro;
       inv_event_control |= DMP_Motion_Event_Control_Gyro_Calibr;
     }
-    if (((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK) > 0) || ((androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK1) > 0))
+    if (((pdev->_enabled_Android_0 & androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK) > 0)
+    || ((pdev->_enabled_Android_1 & androidSensorAsBitMask & INV_NEEDS_COMPASS_MASK1) > 0))
     {
       data_rdy_status |= DMP_Data_ready_Secondary_Compass;
       inv_event_control |= DMP_Motion_Event_Control_Compass_Calibr;
