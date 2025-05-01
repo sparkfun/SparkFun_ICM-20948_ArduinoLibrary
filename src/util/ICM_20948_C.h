@@ -22,7 +22,10 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+// Portduino target uses system memcmp call, which conflicts with this
+#ifndef PORTDUINO
 extern int memcmp(const void *, const void *, size_t); // Avoid compiler warnings
+#endif
 
 // Define if the DMP will be supported
 // Note: you must have 14290/14301 Bytes of program memory available to store the DMP firmware!
