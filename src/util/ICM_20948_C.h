@@ -23,7 +23,9 @@ extern "C"
 #endif /* __cplusplus */
 
 // Portduino target uses system memcmp call, which conflicts with this
-#ifndef PORTDUINO
+#ifdef PORTDUINO
+#include <string.h>
+#else
 extern int memcmp(const void *, const void *, size_t); // Avoid compiler warnings
 #endif
 
